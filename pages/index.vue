@@ -678,7 +678,7 @@ export default {
     async getToken(val) {
       let that = this;
       axios
-        .get(`http://localhost:5000/api/fcm/get-token/${val}`, {})
+        .get(`https://makaazi-85b0afbcae5d.herokuapp.com/api/fcm/get-token/${val}`, {})
         .then(function (response) {
           if (response.status == 200) {
             that.deviceToken = response.data.fcm_token;
@@ -698,7 +698,7 @@ export default {
       let that = this;
 
       axios
-        .post(`http://localhost:5000/api/fcm/sendNotification`, {
+        .post(`https://makaazi-85b0afbcae5d.herokuapp.com/api/fcm/sendNotification`, {
           fcmToken: that.deviceToken,
           title: that.title,
           body: that.body,
@@ -734,7 +734,7 @@ export default {
         that.estate_houseHolds.splice(that.estate_houseHolds);
         axios
           .get(
-            `http://localhost:5000/api/households/search/${that.estate_id}?query=${val}`,
+            `https://makaazi-85b0afbcae5d.herokuapp.com/api/households/search/${that.estate_id}?query=${val}`,
             {}
           )
           .then(function (response) {
@@ -762,7 +762,10 @@ export default {
         let that = this;
         that.payments.splice(that.payments);
         axios
-          .get(`http://localhost:5000/api/payments/searchAll/?query=${val}`, {})
+          .get(
+            `https://makaazi-85b0afbcae5d.herokuapp.com/api/payments/searchAll/?query=${val}`,
+            {}
+          )
           .then(function (response) {
             if (response.status == 200) {
               // that.snackbar = true;
@@ -788,7 +791,10 @@ export default {
         let that = this;
         that.estates.splice(that.estates);
         axios
-          .get(`http://localhost:5000/api/estates/search/?query=${val}`, {})
+          .get(
+            `https://makaazi-85b0afbcae5d.herokuapp.com/api/estates/search/?query=${val}`,
+            {}
+          )
           .then(function (response) {
             if (response.status == 200) {
               // that.snackbar = true;
@@ -814,7 +820,10 @@ export default {
         let that = this;
         that.houseHolds.splice(that.houseHolds);
         axios
-          .get(`http://localhost:5000/api/households/search/?query=${val}`, {})
+          .get(
+            `https://makaazi-85b0afbcae5d.herokuapp.com/api/households/search/?query=${val}`,
+            {}
+          )
           .then(function (response) {
             if (response.status == 200) {
               // that.snackbar = true;
@@ -841,10 +850,13 @@ export default {
         that.snackbarText2 = "Select a role";
       } else {
         axios
-          .patch(`http://localhost:5000/api/households/update_household/${val}`, {
-            is_official: 0,
-            official_role: that.role,
-          })
+          .patch(
+            `https://makaazi-85b0afbcae5d.herokuapp.com/api/households/update_household/${val}`,
+            {
+              is_official: 0,
+              official_role: that.role,
+            }
+          )
           .then(function (response) {
             if (response.status == 200) {
               that.snackbar = true;
@@ -866,10 +878,13 @@ export default {
     async assignOfficials2(val) {
       let that = this;
       axios
-        .patch(`http://localhost:5000/api/households/update_household/${val}`, {
-          is_official: 1,
-          official_role: "none",
-        })
+        .patch(
+          `https://makaazi-85b0afbcae5d.herokuapp.com/api/households/update_household/${val}`,
+          {
+            is_official: 1,
+            official_role: "none",
+          }
+        )
         .then(function (response) {
           if (response.status == 200) {
             that.snackbar = true;
@@ -890,7 +905,10 @@ export default {
     async DeleteOfficial(val) {
       let that = this;
       axios
-        .put(`http://localhost:5000/api/officials/delete_official/${val}`, {})
+        .put(
+          `https://makaazi-85b0afbcae5d.herokuapp.com/api/officials/delete_official/${val}`,
+          {}
+        )
         .then(function (response) {
           if (response.status == 200) {
             that.snackbar = true;
@@ -915,7 +933,7 @@ export default {
         that.householdOwner +
         " your account has been verified welcome to makaazi App";
       axios
-        .post(`http://localhost:5000/api/officials/addOfficial`, {
+        .post(`https://makaazi-85b0afbcae5d.herokuapp.com/api/officials/addOfficial`, {
           full_name: that.full_name,
           estate_id: that.estate_id,
           role: that.role,
@@ -972,7 +990,7 @@ export default {
     async Fetch_AllPayments() {
       let that = this;
       axios
-        .get("http://localhost:5000/api/payments/getAll", {})
+        .get("https://makaazi-85b0afbcae5d.herokuapp.com/api/payments/getAll", {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -993,7 +1011,10 @@ export default {
     async Fetch_ActiveHouseholds() {
       let that = this;
       axios
-        .get("http://localhost:5000/api/households/getActiveHouseHolds/0", {})
+        .get(
+          "https://makaazi-85b0afbcae5d.herokuapp.com/api/households/getActiveHouseHolds/0",
+          {}
+        )
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -1016,7 +1037,7 @@ export default {
       let that = this;
       that.houseHolds.splice(that.houseHolds);
       axios
-        .get("http://localhost:5000/api/households/getall/", {})
+        .get("https://makaazi-85b0afbcae5d.herokuapp.com/api/households/getall/", {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -1039,7 +1060,10 @@ export default {
       let that = this;
       that.estate_houseHolds.splice(that.estate_houseHolds);
       axios
-        .get(`http://localhost:5000/api/households/getBHsHldEstId/${val}`, {})
+        .get(
+          `https://makaazi-85b0afbcae5d.herokuapp.com/api/households/getBHsHldEstId/${val}`,
+          {}
+        )
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -1061,7 +1085,7 @@ export default {
       let that = this;
       that.estates.splice(that.estates);
       axios
-        .get("http://localhost:5000/api/estates/getall/", {})
+        .get("https://makaazi-85b0afbcae5d.herokuapp.com/api/estates/getall/", {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
