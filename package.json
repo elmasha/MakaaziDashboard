@@ -20,6 +20,7 @@
     "dayjs": "^1.11.10",
     "firebase": "^9.17.1",
     "fs": "^0.0.1-security",
+    "leaflet": "^1.9.4",
     "module": "^1.2.5",
     "nuxt": "^2.15.8",
     "nuxt-dropzone": "^1.0.4",
@@ -28,6 +29,8 @@
     "vue-server-renderer": "^2.7.10",
     "vue-template-compiler": "^2.7.10",
     "vue-uuid": "^2.1.0",
+    "vue2-gmap-custom-marker": "^6.1.1",
+    "vue2-google-maps": "^0.10.7",
     "vuetify": "^2.6.10"
   },
   "devDependencies": {

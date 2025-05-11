@@ -54,11 +54,19 @@
                   <v-chip color="black" style="color: white"
                     >Total households {{ totalHousehold }}</v-chip
                   >
+
+                  <v-chip color="blue" style="color: white"
+                    >Active households {{ totalHousehold }}</v-chip
+                  >
+
+                  <v-chip color="green" style="color: white"
+                    >Total officials {{ totalHousehold }}</v-chip
+                  >
                 </v-chip-group>
               </v-card-text>
             </div>
           </v-col>
-          <v-divider class="mx-4"></v-divider>
+          <!-- <v-divider class="mx-4"></v-divider> -->
           <v-col cols="12" sm="6" md="6"></v-col>
           <v-col cols="12" sm="6" md="6">
             <div class="container">
@@ -180,6 +188,39 @@
             </div>
           </v-col>
           <v-col cols="12" sm="12" md="12">
+            <v-row class="container" v-show="true">
+              <v-col cols="6" sm="4" md="4">
+                <v-card color="#dadada" elevation="0">
+                  <v-card-subtitle>
+                    <h4>Total Paid</h4>
+                  </v-card-subtitle>
+                  <v-card-actions>
+                    <h2>{{ 0 }}</h2>
+                  </v-card-actions>
+                </v-card>
+              </v-col>
+              <v-col cols="6" sm="4" md="4">
+                <v-card color="#dadada" elevation="0">
+                  <v-card-subtitle>
+                    <h4>Pending Payments</h4>
+                  </v-card-subtitle>
+                  <v-card-actions>
+                    <h2>{{ 0 }}</h2>
+                  </v-card-actions>
+                </v-card>
+              </v-col>
+
+              <v-col cols="6" sm="4" md="4">
+                <v-card color="#dadada" elevation="0">
+                  <v-card-subtitle>
+                    <h4>Pending payments</h4>
+                  </v-card-subtitle>
+                  <v-card-actions>
+                    <h2>0</h2>
+                  </v-card-actions>
+                </v-card>
+              </v-col>
+            </v-row>
             <div class="container">
               <div class="container">
                 <h4>Households Payment Summary</h4>

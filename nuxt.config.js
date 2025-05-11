@@ -24,17 +24,21 @@ export default {
     ]
   },
 
+
+
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [
-  ],
-
+  plugins: ["@/plugins/mapGoogle.client.js","@/plugins/directionsRenderer.js"],
 
   router: {
-    middleware: ["auth"],
+    middleware: ["auth"]
+  },
+
+  env: {
+    MAPS_API_KEY: process.env.MAPS_API_KEY || 'AIzaSyBohXT2fagF68PWxk4fnTSnH3tNf5Zo21o',
   },
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,

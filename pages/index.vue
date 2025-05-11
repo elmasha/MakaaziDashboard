@@ -133,7 +133,7 @@
 
         <v-col cols="12" sm="6" md="6">
           <div class="container">
-            <div class="row" style="margin: 12px">
+            <div class="d-flex" style="margin: 12px">
               <v-text-field
                 width="200"
                 style="margin: 12px"
@@ -226,13 +226,19 @@
             </v-container>
           </div>
         </v-col>
-        <v-col cols="12" sm="6" md="12" lg="6">
-          <div class="">
-            <v-row>
-              <v-col cols="12" sm="6" md="6">
+        <v-col cols="12" sm="6" md="6" lg="6">
+          <v-row>
+            <v-col cols="12" sm="12" md="12">
+              <v-subheader> <h4>Estate Map Location</h4> </v-subheader>
+              <div class="container">
+                <Map />
+              </div>
+            </v-col>
+            <v-col cols="12" sm="6" md="6" lg="6">
+              <div>
                 <div class="container">
                   <v-subheader>HouseHolds</v-subheader>
-                  <div class="row" style="margin: 12px">
+                  <div class="d-flex" style="margin: 12px">
                     <v-text-field
                       width="200"
                       style="margin: 12px"
@@ -287,75 +293,84 @@
                     </v-list-item>
                   </v-list>
                 </div>
-              </v-col>
-              <v-col cols="12" sm="6" md="6">
-                <div class="container">
-                  <div class="container">
-                    <v-subheader>Recent payments</v-subheader>
-                    <div class="row" style="margin: 12px">
-                      <v-text-field
-                        width="200"
-                        style="margin: 12px"
-                        v-model="pay_search"
-                        @change="searchPayments(pay_search)"
-                        placeholder="Search for payment"
-                        filled
-                        rounded
-                        clearable
-                        dense
-                      >
-                      </v-text-field>
-                      <v-btn
-                        style="margin: 12px"
-                        fab
-                        x-small
-                        color="black"
-                        @click="searchPayments(pay_search)"
-                      >
-                        <v-icon color="white"> mdi-magnify </v-icon>
-                      </v-btn>
-                      <v-spacer></v-spacer>
-                    </div>
-                  </div>
-                  <div class="container" id="all_items">
-                    <v-list subheader three-line>
-                      <v-list-item-group active-class="pink--text" multiple>
-                        <template v-for="(item, index) in payments">
-                          <v-list-item :key="item.transaction_type">
-                            <template v-slot:default="{ active }">
-                              <v-list-item-content>
-                                <v-list-item-title
-                                  v-text="item.estate_name"
-                                ></v-list-item-title>
-
-                                <v-list-item-subtitle
-                                  class="text--primary"
-                                  v-text="item.transaction_id"
-                                ></v-list-item-subtitle>
-
-                                <v-list-item-subtitle
-                                  v-text="item.transaction_type"
-                                ></v-list-item-subtitle>
-                              </v-list-item-content>
-
-                              <v-list-item-action>
-                                <v-list-item-action-text
-                                  v-text="item.total_paid"
-                                ></v-list-item-action-text>
-                              </v-list-item-action>
-                            </template>
-                          </v-list-item>
-
-                          <v-divider
-                            v-if="index < items.length - 1"
-                            :key="index"
-                          ></v-divider>
-                        </template>
-                      </v-list-item-group>
-                    </v-list>
+              </div>
+            </v-col>
+            <v-col cols="12" sm="6" md="6" lg="6">
+              <div class="container">
+                <div>
+                  <v-subheader>Recent payments</v-subheader>
+                  <div class="d-flex" style="margin: 12px">
+                    <v-text-field
+                      width="200"
+                      style="margin: 12px"
+                      v-model="pay_search"
+                      @change="searchPayments(pay_search)"
+                      placeholder="Search for payment"
+                      filled
+                      rounded
+                      clearable
+                      dense
+                    >
+                    </v-text-field>
+                    <v-btn
+                      style="margin: 12px"
+                      fab
+                      x-small
+                      color="black"
+                      @click="searchPayments(pay_search)"
+                    >
+                      <v-icon color="white"> mdi-magnify </v-icon>
+                    </v-btn>
+                    <v-spacer></v-spacer>
                   </div>
                 </div>
-              </v-col>
+                <div class="container" id="all_items">
+                  <v-list subheader three-line>
+                    <v-list-item-group active-class="pink--text" multiple>
+                      <template v-for="(item, index) in payments">
+                        <v-list-item :key="item.transaction_type">
+                          <template v-slot:default="{ active }">
+                            <v-list-item-content>
+                              <v-list-item-title
+                                v-text="item.estate_name"
+                              ></v-list-item-title>
+
+                              <v-list-item-subtitle
+                                class="text--primary"
+                                v-text="item.transaction_id"
+                              ></v-list-item-subtitle>
+
+                              <v-list-item-subtitle
+                                v-text="item.transaction_type"
+                              ></v-list-item-subtitle>
+                            </v-list-item-content>
+
+                            <v-list-item-action>
+                              <v-list-item-action-text
+                                v-text="item.total_paid"
+                              ></v-list-item-action-text>
+                            </v-list-item-action>
+                          </template>
+                        </v-list-item>
+
+                        <v-divider
+                          v-if="index < items.length - 1"
+                          :key="index"
+                        ></v-divider>
+                      </template>
+                    </v-list-item-group>
+                  </v-list>
+                </div>
+              </div>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="12" sm="6" md="6" lg="6"> </v-col>
+        <v-col cols="12" sm="6" md="6" lg="6">
+          <div class="">
+            <v-row>
+              <v-col cols="12" sm="6" md="6"> </v-col>
+              <v-col cols="12" sm="6" md="6"> </v-col>
             </v-row>
           </div>
         </v-col>
@@ -549,6 +564,7 @@ import CryptoJS from "crypto-js";
 import axios from "axios";
 import dayjs from "@nuxtjs/dayjs";
 import moment from "moment";
+import Map from "@/components/map.vue";
 
 import { uuid } from "vue-uuid";
 
@@ -557,11 +573,15 @@ const ivKey = "smslt";
 
 export default {
   name: "index",
+
   mounted() {
     this.Fetch_AllOfficials();
     // this.Fetch_ActiveHouseholds();
     this.Fetch_PostAllEstates();
     this.Fetch_AllPayments();
+  },
+  components: {
+    Map,
   },
   data() {
     return {
