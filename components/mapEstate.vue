@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div class="">
     <div class="">
       <div>
         <table v-show="add_routes" class="secondary--text">
@@ -28,8 +28,7 @@
         :zoom="8"
         :options="options"
         :center="center"
-        style="width: 100%; height: 400px; padding: 6px"
-        class="mb-0"
+        style="width: 100%; height: 300px; padding: 6px"
       >
       </gmap-map>
     </div>
@@ -56,10 +55,6 @@ export default {
   name: "map",
   data() {
     return {
-      center: {
-        lat: 0,
-        lng: 0,
-      },
       add_routes: false,
       farmCard: false,
       currentPlace: null,
@@ -150,14 +145,6 @@ export default {
   },
 
   methods: {
-    locateGeoLocation: function () {
-      navigator.geolocation.getCurrentPosition((res) => {
-        this.center = {
-          lat: res.coords.latitude,
-          lng: res.coords.longitude,
-        };
-      });
-    },
     CheckUser() {
       if (this.$fire.auth.currentUser != null) {
         if (this.$fire.auth.currentUser.uid != null) {

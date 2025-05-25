@@ -33,19 +33,19 @@
             </h2>
           </div>
         </div>
+        <div>
+          {{ location }}
+        </div>
+        <div>
+          {{ estateURN }}
+        </div>
       </v-card-text>
 
       <div class="container">
         <v-row>
           <v-col cols="12" sm="6" md="6">
-            <div class="">
+            <div class="container">
               <v-card-text>
-                <div>
-                  {{ location }}
-                </div>
-                <div>
-                  {{ estateURN }}
-                </div>
                 <v-chip-group
                   v-model="selection"
                   active-class="deep-purple accent-4 white--text"
@@ -67,11 +67,16 @@
             </div>
           </v-col>
           <!-- <v-divider class="mx-4"></v-divider> -->
-          <v-col cols="12" sm="6" md="6"></v-col>
+          <v-col cols="12" sm="6" md="6">
+            <div class="container">
+              <h4>Map Location</h4>
+              <Map />
+            </div>
+          </v-col>
           <v-col cols="12" sm="6" md="6">
             <div class="container">
               <v-subheader>Estate HouseHolds</v-subheader>
-              <div class="row" style="margin: 12px">
+              <div class="d-flex" style="margin: 12px">
                 <v-text-field
                   width="200"
                   style="margin: 12px"
@@ -86,13 +91,13 @@
                 </v-text-field>
                 <v-btn
                   style="margin: 12px"
-                  fab
-                  x-small
+                  icon
                   color="black"
                   @click="searchPayments(pay_search)"
                 >
-                  <v-icon color="white"> mdi-magnify </v-icon>
+                  <v-icon medium color="black">mdi-magnify</v-icon>
                 </v-btn>
+
                 <v-spacer></v-spacer>
               </div>
             </div>
@@ -124,14 +129,98 @@
               </v-list>
             </div>
           </v-col>
-          <v-col cols="12" sm="6" md="6">
+          <v-col cols="12" sm="6" md="6"> </v-col>
+          <v-col cols="12" sm="12" md="12">
+            <v-row class="container" v-show="true">
+              <v-col cols="6" sm="6" md="6">
+                <v-card color="#dadada" elevation="0">
+                  <v-card-subtitle>
+                    <h4>Total Paid</h4>
+                  </v-card-subtitle>
+                  <v-card-actions>
+                    <h2>{{ 0 }}</h2>
+                  </v-card-actions>
+                </v-card>
+              </v-col>
+              <v-col cols="6" sm="6" md="6">
+                <v-card color="#dadada" elevation="0">
+                  <v-card-subtitle>
+                    <h4>Pending Payments</h4>
+                  </v-card-subtitle>
+                  <v-card-actions>
+                    <h2>{{ 0 }}</h2>
+                  </v-card-actions>
+                </v-card>
+              </v-col>
+
+              <v-col cols="6" sm="6" md="6">
+                <v-card color="#dadada" elevation="0">
+                  <v-card-subtitle>
+                    <h4>Prepaid</h4>
+                  </v-card-subtitle>
+                  <v-card-actions>
+                    <h2 style="color: green">0</h2>
+                  </v-card-actions>
+                </v-card>
+              </v-col>
+              <v-col cols="6" sm="6" md="6">
+                <v-card color="#dadada" elevation="0">
+                  <v-card-subtitle>
+                    <h4>Overdue</h4>
+                  </v-card-subtitle>
+                  <v-card-actions>
+                    <h2 style="color: red">0</h2>
+                  </v-card-actions>
+                </v-card>
+              </v-col>
+            </v-row>
             <div class="container">
               <div class="container">
-                <v-subheader>Recent payments</v-subheader>
-                <div class="row" style="margin: 12px">
+                <h4>Households Payment Summary</h4>
+              </div>
+              <paymentSummary :estateId="estateId" />
+              <v-simple-table v-show="false">
+                <template v-slot:default>
+                  <thead>
+                    <tr>
+                      <th class="text-left">Name</th>
+                      <th class="text-left" style="color: red">BAL B/F</th>
+                      <th class="text-left">Jan 24</th>
+                      <th class="text-left">Feb 24</th>
+                      <th class="text-left">March 24</th>
+                      <th class="text-left">Apr 24</th>
+                      <th class="text-left">May 24</th>
+                      <th class="text-left">Jun 24</th>
+                      <th class="text-left">Jul 24</th>
+                      <th class="text-left">Sep 24</th>
+                      <th class="text-left">Oct 24</th>
+                      <th class="text-left">Nov 24</th>
+                      <th class="text-left">Dec 24</th>
+                      <th class="text-left" style="color: blue">Total Paid</th>
+                      <th class="text-left" style="color: orange">DUE TO DATE</th>
+                      <th class="text-left">
+                        <span style="color: red">OVERDUE</span
+                        ><span style="margin: 2px">/</span
+                        ><span style="color: green">PREPAID</span>
+                      </th>
+                      <th class="text-left">MONTH EQUIVALENT</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in desserts" :key="item.name">
+                      <td>{{ item.name }}</td>
+                      <td>{{ item.calories }}</td>
+                    </tr>
+                  </tbody>
+                </template>
+              </v-simple-table>
+            </div>
+            <div class="container">
+              <div class="">
+                <v-subheader>Payments Receipts</v-subheader>
+                <div class="d-flex">
                   <v-text-field
                     width="200"
-                    style="margin: 12px"
                     v-model="pay_search"
                     @change="searchPayments(pay_search)"
                     placeholder="Search for payment"
@@ -141,14 +230,8 @@
                     dense
                   >
                   </v-text-field>
-                  <v-btn
-                    style="margin: 12px"
-                    icon
-                    x-small
-                    color="black"
-                    @click="searchPayments(pay_search)"
-                  >
-                    <v-icon color="white"> mdi-magnify </v-icon>
+                  <v-btn icon color="white" @click="searchPayments(pay_search)">
+                    <v-icon color="black">mdi-magnify</v-icon>
                   </v-btn>
                   <v-spacer></v-spacer>
                 </div>
@@ -187,77 +270,6 @@
               </div>
             </div>
           </v-col>
-          <v-col cols="12" sm="12" md="12">
-            <v-row class="container" v-show="true">
-              <v-col cols="6" sm="4" md="4">
-                <v-card color="#dadada" elevation="0">
-                  <v-card-subtitle>
-                    <h4>Total Paid</h4>
-                  </v-card-subtitle>
-                  <v-card-actions>
-                    <h2>{{ 0 }}</h2>
-                  </v-card-actions>
-                </v-card>
-              </v-col>
-              <v-col cols="6" sm="4" md="4">
-                <v-card color="#dadada" elevation="0">
-                  <v-card-subtitle>
-                    <h4>Pending Payments</h4>
-                  </v-card-subtitle>
-                  <v-card-actions>
-                    <h2>{{ 0 }}</h2>
-                  </v-card-actions>
-                </v-card>
-              </v-col>
-
-              <v-col cols="6" sm="4" md="4">
-                <v-card color="#dadada" elevation="0">
-                  <v-card-subtitle>
-                    <h4>Pending payments</h4>
-                  </v-card-subtitle>
-                  <v-card-actions>
-                    <h2>0</h2>
-                  </v-card-actions>
-                </v-card>
-              </v-col>
-            </v-row>
-            <div class="container">
-              <div class="container">
-                <h4>Households Payment Summary</h4>
-              </div>
-              <v-simple-table>
-                <template v-slot:default>
-                  <thead>
-                    <tr>
-                      <th class="text-left">Name</th>
-                      <th class="text-left">BAL B/F</th>
-                      <th class="text-left">Jan 24</th>
-                      <th class="text-left">Feb 24</th>
-                      <th class="text-left">March 24</th>
-                      <th class="text-left">Apr 24</th>
-                      <th class="text-left">May 24</th>
-                      <th class="text-left">Jun 24</th>
-                      <th class="text-left">Jul 24</th>
-                      <th class="text-left">Sep 24</th>
-                      <th class="text-left">Oct 24</th>
-                      <th class="text-left">Nov 24</th>
-                      <th class="text-left">Dec 24</th>
-                      <th class="text-left">Total PAID</th>
-                      <th class="text-left">DUE TO DATE</th>
-                      <th class="text-left">OVERDUE/PREPAID</th>
-                      <th class="text-left">MONTH EQUIVALENT</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="item in desserts" :key="item.name">
-                      <td>{{ item.name }}</td>
-                      <td>{{ item.calories }}</td>
-                    </tr>
-                  </tbody>
-                </template>
-              </v-simple-table>
-            </div>
-          </v-col>
         </v-row>
       </div>
     </v-card>
@@ -269,7 +281,19 @@ import CryptoJS from "crypto-js";
 import axios from "axios";
 import dayjs from "@nuxtjs/dayjs";
 import moment from "moment";
+import Map from "@/components/mapEstate.vue";
+import paymentSummary from "@/components/paymentSummary.vue";
+
 export default {
+  computed: {
+    estateId() {
+      return parseInt(this.$route.params.id);
+    },
+  },
+  components: {
+    Map,
+    paymentSummary,
+  },
   data() {
     return {
       totalHousehold: 0,
