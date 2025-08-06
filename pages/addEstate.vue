@@ -89,72 +89,49 @@
                   </v-col>
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="estateStreetName"
-                      label="Estate streets name / road"
-                      required
-                      type="text"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="estateSections"
-                      label="Estate section"
+                      v-model="estateLng"
+                      label="Estate longitute"
                       required
                       type="number"
-                    ></v-text-field>
-                  </v-col>
+                    >
+                  </v-text-field>
+                  </v-col> 
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="estateCourts"
-                      label="Estate courts"
-                      required
-                      type="number"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="estateStreet"
-                      label="Estate streets"
-                      required
-                      type="number"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="serviceCharges"
-                      :items="estateCharges"
-                      chips
-                      label="Service charges"
-                      solo
-                    ></v-select>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="serviceChargesAmount"
-                      label="Service charge amount"
+                      v-model="estateLat"
+                      label="Estate latitude"
                       required
                       type="number"
                     ></v-text-field>
                   </v-col>
 
+                 
                   <v-col cols="12" md="6">
-                    <v-select
-                      v-model="estateWelfareModel"
-                      :items="estateWelfare"
-                      @change="checkWelFare(estateWelfareModel)"
-                      chips
-                      label="Select welfare Value"
-                      solo
-                    ></v-select>
-                  </v-col>
-                  <v-col cols="12" md="6" v-show="estateWelfareValue">
-                    <v-text-field
-                      v-model="estateWelfareAmount"
-                      label="Estate welfare amount"
+                    <v-switch
+                      v-model="estateSections"
+                      label="Estate section"
                       required
                       type="number"
-                    ></v-text-field>
+                    ></v-switch>
                   </v-col>
+                  <v-col cols="12" md="6">
+                    <v-switch
+                      v-model="estateCourts"
+                      label="Estate courts"
+                      required
+                      type="number"
+                    ></v-switch>
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-switch
+                      v-model="estateStreet"
+                      label="Estate streets"
+                      required
+                      type="number"
+                    ></v-switch>
+                  </v-col>
+                  
+                
                 </v-row>
                 <v-row>
                   <v-col cols="12" md="6">
@@ -166,6 +143,16 @@
                       @click="UploadEstate"
                       >Upload Estate</v-btn
                     >
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <div class="d-flex">
+                      Street-
+                      {{ estateStreet }}
+                      section-
+                      {{ estateSections }}
+                      Courts-
+                      {{ estateCourts }}
+                    </div>
                   </v-col>
                 </v-row>
               </v-container>
@@ -333,10 +320,7 @@ export default {
       } else if (that.location == null) {
         that.snackbarText2 = "Provide location.";
         that.snackbar2 = true;
-      } else if (that.estateStreetName == null) {
-        that.snackbarText2 = "Provide street name.";
-        that.snackbar2 = true;
-      } else if (that.imageUrl == null) {
+      }  else if (that.imageUrl == null) {
         that.snackbarText2 = "Provide image.";
         that.snackbar2 = true;
       } else if (that.logoUrl == null) {
@@ -344,25 +328,46 @@ export default {
         that.snackbar2 = true;
       } else {
         that.show6 = true;
+        const created_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
         axios
-          .post("https://makaazi-85b0afbcae5d.herokuapp.com/api/estates/create", {
+          .post("https://web-production-27f796.up.railway.app/api/estates/create", {
             estate_name: that.estateName,
-            estateURN: that.estateURN,
-            location: that.location,
-            estate_sections: Number(that.estateSections),
-            estate_courts: Number(that.estateCourts),
-            estate_streets: Number(that.estateStreet),
-            estate_streetName: that.estateStreetName,
-            estate_charges: that.serviceCharges,
-            estate_welfare: that.estateWelfareModel,
-            estate_welfareAmount: that.estateWelfareAmount,
-            service_charges: that.serviceChargesAmount,
-            estate_lat: that.estateLat,
-            estate_lng: that.estateLng,
+            estate_urn: that.estateURN,
+            estate_location: that.location,
+            street: false,
+            section: false,
+            court: false,
+            latitude: that.estateLat,
+            longitude: that.estateLng,
             estate_image: that.imageUrl,
             logo_url: that.logoUrl,
-            created_at: new Date(),
-            updated_at: new Date(),
+            created_at: created_at,
+            updated_at: created_at,
+          })
+          .then(function (response) {
+            console.log(response);
+          
+              that.snackbar = true;
+              that.snackbarText = response.data;
+            
+              
+          })
+          .catch(function (error) {
+            console.log(error);
+            that.snackbarText2 = error;
+            that.snackbar2 = true;
+          });
+      }
+    },
+     UploadEstateConfig(val) {
+      let that = this;      
+        axios
+          .post("https://web-production-27f796.up.railway.app/api/estates/create", {
+            estate_id: val,
+            show_street: that.estateStreet,
+            show_section: that.estateSections,
+            show_court: Number(that.estateCourts),
+            
           })
           .then(function (response) {
             console.log(response);
@@ -379,9 +384,11 @@ export default {
             that.snackbarText2 = error;
             that.snackbar2 = true;
           });
-      }
+      
     },
+  
   },
+  
   mounted() {
     // Everything is mounted and you can access the dropzone instance
     const instance = this.$refs.el.dropzone;

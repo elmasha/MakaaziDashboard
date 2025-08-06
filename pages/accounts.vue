@@ -121,9 +121,17 @@ export default {
       uid: null,
       payment: false,
       payment_msg: "",
+       estate_image: "",
+      estate_name: "",
+      estate_streetName: "",
+      location: "",
+      logo_url: "",
+      estateURN: "",
+      logo_url: "",
     };
   },
   methods: {
+    
     CheckPhone() {
       if (this.Phone == "254106150255") {
         this.snackbar2 = true;

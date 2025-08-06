@@ -1,88 +1,251 @@
 <template>
 <div>
-    <v-card color="white" elevation="0">
-        <v-app-bar color="white" light elevation="0">
-            <v-app-bar-nav-icon @click="drawer = true"></v-app-bar-nav-icon>
-
-            <div class="d-flex" style="background-color: #b6ff00; border-radius: 120px; padding: 4px">
-                <v-avatar color="black" size="28">
-                    <span style="color: #b6ff00">El</span>
-                </v-avatar>
-                <v-toolbar-title style="color: black; margin-start: 8px; margin-right: 8px">Intech</v-toolbar-title>
-            </div>
-
-            <v-spacer></v-spacer>
-            <v-btn icon>
-                <v-icon>mdi-bell</v-icon>
-            </v-btn>
-            <v-btn icon>
-                <v-icon>mdi-logout</v-icon>
-            </v-btn>
-        </v-app-bar>
-
-        <!-- <v-navigation-drawer  absolute temporary>
-
-          <v-list>
-        <v-list-item
-          v-for="item in items"
-          :key="item.title"
-          link
-        >
-          <v-list-item-icon>
-            <v-icon>{{ item.icon }}</v-icon>
-          </v-list-item-icon>
-
-          <v-list-item-content>
-            <v-list-item-title>{{ item.title }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-      </v-navigation-drawer> -->
-
-        <v-navigation-drawer v-model="drawer" color="black" light absolute temporary>
-            <v-list>
-
-                <v-list-item v-for="item in items_dashboard" :key="item.title" style="color: aliceblue;">
-                     <v-list-item-icon @click="MoveNavigation(item.title), drawer = false">
-                          <v-icon style="color:#fff">{{ item.icon }}</v-icon>
-                    </v-list-item-icon>
-
-                    <v-list-item-content @click="MoveNavigation(item.title), drawer = false">
-                      
-                      
-                        <div class="d-flex">
-                      
-                        <v-list-item-title style="margin-left: 8px;">{{ item.title }}</v-list-item-title>
-                       </div> 
-                      
-                    </v-list-item-content>
-                    <v-list-item-action @click="MoveNavigation(item.title), drawer = false">
-                     
-                    </v-list-item-action>
-                </v-list-item>
-            </v-list>
-
-            <template v-slot:append>
-                <div class="pa-2">
-                    <v-btn block>
-                        Logout
-                    </v-btn>
-                </div>
-            </template>
-        </v-navigation-drawer>
-
+    <v-card elevation="0">
+        <div class="">
+            <v-card-actions>
+                <v-card-title>
+                    <h2>Dashboard</h2>
+                </v-card-title>
+                <v-spacer></v-spacer>
+                <!-- <v-btn icon>
+                                <v-icon>mdi-account</v-icon>
+                            </v-btn> -->
+                <v-btn icon>
+                    <v-icon>mdi-magnify</v-icon>
+                </v-btn>
+                <v-btn icon>
+                    <v-icon>mdi-cog-outline</v-icon>
+                </v-btn>
+            </v-card-actions>
+        </div>
+    </v-card>
+    <v-card color="#f0f0f0" elevation="0" class="" style="padding: 1rem;">
         <v-row justify="" align="" class="">
             <v-col cols="12" sm="12" md="12">
-                <div class="" style="padding: 1.2rem;">
-                    <dashboard v-show="d_1" :estateId="estateId" />
-                    <households v-show="d_5" :estateId="estateId" />
-                    <estateConfig v-show="d_7" :estateId="estateId" />
-                    <estateOfficials v-show="d_4" :estateId="estateId" />                    
-                    <billing v-show="d_3" />
-                    <account v-show="d_2" :estateId="estateId" />
+
+            </v-col>
+            <v-col cols="12" sm="12" md="12">
+                <div class="">
+
+                    <v-row class="" v-show="true">
+                        <v-col cols="12" sm="4" md="4">
+                            <v-card color="black" elevation="0" dark>
+                                <div class="container">
+                                    <div class="d-flex">
+                                        <v-chip color="#b7ff005b">
+                                        <v-icon color="#b6ff00">mdi-cash-multiple</v-icon>
+                                    </v-chip>
+                                    <v-spacer></v-spacer>
+                                    <v-btn icon @click="Fetch_AllPayments"> <v-icon color="#808080">mdi-refresh</v-icon></v-btn>
+                                    </div>
+                                    <v-card-subtitle>
+                                        <h4>Total Payment </h4>
+                                    </v-card-subtitle>
+                                    <v-card-actions>
+                                        <div class="d-flex">
+                                            <span style="margin-top: 10px; margin-right:2px;">Ksh</span>
+                                            <h2 style="font-size: 1.6rem;"> {{ numeral(totalPayment).format('0,0')   }}</h2>
+                                        </div>
+                                    </v-card-actions>
+                                </div>
+
+                            </v-card>
+                        </v-col>
+                        <v-col cols="6" sm="2" md="2">
+                            <v-card color="#8051FF" dark elevation="0">
+                                <div class="container">
+                                    <v-chip>
+                                        <v-icon>mdi-progress-pencil</v-icon>
+                                    </v-chip>
+                                    <v-card-subtitle>
+                                        <h4>Pending Payments</h4>
+                                    </v-card-subtitle>
+                                    <v-card-actions>
+                                        <div class="d-flex">
+                                            <span style="margin-top: 10px; margin-right:2px;">Ksh</span>
+                                            <h2> {{ numeral(totalPendingPayment).format('0,0')  }}</h2>
+                                        </div>
+                                    </v-card-actions>
+                                </div>
+                            </v-card>
+                        </v-col>
+
+                        <v-col cols="6" sm="2" md="2">
+                            <v-card color="white" elevation="0">
+                                <div class="container">
+                                    <v-chip>
+                                        <v-icon color="#000">mdi-home-city</v-icon>
+                                    </v-chip>
+                                    <v-card-subtitle>
+                                        <h4>Total Households</h4>
+                                    </v-card-subtitle>
+                                    <v-card-actions>
+                                        <div class="d-flex">
+                                            <h2> {{ numeral(totalResidence).format('0,0') }}</h2>
+                                        </div>
+                                    </v-card-actions>
+                                </div>
+
+                            </v-card>
+                        </v-col>
+
+                        <v-col cols="6" sm="2" md="2">
+                            <v-card color="white" elevation="0">
+                                <div class="container">
+                                    <v-chip>
+                                        <v-icon color="#000">mdi-home-account</v-icon>
+                                    </v-chip>
+                                    <v-card-subtitle>
+                                        <h4>Active Households</h4>
+                                    </v-card-subtitle>
+                                    <v-card-actions>
+                                        <div class="d-flex">
+                                            <h2> {{ numeral(totalActiveResidence).format('0,0') }}</h2>
+                                        </div>
+                                    </v-card-actions>
+                                </div>
+                            </v-card>
+                        </v-col>
+                        <v-col cols="6" sm="2" md="2">
+                            <v-card color="white" elevation="0">
+                                <div class="container">
+                                    <v-chip>
+                                        <v-icon color="#000">mdi-white-balance-incandescent</v-icon>
+                                    </v-chip>
+                                    <v-card-subtitle>
+                                          <h4></h4>
+                                        <h4>Open   Incidents</h4>
+                                    </v-card-subtitle>
+                                    <v-card-actions>
+                                        <div class="d-flex">
+                                            <h2> {{ '10' }}</h2>
+                                        </div>
+                                    </v-card-actions>
+                                </div>
+
+                            </v-card>
+                        </v-col>
+                    </v-row>
                 </div>
             </v-col>
 
+            <v-col cols="12" sm="6" md="6">
+                <div class="">
+                    <v-card elevation="0">
+                        <div>
+                            <v-card-title>Payments by Month</v-card-title>
+                            <div>
+                                <MyBarChart :estateId="estateId"/>
+                                <!-- <HouseholdBarChart :payments="paymentData" /> -->
+                            </div>
+                        </div>
+                    </v-card>
+
+                </div>
+            </v-col>
+            <v-col cols="12" sm="6" md="6">
+                <div class="">
+
+                    <v-card elevation="0">
+
+                        <div>
+                            <v-card-title>Household registration trend</v-card-title>
+                            <div>
+                                <barChart :estateId="estateId" />
+                                <!-- <HouseholdBarChart :payments="paymentData" /> -->
+                            </div>
+                        </div>
+                    </v-card>
+
+                </div>
+            </v-col>
+
+            <v-col cols="12" sm="6" md="6" lg="6">
+                <div>
+                    <div class="container">
+                        <v-card elevation="0">
+                            <v-subheader>HouseHolds</v-subheader>
+                            <v-data-table :headers="headers" :items="houseHolds" :items-per-page="10" class="elevation-0">
+                                <!-- index column -->
+                                <template #item.index="{ item }">
+                                    {{ item.index }}
+                                </template>
+
+                                <!-- overdue cell -->
+                                <template #item.overdue="{ item }">
+                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
+                                        {{ formatCurrency(item.overdue) }}
+                                    </span>
+                                </template>
+
+                                <!-- any month cell could use the default -->
+                            </v-data-table>
+
+                        </v-card>
+
+                    </div>
+
+                </div>
+            </v-col>
+
+            <v-col cols="12" sm="6" md="6" lg="6">
+                <div class="container">
+
+                    <v-card elevation="0">
+                        <paymentSummary :estateId="estateId" />
+                    </v-card>
+
+                </div>
+            </v-col>
+            <v-col cols="12" sm="6" md="6" lg="6">
+                <div class="container">
+                    <div>
+                        <v-card elevation="0">
+                            <v-subheader>Recent payments</v-subheader>
+                            <v-data-table :headers="headers2" :items="paymentData" :items-per-page="10" class="elevation-0">
+                                <!-- index column -->
+                                <template #item.index="{ item }">
+                                    {{ item.index }}
+                                </template>
+
+                                <!-- overdue cell -->
+                                <template #item.overdue="{ item }">
+                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
+                                        {{ formatCurrency(item.overdue) }}
+                                    </span>
+                                </template>
+
+                                <!-- any month cell could use the default -->
+                            </v-data-table>
+                        </v-card>
+                    </div>
+
+                </div>
+            </v-col>
+
+            <v-col cols="12" sm="6" md="6" lg="6">
+                <v-row>
+                    <v-col cols="12" sm="12" md="12">
+                        <v-subheader>
+                            <h4>Estate Map Location</h4>
+                        </v-subheader>
+                        <div class="container">
+                            <Map />
+                        </div>
+                    </v-col>
+
+                </v-row>
+            </v-col>
+            <v-col cols="12" sm="6" md="6" lg="6"> </v-col>
+            <v-col cols="12" sm="6" md="6" lg="6">
+                <div class="">
+                    <v-row>
+                        <v-col cols="12" sm="6" md="6"> </v-col>
+                        <v-col cols="12" sm="6" md="6"> </v-col>
+                    </v-row>
+                </div>
+            </v-col>
+            <v-col cols="12" sm="12" md="12"> </v-col>
         </v-row>
 
         <v-snackbar color="primary accent-8" :timeout="6000" v-model="snackbar_s" centered bottom>
@@ -210,21 +373,17 @@
 </template>
 
 <script>
+import MyBarChart from '@/components/charts/barChartPayment'
 import CryptoJS from "crypto-js";
 import axios from "axios";
 import dayjs from "@nuxtjs/dayjs";
 import moment from "moment";
+import numeral from 'numeral';
 import Map from "@/components/map.vue";
-import dashboard from "@/components/estate/dashboard.vue";
-import billing from "@/components/estate/billing.vue";
-import households from "@/components/estate/households.vue";
-import estateConfig from "@/components/estate/estateConfig.vue";
-import estateOfficials from "@/components/estate/estateOfficials.vue";
-import account from "@/components/estate/account.vue";
 
-
-
-
+import HouseholdBarChart from '~/components/charts/HouseholdBarChart.vue'
+import barChart from '@/components/charts/barChartTrends.vue'
+import paymentSummary from "@/components/paymentSummary.vue";
 
 import {
     uuid
@@ -235,12 +394,14 @@ const ivKey = "smslt";
 
 export default {
     name: "index",
-    computed: {
-        estateId() {
-            return parseInt(this.$route.params.id);
+    props: {
+        estateId: {
+            type: Number,
+            required: true,
         },
     },
     mounted() {
+        console.log("Estate ID:", this.estateId);
         this.Fetch_AllOfficials();
         // this.Fetch_ActiveHouseholds();
         this.Fetch_PostAllEstates();
@@ -248,56 +409,104 @@ export default {
     },
     components: {
         Map,
-        dashboard,
-        billing,
-        households,
-        estateConfig,
-        estateOfficials,
-        account
+        paymentSummary,
+        HouseholdBarChart,
+        MyBarChart,
+        barChart
     },
     data() {
         return {
-            d_1: true,
-            d_2: false,
-            d_3: false,
-            d_4: false,
-            d_5: false,
-            d_6: false,
-            d_7: false,
-            items_dashboard: [{
-                    title: 'Dashboard',
-                    icon: 'mdi-view-dashboard'
+            numeral,
+            headers2: [
+
+                {
+                    text: "Name",
+                    value: "primary_owner",
+                    width: 200,
                 },
                 {
-                    title: 'Account',
-                    icon: 'mdi-account-box'
+                    text: "House no",
+                    value: "house_number",
+                    align: "right",
+                },
+
+                {
+                    text: "Phone no",
+                    value: "contact_number",
+                    align: "right",
                 },
                 {
-                    title: 'Billing',
-                    icon: 'mdi-account-credit-card-outline'
+                    text: "Payment receipt",
+                    value: "total_paid",
+                    align: "right",
                 },
                 {
-                    title: 'Estate officials',
-                    icon: 'mdi-home-group'
+                    text: "Payment method",
+                    value: "total_paid",
+                    align: "right",
                 },
                 {
-                    title: 'Resident',
-                    icon: 'mdi-account-box'
+                    text: "Amount",
+                    value: "total_paid",
+                    align: "right",
+                },
+
+            ],
+            headers: [{
+                    text: "#",
+                    value: "index",
+                    width: 50,
                 },
                 {
-                    title: 'Visitors logs',
-                    icon: 'mdi-account-settings-outline'
+                    text: "Name",
+                    value: "primary_owner",
+                    width: 200,
                 },
                 {
-                    title: 'Estate Config',
-                    icon: 'mdi-store-settings'
+                    text: "House no",
+                    value: "house_number",
+                    align: "right",
                 },
+
+                {
+                    text: "Phone no",
+                    value: "contact_number",
+                    align: "right",
+                },
+                {
+                    text: "Court",
+                    value: "court",
+                    align: "right",
+                },
+
+                {
+                    text: "Section",
+                    value: "section",
+                    align: "right",
+                },
+
+            ],
+            paymentData: [{
+                    month: 'January',
+                    amount: 1200
+                },
+                {
+                    month: 'February',
+                    amount: 950
+                },
+                {
+                    month: 'March',
+                    amount: 1600
+                },
+                {
+                    month: 'April',
+                    amount: 1100
+                }
             ],
             roles: ["Chairman", "Secretary", "Treasurer"],
             dialog: false,
             totalEstate: 0,
             totalResidence: 0,
-            totalPaid: 0,
             totalActiveResidence: 0,
             estate_name: null,
             estate_urn: null,
@@ -401,69 +610,15 @@ export default {
             title: "",
             body: "",
             householdOwner: "",
+            totalPayment: 0,
+            totalPendingPayment: 0,
         };
     },
     methods: {
-        MoveNavigation(val) {
-
-            if (val === 'Dashboard') {
-                this.d_1 = true;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Account') {
-                this.d_1 = false;
-                this.d_2 = true;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Billing') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = true;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Estate officials') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = true;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Resident') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = true;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Visitors logs') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = true;
-                this.d_7 = false;
-            } else if (val === 'Estate Config') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = true;
-            }
-
+        formatCurrency(val) {
+            return (val || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+            });
         },
         async getToken(val) {
             let that = this;
@@ -758,30 +913,33 @@ export default {
             }
         },
         async Fetch_AllPayments() {
-            let that = this;
-            axios
-                .get("https://web-production-27f796.up.railway.app/api/payments/getAll", {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.payments = response.data;
-                        console.log("Payments", that.payments);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
+    let that = this;
+    axios
+        .get("https://web-production-27f796.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
+        .then(function (response) {
+            if (response.status === 200) {
+                that.payments = response.data;
+
+                // Calculate totals from all rows
+                that.totalPayment = that.payments.reduce((sum, row) => sum + Number(row.total_paid || 0), 0);
+                that.totalPendingPayment = that.payments.reduce((sum, row) => sum + Number(row.overdue || 0), 0);
+
+                console.log("Payments total", that.totalPayment, that.totalPendingPayment);
+            } else if (response.status === 400) {
+                that.snackbar2 = true;
+                that.snackbarText2 = response.data;
+            }
+        })
+        .catch(function (error) {
+            console.log(error);
+            that.snackbarText2 = error.message || "An error occurred";
+            that.snackbar2 = true;
+        });
+},
         async Fetch_ActiveHouseholds() {
             let that = this;
             axios
-                .get("https://web-production-27f796.up.railway.app/api/households/getActiveHouseHolds/0", {})
+                .get("https://web-production-27f796.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1428,6 +1586,7 @@ export default {
 <style>
 #all_items {
     --scrollbarBG: #00000000;
+    --scrollbarBG: #b7ff005b;
     --thumbBG: #2f2c2c00;
     scrollbar-width: thin;
     scrollbar-color: var(--thumbBG) var(--scrollbarBG);

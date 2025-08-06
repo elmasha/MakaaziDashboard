@@ -31,7 +31,7 @@ export default {
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: ["@/plugins/mapGoogle.client.js","@/plugins/directionsRenderer.js"],
+  plugins: ["@/plugins/mapGoogle.client.js","@/plugins/directionsRenderer.js",'@/plugins/chart.js'],
 
   router: {
     middleware: ["auth"]

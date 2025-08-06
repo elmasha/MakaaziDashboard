@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-card color="white" elevation="0" >
+    <v-card color="white" elevation="0">
       <v-app-bar color="white" light elevation="0">
         <v-app-bar-nav-icon @click="drawer = true"></v-app-bar-nav-icon>
 
@@ -25,7 +25,7 @@
         </v-btn>
       </v-app-bar>
 
-      <v-navigation-drawer v-model="drawer" absolute temporary height="100vh">
+      <v-navigation-drawer v-model="drawer" absolute temporary>
         <v-list nav dense>
           <v-list-item-group
             v-model="group"
@@ -56,7 +56,7 @@
                 color="black"
                 rounded
                 style="color: white; margin: 12px"
-                to="/addEstate"
+                to="/addestate"
               >
                 <v-icon left color="white"> mdi-plus </v-icon>
                 Add new estate
@@ -179,10 +179,10 @@
                               {{ tag.estate_name }}
                             </h2>
                             <p style="font-size: 0.8rem; margin: 0px">
-                              {{ tag.estate_urn }}
+                              {{ tag.estateURN }}
                             </p>
                             <p style="font-size: 0.6rem; margin: 0px">
-                              {{ tag.estate_location }}
+                              {{ tag.estate_streetName }}
                             </p>
                           </v-card-text>
                         </div>
@@ -193,14 +193,14 @@
                               @click="
                                 (dialog = true),
                                   (estate_name = tag.estate_name),
-                                  (estate_urn = tag.estate_urn),
+                                  (estateURN = tag.estateURN),
                                   (estate_id = tag.estate_id),
                                   Fetch_EstateOfficials(tag.estate_id)
                               "
                               color="black"
                             >
                               <div class="">
-                                <!-- <v-icon large color="black">mdi-account-plus</v-icon> -->
+                                <v-icon large color="black">mdi-account-plus</v-icon>
                                 <span style="margin-top: 4px; color: white">
                                   <strong>{{ tag.likes }}</strong>
                                 </span>
@@ -214,8 +214,8 @@
 
                         </v-nuxt-link> -->
                           <v-spacer></v-spacer>
-                          <v-btn icon color="black" :to="`/estate/${tag.estate_id}`">
-                            <v-icon color="black">mdi-arrow-right</v-icon>
+                          <v-btn color="black" :to="`/estate/${tag.estate_id}`">
+                            <v-icon color="white">mdi-share-outline</v-icon>
                           </v-btn>
                         </div>
                       </div>
@@ -414,7 +414,7 @@
                 <div class="text-span pa-2">
                   <h2>{{ estate_name }}</h2>
                   <br />
-                  <h3>{{ estate_urn }}</h3>
+                  <h3>{{ estateURN }}</h3>
                 </div>
               </v-card-text>
 
@@ -585,14 +585,13 @@ export default {
   },
   data() {
     return {
-       
       roles: ["Chairman", "Secretary", "Treasurer"],
       dialog: false,
       totalEstate: 0,
       totalResidence: 0,
       totalActiveResidence: 0,
       estate_name: null,
-      estate_urn: null,
+      estateURN: null,
       show: true,
       switch: false,
       drawer: false,
@@ -699,7 +698,7 @@ export default {
     async getToken(val) {
       let that = this;
       axios
-        .get(`https://web-production-27f796.up.railway.app/api/fcm/get-token/${val}`, {})
+        .get(`http://localhost:5000/api/fcm/get-token/${val}`, {})
         .then(function (response) {
           if (response.status == 200) {
             that.deviceToken = response.data.fcm_token;
@@ -719,7 +718,7 @@ export default {
       let that = this;
 
       axios
-        .post(`https://web-production-27f796.up.railway.app/api/fcm/sendNotification`, {
+        .post(`http://localhost:5000/api/fcm/sendNotification`, {
           fcmToken: that.deviceToken,
           title: that.title,
           body: that.body,
@@ -755,7 +754,7 @@ export default {
         that.estate_houseHolds.splice(that.estate_houseHolds);
         axios
           .get(
-            `https://web-production-27f796.up.railway.app/api/households/search/${that.estate_id}?query=${val}`,
+            `http://localhost:5000/api/households/search/${that.estate_id}?query=${val}`,
             {}
           )
           .then(function (response) {
@@ -783,7 +782,7 @@ export default {
         let that = this;
         that.payments.splice(that.payments);
         axios
-          .get(`https://web-production-27f796.up.railway.app/api/payments/searchAll/?query=${val}`, {})
+          .get(`http://localhost:5000/api/payments/searchAll/?query=${val}`, {})
           .then(function (response) {
             if (response.status == 200) {
               // that.snackbar = true;
@@ -809,7 +808,7 @@ export default {
         let that = this;
         that.estates.splice(that.estates);
         axios
-          .get(`https://web-production-27f796.up.railway.app/api/estates/search/?query=${val}`, {})
+          .get(`http://localhost:5000/api/estates/search/?query=${val}`, {})
           .then(function (response) {
             if (response.status == 200) {
               // that.snackbar = true;
@@ -835,7 +834,7 @@ export default {
         let that = this;
         that.houseHolds.splice(that.houseHolds);
         axios
-          .get(`https://web-production-27f796.up.railway.app/api/households/search/?query=${val}`, {})
+          .get(`http://localhost:5000/api/households/search/?query=${val}`, {})
           .then(function (response) {
             if (response.status == 200) {
               // that.snackbar = true;
@@ -862,7 +861,7 @@ export default {
         that.snackbarText2 = "Select a role";
       } else {
         axios
-          .patch(`https://web-production-27f796.up.railway.app/api/households/update_household/${val}`, {
+          .patch(`http://localhost:5000/api/households/update_household/${val}`, {
             is_official: 0,
             official_role: that.role,
           })
@@ -887,7 +886,7 @@ export default {
     async assignOfficials2(val) {
       let that = this;
       axios
-        .patch(`https://web-production-27f796.up.railway.app/api/households/update_household/${val}`, {
+        .patch(`http://localhost:5000/api/households/update_household/${val}`, {
           is_official: 1,
           official_role: "none",
         })
@@ -911,7 +910,7 @@ export default {
     async DeleteOfficial(val) {
       let that = this;
       axios
-        .put(`https://web-production-27f796.up.railway.app/api/officials/delete_official/${val}`, {})
+        .put(`http://localhost:5000/api/officials/delete_official/${val}`, {})
         .then(function (response) {
           if (response.status == 200) {
             that.snackbar = true;
@@ -936,12 +935,12 @@ export default {
         that.householdOwner +
         " your account has been verified welcome to makaazi App";
       axios
-        .post(`https://web-production-27f796.up.railway.app/api/officials/addOfficial`, {
+        .post(`http://localhost:5000/api/officials/addOfficial`, {
           full_name: that.full_name,
           estate_id: that.estate_id,
           role: that.role,
           contact_number: that.contact_number,
-          estate_urn: that.estate_urn,
+          estate_urn: that.estateURN,
           uid: val,
         })
         .then(function (response) {
@@ -993,7 +992,7 @@ export default {
     async Fetch_AllPayments() {
       let that = this;
       axios
-        .get("https://web-production-27f796.up.railway.app/api/payments/getAll", {})
+        .get("http://localhost:5000/api/payments/getAll", {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -1014,7 +1013,7 @@ export default {
     async Fetch_ActiveHouseholds() {
       let that = this;
       axios
-        .get("https://web-production-27f796.up.railway.app/api/households/getActiveHouseHolds/0", {})
+        .get("http://localhost:5000/api/households/getActiveHouseHolds/0", {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -1037,7 +1036,7 @@ export default {
       let that = this;
       that.houseHolds.splice(that.houseHolds);
       axios
-        .get("https://web-production-27f796.up.railway.app/api/households/getall/", {})
+        .get("http://localhost:5000/api/households/getall/", {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -1060,7 +1059,7 @@ export default {
       let that = this;
       that.estate_houseHolds.splice(that.estate_houseHolds);
       axios
-        .get(`https://web-production-27f796.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
+        .get(`http://localhost:5000/api/households/getBHsHldEstId/${val}`, {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -1082,7 +1081,7 @@ export default {
       let that = this;
       that.estates.splice(that.estates);
       axios
-        .get("https://web-production-27f796.up.railway.app/api/estates/getall", {})
+        .get("http://localhost:5000/api/estates/getall", {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -1707,3 +1706,4 @@ export default {
   height: 260px;
 }
 </style>
+

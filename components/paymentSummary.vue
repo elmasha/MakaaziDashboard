@@ -29,6 +29,14 @@
           </span>
         </template>
 
+         <template #item.total_paid="{ item }">
+          <span
+            :class="{'blue--text': item.total_paid >= 0 }"
+          >
+            {{ formatCurrency(item.total_paid) }}
+          </span>
+        </template>
+
         <!-- any month cell could use the default -->
       </v-data-table>
     </v-card>
@@ -78,11 +86,7 @@ export default {
           align: "right",
         },
 
-        {
-          text: "Total Paid",
-          value: "total_paid",
-          align: "right",
-        },
+        
         {
           text: "january",
           value: "january",
@@ -142,6 +146,11 @@ export default {
         {
           text: "december",
           value: "december",
+          align: "right",
+        },
+        {
+          text: "Total Paid",
+          value: "total_paid",
           align: "right",
         },
         {

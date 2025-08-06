@@ -1,88 +1,64 @@
 <template>
 <div>
-    <v-card color="white" elevation="0">
-        <v-app-bar color="white" light elevation="0">
-            <v-app-bar-nav-icon @click="drawer = true"></v-app-bar-nav-icon>
-
-            <div class="d-flex" style="background-color: #b6ff00; border-radius: 120px; padding: 4px">
-                <v-avatar color="black" size="28">
-                    <span style="color: #b6ff00">El</span>
-                </v-avatar>
-                <v-toolbar-title style="color: black; margin-start: 8px; margin-right: 8px">Intech</v-toolbar-title>
-            </div>
-
-            <v-spacer></v-spacer>
-            <v-btn icon>
-                <v-icon>mdi-bell</v-icon>
-            </v-btn>
-            <v-btn icon>
-                <v-icon>mdi-logout</v-icon>
-            </v-btn>
-        </v-app-bar>
-
-        <!-- <v-navigation-drawer  absolute temporary>
-
-          <v-list>
-        <v-list-item
-          v-for="item in items"
-          :key="item.title"
-          link
-        >
-          <v-list-item-icon>
-            <v-icon>{{ item.icon }}</v-icon>
-          </v-list-item-icon>
-
-          <v-list-item-content>
-            <v-list-item-title>{{ item.title }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-      </v-navigation-drawer> -->
-
-        <v-navigation-drawer v-model="drawer" color="black" light absolute temporary>
-            <v-list>
-
-                <v-list-item v-for="item in items_dashboard" :key="item.title" style="color: aliceblue;">
-                     <v-list-item-icon @click="MoveNavigation(item.title), drawer = false">
-                          <v-icon style="color:#fff">{{ item.icon }}</v-icon>
-                    </v-list-item-icon>
-
-                    <v-list-item-content @click="MoveNavigation(item.title), drawer = false">
-                      
-                      
-                        <div class="d-flex">
-                      
-                        <v-list-item-title style="margin-left: 8px;">{{ item.title }}</v-list-item-title>
-                       </div> 
-                      
-                    </v-list-item-content>
-                    <v-list-item-action @click="MoveNavigation(item.title), drawer = false">
-                     
-                    </v-list-item-action>
-                </v-list-item>
-            </v-list>
-
-            <template v-slot:append>
-                <div class="pa-2">
-                    <v-btn block>
-                        Logout
-                    </v-btn>
-                </div>
-            </template>
-        </v-navigation-drawer>
-
+    <v-card elevation="0">
+        <div class="">
+            <v-card-actions>
+                <v-card-title>
+                    <h2>HouseHolds</h2>
+                </v-card-title>
+                <v-spacer></v-spacer>
+                <!-- <v-btn icon>
+                                <v-icon>mdi-account</v-icon>
+                            </v-btn> -->
+                <v-btn icon>
+                    <v-icon>mdi-magnify</v-icon>
+                </v-btn>
+                <v-btn icon>
+                    <v-icon>mdi-cog-outline</v-icon>
+                </v-btn>
+            </v-card-actions>
+        </div>
+    </v-card>
+    <v-card color="#f0f0f0" elevation="0" class="" style="padding: 1rem;">
         <v-row justify="" align="" class="">
-            <v-col cols="12" sm="12" md="12">
-                <div class="" style="padding: 1.2rem;">
-                    <dashboard v-show="d_1" :estateId="estateId" />
-                    <households v-show="d_5" :estateId="estateId" />
-                    <estateConfig v-show="d_7" :estateId="estateId" />
-                    <estateOfficials v-show="d_4" :estateId="estateId" />                    
-                    <billing v-show="d_3" />
-                    <account v-show="d_2" :estateId="estateId" />
+
+            <v-col cols="12" sm="12" md="12" lg="12">
+                <div>
+                    <div class="container">
+                        <v-card elevation="0">
+                            <v-subheader></v-subheader>
+                            <v-data-table :headers="headers" :items="houseHolds" :items-per-page="10" class="elevation-0">
+                                <!-- index column -->
+                                <template #item.index="{ item }">
+                                    {{ item.index }}
+                                </template>
+
+                                <!-- overdue cell -->
+                                <template #item.overdue="{ item }">
+                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
+                                        {{ formatCurrency(item.overdue) }}
+                                    </span>
+                                </template>
+
+                                <template v-slot:item.actions="{ item }">
+                                    <v-icon small class="mr-2" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
+                                    contact_number = item.contact_number,dialog = true">
+                                        mdi-account-badge
+                                    </v-icon>
+
+                                </template>
+
+                                <!-- any month cell could use the default -->
+                            </v-data-table>
+
+                        </v-card>
+
+                    </div>
+
                 </div>
             </v-col>
 
+            <v-col cols="12" sm="12" md="12"> </v-col>
         </v-row>
 
         <v-snackbar color="primary accent-8" :timeout="6000" v-model="snackbar_s" centered bottom>
@@ -113,81 +89,53 @@
                         </v-toolbar>
                         <v-card-text>
                             <div class="text-span pa-2">
-                                <h2>{{ estate_name }}</h2>
+                                <!-- <h2>{{ estate_name }}</h2>
                                 <br />
-                                <h3>{{ estate_urn }}</h3>
+                                <h3>{{ estate_urn }}</h3> -->
                             </div>
                         </v-card-text>
 
                         <div class="container">
                             <div class="">
                                 <v-select v-model="role" :items="roles" label="Role" flat required></v-select>
-
-                                <div class="">
-                                    <v-text-field clearable v-model="household_search" @change="searchHouseholdsEstate(household_search)" placeholder="Search households" flat rounded style="background-color: beige; height: 50px" required></v-text-field>
-                                </div>
                             </div>
-                            <div class="row text--center" id="all_items">
+                            <div class="row text--center" >
                                 <!-- <div v-for="tag in houseHolds" :key="tag.id" class="col-md-6"></div> -->
 
                                 <v-list subheader>
-                                    <v-subheader>Households</v-subheader>
+                                    <v-subheader>Set Official</v-subheader>
 
-                                    <v-list-item v-for="hs in estate_houseHolds" :key="hs.title">
-                                        <v-list-item @click="
-                          (householdOwner = hs.primary_owner), getToken(hs.household_id)
-                        ">
+                                    <v-list-item >
+                                        <v-list-item>
                                             <v-list-item-avatar>
                                                 <v-avatar color="#8051FF" size="48">
                                                     <span style="color: black">{{
-                              hs.primary_owner.substring(0, 3)
+                              officialName.substring(0, 3)
                             }}</span>
                                                 </v-avatar>
                                             </v-list-item-avatar>
 
                                             <v-list-item-content>
-                                                <v-list-item-title>{{ hs.primary_owner }}</v-list-item-title>
+                                                <v-list-item-title>{{ officialName }}</v-list-item-title>
+                                                <v-list-item-title>{{ role }}</v-list-item-title>
+                                                <v-list-item-title>{{ estate_urn }}</v-list-item-title>
                                             </v-list-item-content>
                                             <v-list-item-icon>
                                                 <v-spacer></v-spacer>
 
-                                                <div>
+                                                <!-- <div>
                                                     <v-card-actions>
                                                         <v-icon color="green" v-show="hs.is_official ? false : true">mdi-account-badge</v-icon>
                                                     </v-card-actions>
-                                                </div>
+                                                </div> -->
                                             </v-list-item-icon>
 
-                                            <v-list-item-action>
-                                                <div v-show="hs.is_official ? true : false">
-                                                    <span style="font-size: 0.6rem">Assign official</span>
-
-                                                    <v-btn icon color="orange" v-show="hs.is_official ? true : false" @click="
-                                getToken(hs.household_id),
-                                  assignOfficials(hs.household_id, hs.uid),
-                                  (full_name = hs.primary_owner),
-                                  (householdOwner = hs.primary_owner),
-                                  (contact_number = hs.contact_number)
-                              ">
-                                                        <v-icon>mdi-account-network-outline</v-icon>
-                                                    </v-btn>
-                                                </div>
-                                                <div v-show="true">
-                                                    <v-btn style="margin: 4px" icon v-show="hs.is_official ? false : true" @click="
-                                assignOfficials2(hs.household_id),
-                                  DeleteOfficial(hs.contact_number)
-                              ">
-                                                        <v-icon>mdi-close</v-icon>
-                                                    </v-btn>
-                                                    <span style="font-size: 0.6rem"></span>
-                                                </div>
-                                            </v-list-item-action>
-                                            <v-icon style="margin: 4px" :color="hs.active ? 'grey' : 'blue'">
-                                                mdi-check-decagram
-                                            </v-icon>
+                                         
                                         </v-list-item>
+                                         <v-btn color="black" style="color: black;" outlined @click="assignOfficials(officialID, officialUID)">Add an official</v-btn>
                                     </v-list-item>
                                 </v-list>
+                               
                             </div>
                         </div>
                         <v-form v-show="false" @submit.prevent="AddOfficial">
@@ -210,21 +158,17 @@
 </template>
 
 <script>
+import MyBarChart from '@/components/charts/barChartPayment'
 import CryptoJS from "crypto-js";
 import axios from "axios";
 import dayjs from "@nuxtjs/dayjs";
 import moment from "moment";
+import numeral from 'numeral';
 import Map from "@/components/map.vue";
-import dashboard from "@/components/estate/dashboard.vue";
-import billing from "@/components/estate/billing.vue";
-import households from "@/components/estate/households.vue";
-import estateConfig from "@/components/estate/estateConfig.vue";
-import estateOfficials from "@/components/estate/estateOfficials.vue";
-import account from "@/components/estate/account.vue";
 
-
-
-
+import HouseholdBarChart from '~/components/charts/HouseholdBarChart.vue'
+import barChart from '@/components/charts/barChartTrends.vue'
+import paymentSummary from "@/components/paymentSummary.vue";
 
 import {
     uuid
@@ -234,70 +178,121 @@ const keyValue = "fd85b4945YF'i"; // your key value (eg: key)
 const ivKey = "smslt";
 
 export default {
-    name: "index",
-    computed: {
-        estateId() {
-            return parseInt(this.$route.params.id);
+    name: "households",
+    props: {
+        estateId: {
+            type: Number,
+            required: true,
         },
     },
     mounted() {
+        console.log("Estate ID:", this.estateId);
         this.Fetch_AllOfficials();
         // this.Fetch_ActiveHouseholds();
         this.Fetch_PostAllEstates();
         this.Fetch_AllPayments();
+        this.Fetch_Estates();
     },
     components: {
         Map,
-        dashboard,
-        billing,
-        households,
-        estateConfig,
-        estateOfficials,
-        account
+        paymentSummary,
+        HouseholdBarChart,
+        MyBarChart,
+        barChart
     },
     data() {
         return {
-            d_1: true,
-            d_2: false,
-            d_3: false,
-            d_4: false,
-            d_5: false,
-            d_6: false,
-            d_7: false,
-            items_dashboard: [{
-                    title: 'Dashboard',
-                    icon: 'mdi-view-dashboard'
+            numeral,
+            headers: [{
+                    text: "Active",
+                    value: "active",
+                    align: "right",
                 },
                 {
-                    title: 'Account',
-                    icon: 'mdi-account-box'
+                    text: "#",
+                    value: "index",
+                    width: 50,
                 },
                 {
-                    title: 'Billing',
-                    icon: 'mdi-account-credit-card-outline'
+                    text: "Name",
+                    value: "primary_owner",
+                    width: 200,
                 },
                 {
-                    title: 'Estate officials',
-                    icon: 'mdi-home-group'
+                    text: "House no",
+                    value: "house_number",
+                    align: "right",
+                },
+
+                {
+                    text: "Phone no",
+                    value: "contact_number",
+                    align: "right",
                 },
                 {
-                    title: 'Resident',
-                    icon: 'mdi-account-box'
+                    text: "Court",
+                    value: "court",
+                    align: "right",
+                },
+
+                {
+                    text: "Section",
+                    value: "section",
+                    align: "right",
+                }, {
+                    text: "Caretaker",
+                    value: "caretaker_name",
+                    align: "right",
+                },
+
+                {
+                    text: "Spouse",
+                    value: "spouse_name",
+                    align: "right",
                 },
                 {
-                    title: 'Visitors logs',
-                    icon: 'mdi-account-settings-outline'
+                    text: "Res status",
+                    value: "residence_status",
+                    align: "right",
                 },
                 {
-                    title: 'Estate Config',
-                    icon: 'mdi-store-settings'
+                    text: "Official",
+                    value: "is_official",
+                    align: "right",
                 },
+                {
+                    text: "UID",
+                    value: "uid",
+                    align: "right",
+                },
+                {
+                    text: 'Add officials',
+                    value: 'actions',
+                    sortable: false
+                },
+
+            ],
+            paymentData: [{
+                    month: 'January',
+                    amount: 1200
+                },
+                {
+                    month: 'February',
+                    amount: 950
+                },
+                {
+                    month: 'March',
+                    amount: 1600
+                },
+                {
+                    month: 'April',
+                    amount: 1100
+                }
             ],
             roles: ["Chairman", "Secretary", "Treasurer"],
             dialog: false,
             totalEstate: 0,
             totalResidence: 0,
-            totalPaid: 0,
             totalActiveResidence: 0,
             estate_name: null,
             estate_urn: null,
@@ -364,6 +359,9 @@ export default {
             show: false,
             show6: false,
             timerCount: 25,
+            officialName:null,
+            officialUID:null,
+             officialID:null,
             valid: true,
             name: "",
             nameRules: [
@@ -401,69 +399,35 @@ export default {
             title: "",
             body: "",
             householdOwner: "",
+            totalPayment: 0,
+            totalPendingPayment: 0,
         };
     },
-    methods: {
-        MoveNavigation(val) {
-
-            if (val === 'Dashboard') {
-                this.d_1 = true;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Account') {
-                this.d_1 = false;
-                this.d_2 = true;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Billing') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = true;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Estate officials') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = true;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Resident') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = true;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Visitors logs') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = true;
-                this.d_7 = false;
-            } else if (val === 'Estate Config') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = true;
-            }
-
+    methods: { async Fetch_Estates() {
+      let that = this;
+      axios
+        .get(`https://web-production-27f796.up.railway.app/api/estates/estate/${this.estateId}`, {})
+        .then(function (response) {
+          if (response.status == 200) {
+            // that.snackbar = true;
+            // that.snackbarText = response.data;           
+            that.estate_urn = response.data.estate_urn;
+            console.log("Estates", response.data);
+          } else if (response.status == 400) {
+            that.snackbar2 = true;
+            that.snackbarText2 = response.data;
+          }
+        })
+        .catch(function (error) {
+          console.log(error);
+          that.snackbarText2 = error;
+          that.snackbar2 = true;
+        });
+    },
+        formatCurrency(val) {
+            return (val || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+            });
         },
         async getToken(val) {
             let that = this;
@@ -705,8 +669,8 @@ export default {
                 " your account has been verified welcome to makaazi App";
             axios
                 .post(`https://web-production-27f796.up.railway.app/api/officials/addOfficial`, {
-                    full_name: that.full_name,
-                    estate_id: that.estate_id,
+                    full_name: that.officialName,
+                    estate_id: this.estateId,
                     role: that.role,
                     contact_number: that.contact_number,
                     estate_urn: that.estate_urn,
@@ -716,8 +680,8 @@ export default {
                     if (response.status == 200) {
                         that.snackbar = true;
                         that.snackbarText = response.data;
+                        that.dialog = false;
                         that.SendNotification();
-                        that.Fetch_EstateOfficials(that.estate_id);
                         console.log("Official added");
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
@@ -760,28 +724,31 @@ export default {
         async Fetch_AllPayments() {
             let that = this;
             axios
-                .get("https://web-production-27f796.up.railway.app/api/payments/getAll", {})
+                .get("https://web-production-27f796.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
                 .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
+                    if (response.status === 200) {
                         that.payments = response.data;
-                        console.log("Payments", that.payments);
-                    } else if (response.status == 400) {
+
+                        // Calculate totals from all rows
+                        that.totalPayment = that.payments.reduce((sum, row) => sum + Number(row.total_paid || 0), 0);
+                        that.totalPendingPayment = that.payments.reduce((sum, row) => sum + Number(row.overdue || 0), 0);
+
+                        console.log("Payments total", that.totalPayment, that.totalPendingPayment);
+                    } else if (response.status === 400) {
                         that.snackbar2 = true;
                         that.snackbarText2 = response.data;
                     }
                 })
                 .catch(function (error) {
                     console.log(error);
-                    that.snackbarText2 = error;
+                    that.snackbarText2 = error.message || "An error occurred";
                     that.snackbar2 = true;
                 });
         },
         async Fetch_ActiveHouseholds() {
             let that = this;
             axios
-                .get("https://web-production-27f796.up.railway.app/api/households/getActiveHouseHolds/0", {})
+                .get("https://web-production-27f796.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1428,6 +1395,7 @@ export default {
 <style>
 #all_items {
     --scrollbarBG: #00000000;
+    --scrollbarBG: #b7ff005b;
     --thumbBG: #2f2c2c00;
     scrollbar-width: thin;
     scrollbar-color: var(--thumbBG) var(--scrollbarBG);
