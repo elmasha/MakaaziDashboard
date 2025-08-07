@@ -165,7 +165,7 @@
                     <div class="container">
                         <v-card elevation="0">
                             <v-subheader>HouseHolds</v-subheader>
-                            <v-data-table :headers="headers" :items="houseHolds" :items-per-page="10" class="elevation-0">
+                            <v-data-table :headers="headers" :items="houseHolds" :items-per-page="5" class="elevation-0">
                                 <!-- index column -->
                                 <template #item.index="{ item }">
                                     {{ item.index }}
@@ -202,7 +202,7 @@
                     <div>
                         <v-card elevation="0">
                             <v-subheader>Recent payments</v-subheader>
-                            <v-data-table :headers="headers44" :items="paymentsReceipt" :items-per-page="10" class="elevation-0">
+                            <v-data-table :headers="headers44" :items="paymentsReceipt" :items-per-page="5" class="elevation-0">
                                 <!-- index column -->
                                 <template #item.index="{ item }">
                                     {{ item.index }}

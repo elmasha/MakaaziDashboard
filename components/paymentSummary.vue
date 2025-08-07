@@ -25,7 +25,7 @@
           <span
             :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }"
           >
-            {{ formatCurrency(item.overdue) }}
+            {{  numeral(formatCurrency(item.overdue)).format('0,0.0')  }}
           </span>
         </template>
 
@@ -33,7 +33,7 @@
           <span
             :class="{'blue--text': item.total_paid >= 0 }"
           >
-            {{ formatCurrency(item.total_paid) }}
+            {{ numeral(formatCurrency(item.total_paid)).format('0,0.0') }}
           </span>
         </template>
 
@@ -45,6 +45,7 @@
 
 <script>
 import axios from "axios";
+import numeral from "numeral";
 
 export default {
   props: {
@@ -55,6 +56,7 @@ export default {
   },
   data() {
     return {
+      numeral,
       months: [
         "january",
         "february",
