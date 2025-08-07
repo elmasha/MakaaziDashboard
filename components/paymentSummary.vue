@@ -184,7 +184,7 @@ export default {
     async refresh() {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/household-payments/year-by-estate/" + this.estateId
+          "https://web-production-27f796.up.railway.app/api/household-payments/year-by-estate/" + this.estateId
         );
 
         if (response.status === 200) {
