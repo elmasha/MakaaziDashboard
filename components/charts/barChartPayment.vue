@@ -112,7 +112,7 @@ export default {
   methods: {
     async prepareChartData() {
       let that = this;
-       await axios.get(`http://localhost:5000/api/charts/monthly-estate-summary/?estate_id=`+that.estateId+`&year=`+2025,{})
+       await axios.get(`https://web-production-27f796.up.railway.app/api/charts/monthly-estate-summary/?estate_id=`+that.estateId+`&year=`+2025,{})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
