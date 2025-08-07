@@ -118,7 +118,7 @@
                                     </v-card-subtitle>
                                     <v-card-actions>
                                         <div class="d-flex">
-                                            <h2> {{ '10' }}</h2>
+                                            <h2> {{ numeral(0).format('0,0') }}</h2>
                                         </div>
                                     </v-card-actions>
                                 </div>
@@ -202,7 +202,7 @@
                     <div>
                         <v-card elevation="0">
                             <v-subheader>Recent payments</v-subheader>
-                            <v-data-table :headers="headers2" :items="paymentData" :items-per-page="10" class="elevation-0">
+                            <v-data-table :headers="headers44" :items="paymentsReceipt" :items-per-page="10" class="elevation-0">
                                 <!-- index column -->
                                 <template #item.index="{ item }">
                                     {{ item.index }}
@@ -406,6 +406,7 @@ export default {
         // this.Fetch_ActiveHouseholds();
         this.Fetch_PostAllEstates();
         this.Fetch_AllPayments();
+        this.Fetch_EstateReceipt();
     },
     components: {
         Map,
@@ -553,6 +554,7 @@ export default {
             set_Pin: false,
             pass_status: "",
             pin: null,
+            paymentsReceipt: [],
             verify_pin: null,
             b2c: false,
             bg: require("@/assets/bg.png"),
@@ -612,9 +614,64 @@ export default {
             householdOwner: "",
             totalPayment: 0,
             totalPendingPayment: 0,
+             headers44: [
+        {
+          text: "#",
+          value: "index",
+          width: 50,
+        },
+        {
+          text: "Method",
+          value: "payment_method",
+          width: 200,
+        },
+        {
+          text: "Receipt",
+          value: "transaction_id",
+          align: "right",
+        },
+        {
+          text: "Status",
+          value: "payment_status",
+          align: "right",
+        },
+        {
+          text: "Charge id",
+          value: "charge_id",
+          align: "right",
+        },
+        {
+          text: "Amount",
+          value: "amount_paid",
+          align: "right",
+        },
+        
+      ],
         };
     },
     methods: {
+        async Fetch_EstateReceipt() {
+            let that = this;
+            that.paymentsReceipt.splice(that.paymentsReceipt);
+            axios
+                .get("https://web-production-27f796.up.railway.app/api/payments/getByEstateId/"+this.estateId, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        // that.snackbar = true;
+                        // that.snackbarText = response.data;
+                        that.paymentsReceipt = response.data;
+                        console.log("payments Receipt", that.paymentsReceipt);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
         formatCurrency(val) {
             return (val || 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
