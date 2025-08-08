@@ -78,7 +78,7 @@
                     <households v-show="d_5" :estateId="estateId" />
                     <estateConfig v-show="d_7" :estateId="estateId" />
                     <estateOfficials v-show="d_4" :estateId="estateId" />                    
-                    <billing v-show="d_3" />
+                    <billing :estateId="estateId" v-show="d_3" />
                     <account v-show="d_2" :estateId="estateId" />
                 </div>
             </v-col>

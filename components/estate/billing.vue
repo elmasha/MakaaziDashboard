@@ -17,21 +17,26 @@
                     <v-col cols="12" sm="6" md="6"></v-col>
 
                     <v-col cols="12" v-show="d_1" sm="6" md="6" class="">
-                        <v-card class="mx-auto" v-show="d_1">
+                        <v-card class="mx-auto" color="#8051FF" dark>
                             <v-card-text>
-                                <p class="text-h6 text--primary">Upto - 20 </p>
+                                  <p class="text-h5 text--white">Band 1 </p>
+                               <div class="d-flex">
+                                 <p class="text-h6 text--white">Upto - 20 </p>
+                                  <p class="text--white"></p>
+                               </div>
 
                                 <p>Subscribe to our monthly plan</p>
                                 <v-card-action></v-card-action>
-                                <p class="text-h5 text--primary">Ksh/• {{ '2000' }}</p>
+                                <p class="text-h5 text--white">Ksh/• {{ '2000' }}</p>
                                 <div class="text--primary">
                                     <b>Monthly</b><br />
 
                                 </div>
                             </v-card-text>
                             <v-card-actions>
-                                <v-btn style="margin: 8px; color: white" rounded color="#8051FF" class="text-white" @click="
-                      (amount = amountMonth), (paymentForm = true), (duration = 'Monthly')
+                                <v-btn style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
+
+                      (paymentForm = true), (duration = 'Monthly')
                     ">
                                     Start Plan
                                 </v-btn>
@@ -53,7 +58,7 @@
                             </v-card-text>
                             <v-card-actions>
                                 <v-btn style="margin: 8px; color: white" rounded color="#8051FF" class="text-white" @click="
-                      (amount = amountMonth), (paymentForm = true), (duration = 'Monthly')
+                       (paymentForm = true), (duration = 'Monthly')
                     ">
                                     Start Plan
                                 </v-btn>
@@ -97,7 +102,7 @@
                             </v-card-text>
                             <v-card-actions>
                                 <v-btn style="margin: 8px; color: white" rounded color="#8051FF" class="text-white" @click="
-                      (amount = amountMonth), (paymentForm = true), (duration = 'Monthly')
+                      (paymentForm = true), (duration = 'Monthly')
                     ">
                                     Start Plan
                                 </v-btn>
@@ -110,6 +115,9 @@
                     <v-col cols="12" sm="12" md="12" v-show="paymentForm">
                         <div class="container">
                             <v-card dark color="#8051FF" elevation="0">
+                                 <div>
+                                        <v-progress-linear v-show="progress_bar" indeterminate color="white"></v-progress-linear>
+                                    </div>
                                 <div class="container">
                                     <v-card-text>
                                         <div class="">
@@ -123,19 +131,18 @@
                                                     <v-icon color="red">mdi-close</v-icon>
                                                 </v-btn>
                                             </div>
-                                            <div class="d-flex">
-                                                <v-text-field active-class="green" outlined hint="254767**456*" v-model="phone" type="number" label="Provide mpesa number"></v-text-field>
-                                                <v-spacer></v-spacer>
-                                                <v-spacer></v-spacer>
-                                                <p class="text-h4" style="color: white">Ksh/{{ amount }}</p>
+                                            <div class="">
+                                                <div class="d-flex">
+                                                    <v-text-field active-class="green" outlined hint="254767**456*" v-model="phone" type="number" label="Provide mpesa number"></v-text-field>
+                                                <
+                                                </div>
+                                                <p class="text-h4" style="color: white">Ksh/{{ numeral(amount).format('0,0') }}</p>
                                                 <p>{{ "   -- " }}{{ duration }}</p>
                                             </div>
                                         </div>
                                     </v-card-text>
-                                    <div>
-                                        <v-progress-linear v-show="progress_bar" indeterminate color="red"></v-progress-linear>
-                                    </div>
-                                    <v-btn ref="button" style="margin: 10px; font-size: 1.2rem; color: red" color="black" class="white--text" @click="StkPush()">Stk Push</v-btn>
+                                   
+                                    <v-btn ref="button" style="margin: 10px; font-size: 1.2rem; color: red" color="black" class="white--text" @click="StkPush()">Initiate Stk Push</v-btn>
                                     <v-spacer />
                                 </div>
                             </v-card>
@@ -168,11 +175,20 @@
 
 <script>
 import axios from "axios";
+import numeral from "numeral";
+
 import * as easings from "vuetify/lib/services/goto/easing-patterns";
 
 export default {
+    props: {
+        estateId: {
+            type: Number,
+            required: true,
+        },
+    },
     data() {
         return {
+            numeral,
             d_1: false,
             d_2: false,
             d_3: false,
@@ -208,7 +224,7 @@ export default {
             amountYear: "0",
             showSide: true,
             phone: null,
-            amount: null,
+            amount: 0,
             snackbar_s: false,
             snackbarText_s: "",
             snackbar: false,
@@ -240,6 +256,7 @@ export default {
             from: "",
             to: "",
             status: "",
+            houseHoldCount:0,
         };
     },
     methods: {
@@ -272,7 +289,7 @@ export default {
             that.snackbar_s = true;
             that.snackbarText_s = "Checking payment status...";
             axios
-                .post("https://web-production-27f796.up.railway.app/payments/stk/query", {
+                .post("https://web-production-27f796.up.railway.app/payment/stk_push_subscription/query", {
                     checkoutRequestId: that.CheckoutRequestID,
                 })
                 .then(function (response) {
@@ -282,54 +299,10 @@ export default {
                     if (response.status == 200) {
                         that.progress_bar = false;
                         that.paymentForm = true;
-                        if (response.data.errorCode == "400.002.02") {
-                            that.snackbarError = true;
-                            that.snackbarTextError = response.data.errorMessage;
-                            that.errorResponse = response.data.errorMessage;
-                            that.timerCount = 25;
-                            that.timerEnabled = false;
-                        } else if (response.data.errorCode == "500.001.1001") {
-                            that.snackbar = true;
-                            that.snackbarText = response.data.errorMessage;
-                            that.errorResponse = response.data.errorMessage;
-                            that.timerCount = 25;
-                            that.timerEnabled = false;
-                        } else {
-                            if (response.data.ResultCode == "0") {
-                                that.snackbar = true;
-                                that.snackbarText = response.data.ResultDesc;
-                                that.successResponse = response.data.ResultDesc;
-                                that.timerEnabled = false;
-                                that.UploadNotification();
-                                that.timerCount = 25;
-                            } else if (response.data.ResultCode == "1032") {
-                                that.snackbarError = true;
-                                that.snackbarTextError = "Request was cancelled";
-                                that.errorResponse = "Request was cancelled";
-                                that.UploadNotification();
-                                that.timerCount = 25;
-                                that.timerEnabled = false;
-                            } else if (response.data.ResultCode == "2001") {
-                                that.snackbarError = true;
-                                that.snackbarTextError = "You entered a wrong pin";
-                                that.errorResponse = "You entered a wrong pin";
-                                that.timerCount = 25;
-                                that.timerEnabled = false;
-                            } else {
-                                that.snackbarError = true;
-                                that.snackbarTextError = response.data.ResultDesc;
-                                that.errorResponse = response.data.ResultDesc;
-                                that.timerEnabled = false;
-                                that.timerCount = 25;
-                            }
-                        }
-                    } else if (response.status == 400) {
-                        that.paymentForm = true;
-                        that.snackbarError = true;
-                        that.snackbarTextError = response.data;
-                        that.timerCount = 25;
-                        that.timerEnabled = false;
-                        that.progress_bar = false;
+                        that.snackbar = true;
+                        that.snackbarText = response.data.ResultDesc;
+                        
+                                            
                     }
                 })
                 .catch(function (error) {
@@ -352,9 +325,12 @@ export default {
                 .then(function (response) {
                     console.log(response);
                     if (response.status == 200) {
-                        console.log('Billing', response.data);
-                        that.snackbarText = response.data;
+                        
+                        that.amount = response.data.billing_rate;
+                        that.houseHoldCount = response.data.total_households;
+                        console.log('Billing', that.amount , that.houseHoldCount);
                         that.show(response.data.billing_rate)
+
                         that.successResponse = response.data;
                     } else if (response.status == 400) {
                         // this.snackbarError = true;
@@ -461,18 +437,11 @@ export default {
             if (that.phone == null) {
                 that.snackbarTextError = "Provide phone..";
                 that.snackbarError = true;
-            } else if (that.amount == null) {
-                that.snackbarTextError = "Provide amount.";
-                that.snackbarError = true;
-            } else {
+            }  else {
                 axios
-                    .post("https://web-production-27f796.up.railway.app/payments/stk", {
-                        phone: that.phone,
-                        amount: that.amount,
-                        user_id: that.$fire.auth.currentUser.uid,
-                        User_name: that.UserName,
-                        subscription: that.duration,
-                        User_type: that.UserType,
+                    .post("https://web-production-27f796.up.railway.app/payment/stk_push_subscription", {
+                        phone_number: that.phone,
+                        estate_id: this.estateId,
                     })
                     .then(function (response) {
                         console.log(response);
