@@ -460,7 +460,7 @@ export default {
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
-                        that.snackbarText = response.data;
+                        that.snackbarText = "Success";
                         console.log("Notification sent");
                     } else if (response.status == 400) {
                         that.snackbar2 = true;

@@ -69,7 +69,7 @@ export default {
       labels: [],
       datasets: [
         {
-          label: 'Household Registrations trends',
+          label: 'Monthy Payments trends',
           backgroundColor: '#b7ff0086',
           data: []
         }
