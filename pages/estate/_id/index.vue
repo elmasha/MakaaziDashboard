@@ -245,6 +245,7 @@ export default {
         // this.Fetch_ActiveHouseholds();
         this.Fetch_PostAllEstates();
         this.Fetch_AllPayments();
+        this.Fetch_ActiveSubs();
     },
     components: {
         Map,
@@ -767,6 +768,26 @@ export default {
                         // that.snackbarText = response.data;
                         that.payments = response.data;
                         console.log("Payments", that.payments);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
+         async Fetch_ActiveSubs() {
+            let that = this;
+            axios
+                .get("https://web-production-27f796.up.railway.app/api/estates/estate-sub/"+that.$route.params.id, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        // that.snackbar = true;
+                        // that.snackbarText = response.data;
+                        console.log("Estates sub", response.data);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
                         that.snackbarText2 = response.data;

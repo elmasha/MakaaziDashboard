@@ -301,8 +301,9 @@ export default {
                         that.paymentForm = true;
                         that.snackbar = true;
                         that.snackbarText = response.data.ResultDesc;
-                        
-                                            
+                        that.timerCount = 25;
+                        that.timerEnabled = false;
+                                           
                     }
                 })
                 .catch(function (error) {
