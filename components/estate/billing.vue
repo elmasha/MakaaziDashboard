@@ -12,29 +12,46 @@
                             <p>
                                 Choose your preferred payment plan to manage your household services. Select our monthly plan and enjoy seamless service access.
                             </p>
+
+                            <br>
+                            <v-card elevation="0" color="black" dark v-show="!d_5">
+                                <div class="container">
+                                    <div class="d-flex" style="padding: 10px;">
+                                         <strong style="color: greenyellow;">Active</strong>
+                                    </div>
+                                   
+                                    <p style="padding: 10px;">Your current plan: {{ plan_name }} <br> {{ houseHoldCount }} households at KSh {{ plan_amount }}/month.</p>
+                                </div>
+                            </v-card>
                         </div>
                     </v-col>
                     <v-col cols="12" sm="6" md="6"></v-col>
 
                     <v-col cols="12" v-show="d_1" sm="6" md="6" class="">
                         <v-card class="mx-auto" color="#8051FF" dark>
-                            <v-card-text>
-                                  <p class="text-h5 text--white">Band 1 </p>
-                               <div class="d-flex">
-                                 <p class="text-h6 text--white">Upto - 20 </p>
-                                  <p class="text--white"></p>
+                            <v-card-action>
+                               <div class="container">
+                                 <div class="d-flex"> <p class="text-h5 text--white">Band 1 </p>
+                                <v-spacer></v-spacer> <b style="margin-top: 8px;margin-left: 4px;">Monthly</b></div>
+                               
                                </div>
+                            </v-card-action>
+
+                            <v-card-text>
 
                                 <p>Subscribe to our monthly plan</p>
-                                <v-card-action></v-card-action>
-                                <p class="text-h5 text--white">Ksh/• {{ '2000' }}</p>
-                                <div class="text--primary">
-                                    <b>Monthly</b><br />
+                                <div class="d-flex">
+                                    <p class="text-h6 text--white">Upto - 20 </p>
+                                    <p class="text--white text-b" style="margin-top: 7px;margin-left: 4px;">Households</p>
+                                </div>
+
+                                <div class="text--white ">
+                                    <p class="text-h5 text--white">Ksh/• {{ '2000' }}</p>
 
                                 </div>
                             </v-card-text>
                             <v-card-actions>
-                                <v-btn style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
+                                <v-btn :disabled="!d_5" style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
 
                       (paymentForm = true), (duration = 'Monthly')
                     ">
@@ -43,7 +60,7 @@
                             </v-card-actions>
                         </v-card>
                     </v-col>
-                    <v-col cols="12" v-show="d_2" sm="6" md="6" class="" >
+                    <v-col cols="12" v-show="d_2" sm="6" md="6" class="">
                         <v-card class="mx-auto">
                             <v-card-text>
                                 <p class="text-h6 text--primary">20 - 50 </p>
@@ -115,9 +132,9 @@
                     <v-col cols="12" sm="12" md="12" v-show="paymentForm">
                         <div class="container">
                             <v-card dark color="#8051FF" elevation="0">
-                                 <div>
-                                        <v-progress-linear v-show="progress_bar" indeterminate color="white"></v-progress-linear>
-                                    </div>
+                                <div>
+                                    <v-progress-linear v-show="progress_bar" indeterminate color="white"></v-progress-linear>
+                                </div>
                                 <div class="container">
                                     <v-card-text>
                                         <div class="">
@@ -134,14 +151,12 @@
                                             <div class="">
                                                 <div class="d-flex">
                                                     <v-text-field active-class="green" outlined hint="254767**456*" v-model="phone" type="number" label="Provide mpesa number"></v-text-field>
-                                                <
+                                                    < </div> <p class="text-h4" style="color: white">Ksh/{{ numeral(amount).format('0,0') }}</p>
+                                                        <p>{{ "   -- " }}{{ duration }}</p>
                                                 </div>
-                                                <p class="text-h4" style="color: white">Ksh/{{ numeral(amount).format('0,0') }}</p>
-                                                <p>{{ "   -- " }}{{ duration }}</p>
                                             </div>
-                                        </div>
                                     </v-card-text>
-                                   
+
                                     <v-btn ref="button" style="margin: 10px; font-size: 1.2rem; color: red" color="black" class="white--text" @click="StkPush()">Initiate Stk Push</v-btn>
                                     <v-spacer />
                                 </div>
@@ -189,10 +204,14 @@ export default {
     data() {
         return {
             numeral,
+            plan_name: "",
+            total_households_count: 0,
+            plan_amount: 0,
             d_1: false,
             d_2: false,
             d_3: false,
             d_4: false,
+            d_5: true,
             type: "number",
             number: 9999,
             selector: "#third",
@@ -256,7 +275,7 @@ export default {
             from: "",
             to: "",
             status: "",
-            houseHoldCount:0,
+            houseHoldCount: 0,
         };
     },
     methods: {
@@ -303,7 +322,7 @@ export default {
                         that.snackbarText = response.data.ResultDesc;
                         that.timerCount = 25;
                         that.timerEnabled = false;
-                                           
+
                     }
                 })
                 .catch(function (error) {
@@ -326,10 +345,16 @@ export default {
                 .then(function (response) {
                     console.log(response);
                     if (response.status == 200) {
-                        
+
                         that.amount = response.data.billing_rate;
-                        that.houseHoldCount = response.data.total_households;
-                        console.log('Billing', that.amount , that.houseHoldCount);
+                        that.plan_amount = response.data.billing_rate;
+                        if (response.data.billing_rate < 2500) {
+                            that.plan_name = "Band 1";
+                        } else if (response.data.billing_rate > 25000) {
+
+                        }
+
+                        console.log('Billing', that.amount, that.houseHoldCount);
                         that.show(response.data.billing_rate)
 
                         that.successResponse = response.data;
@@ -342,6 +367,81 @@ export default {
                     console.log(error);
                     // this.snackbarTextError = error;
                     // this.snackbarError = true;
+                });
+        },
+        async Fetch_MessageSubs() {
+            let that = this;
+            axios
+                .get("https://web-production-27f796.up.railway.app/api/estates/estate-sub-msg/" + this.estateId, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        that.snackbar = true;
+                        that.snackbarText = response.data;
+                        // if(response.data.payment_status === 'Paid'){
+                        //     that.d_5 = false;
+                        // }else{
+                        //     that.d_5 = true;
+                        // }
+                        console.log("Estates sub", response.data);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
+        async Fetch_EstateHouseHolds() {
+      let that = this;
+      axios
+        .get(
+          `https://web-production-27f796.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`,
+          {}
+        )
+        .then(function (response) {
+          if (response.status == 200) {
+            // that.snackbar = true;
+            // that.snackbarText = response.data;
+            that.houseHoldCount = response.data.length;
+            console.log("Households count", that.houseHoldCount);
+          } else if (response.status == 400) {
+            that.snackbar2 = true;
+            that.snackbarText2 = response.data;
+          }
+        })
+        .catch(function (error) {
+          console.log(error);
+          that.snackbarText2 = error;
+          that.snackbar2 = true;
+        });
+    },
+        async Fetch_ActiveSubs() {
+            let that = this;
+            axios
+                .get("https://web-production-27f796.up.railway.app/api/estates/estate-sub/" + this.estateId, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        // that.snackbar = true;
+                        // that.snackbarText = response.data;
+
+                        if (response.data.payment_status === 'Paid') {
+                            that.d_5 = false;
+                        } else {
+                            that.d_5 = true;
+                        }
+                        console.log("Estates sub", response.data);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
                 });
         },
         UploadNotification() {
@@ -438,7 +538,7 @@ export default {
             if (that.phone == null) {
                 that.snackbarTextError = "Provide phone..";
                 that.snackbarError = true;
-            }  else {
+            } else {
                 axios
                     .post("https://web-production-27f796.up.railway.app/payment/stk_push_subscription", {
                         phone_number: that.phone,
@@ -469,6 +569,9 @@ export default {
     },
     created() {
         this.getBilling();
+        this.Fetch_ActiveSubs();
+        this.Fetch_MessageSubs();
+        this.Fetch_EstateHouseHolds();
         // this.FetchUser();
     },
     watch: {
