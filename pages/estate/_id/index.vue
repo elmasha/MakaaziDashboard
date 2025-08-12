@@ -246,6 +246,7 @@ export default {
         this.Fetch_PostAllEstates();
         this.Fetch_AllPayments();
         this.Fetch_ActiveSubs();
+        this.Check_Billing();
     },
     components: {
         Map,
@@ -810,6 +811,28 @@ export default {
 
                         that.totalActiveResidence = response.data.length;
                         console.log("Estates", that.estates);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
+        async Check_Billing() {
+            let that = this;
+            axios
+                .get("https://web-production-27f796.up.railway.app/api/estates/estate-due-disable/"+that.$route.params.id, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        that.snackbar = true;
+                        that.snackbarText = response.data;
+
+                    
+                        console.log("Check billing", response.data);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
                         that.snackbarText2 = response.data;

@@ -17,10 +17,11 @@
                             <v-card elevation="0" color="black" dark v-show="!d_5">
                                 <div class="container">
                                     <div class="d-flex" style="padding: 10px;">
-                                         <strong style="color: greenyellow;">Active</strong>
+                                         <strong style="color: greenyellow;" v-show="active">Active</strong>
+                                          <strong style="color:  Grey;" v-show="!active">InActive</strong>
                                     </div>
                                    
-                                    <p style="padding: 10px;">Your current plan: {{ plan_name }} <br> {{ houseHoldCount }} households at KSh {{ plan_amount }}/month.</p>
+                                    <p style="padding: 10px;">{{ message }}</p>
                                 </div>
                             </v-card>
                         </div>
@@ -204,7 +205,9 @@ export default {
     data() {
         return {
             numeral,
+            active:false,
             plan_name: "",
+            message:'',
             total_households_count: 0,
             plan_amount: 0,
             d_1: false,
@@ -377,6 +380,7 @@ export default {
                     if (response.status == 200) {
                         that.snackbar = true;
                         that.snackbarText = response.data;
+                        that.message = response.data.message;
                         // if(response.data.payment_status === 'Paid'){
                         //     that.d_5 = false;
                         // }else{
@@ -432,6 +436,7 @@ export default {
                         } else {
                             that.d_5 = true;
                         }
+                        that.active = response.data.is_active;
                         console.log("Estates sub", response.data);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
