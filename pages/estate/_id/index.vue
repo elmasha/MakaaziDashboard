@@ -12,6 +12,13 @@
             </div>
 
             <v-spacer></v-spacer>
+             <v-btn icon>
+                <v-icon>mdi-dot</v-icon>
+            </v-btn>
+
+             <v-btn icon>
+                <v-icon>mdi-dot</v-icon>
+            </v-btn>
             <v-btn icon>
                 <v-icon>mdi-bell</v-icon>
             </v-btn>
@@ -39,7 +46,7 @@
       </v-list>
       </v-navigation-drawer> -->
 
-        <v-navigation-drawer v-model="drawer" color="black" light absolute temporary>
+        <v-navigation-drawer v-model="drawer" color="black" light absolute temporary height="100vh">
             <v-list>
 
                 <v-list-item v-for="item in items_dashboard" :key="item.title" style="color: aliceblue;">
@@ -47,11 +54,8 @@
                           <v-icon style="color:#fff">{{ item.icon }}</v-icon>
                     </v-list-item-icon>
 
-                    <v-list-item-content @click="MoveNavigation(item.title), drawer = false">
-                      
-                      
+                    <v-list-item-content @click="MoveNavigation(item.title), drawer = false">                                            
                         <div class="d-flex">
-                      
                         <v-list-item-title style="margin-left: 8px;">{{ item.title }}</v-list-item-title>
                        </div> 
                       
@@ -73,7 +77,7 @@
 
         <v-row justify="" align="" class="">
             <v-col cols="12" sm="12" md="12">
-                <div class="" style="padding: 1.2rem;">
+                <div class="" style="padding: 1.3rem;">
                     <dashboard v-show="d_1" :estateId="estateId" />
                     <households v-show="d_5" :estateId="estateId" />
                     <estateConfig v-show="d_7" :estateId="estateId" />
@@ -223,9 +227,6 @@ import estateOfficials from "@/components/estate/estateOfficials.vue";
 import account from "@/components/estate/account.vue";
 
 
-
-
-
 import {
     uuid
 } from "vue-uuid";
@@ -259,6 +260,7 @@ export default {
     },
     data() {
         return {
+            active:false,
             d_1: true,
             d_2: false,
             d_3: false,
@@ -830,7 +832,7 @@ export default {
                     if (response.status == 200) {
                         that.snackbar = true;
                         that.snackbarText = response.data;
-
+                        that.active = response.data.is_active;
                     
                         console.log("Check billing", response.data);
                     } else if (response.status == 400) {

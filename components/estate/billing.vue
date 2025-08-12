@@ -386,7 +386,7 @@ export default {
                         // }else{
                         //     that.d_5 = true;
                         // }
-                        console.log("Estates sub", response.data);
+                        console.log("Estates sub msg", response.data);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
                         that.snackbarText2 = response.data;
