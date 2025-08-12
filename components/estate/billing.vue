@@ -14,11 +14,11 @@
                             </p>
 
                             <br>
-                            <v-card elevation="0" color="black" dark v-show="!d_5">
+                            <v-card elevation="0" color="black" dark v-show="shallowReactive" >
                                 <div class="container">
                                     <div class="d-flex" style="padding: 10px;">
                                          <strong style="color: greenyellow;" v-show="active">Active</strong>
-                                          <strong style="color:  Grey;" v-show="!active">InActive</strong>
+                                          <strong style="color:  red;" v-show="!active">InActive</strong>
                                     </div>
                                    
                                     <p style="padding: 10px;">{{ message }}</p>
@@ -52,7 +52,7 @@
                                 </div>
                             </v-card-text>
                             <v-card-actions>
-                                <v-btn :disabled="!d_5" style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
+                                <v-btn :disabled="active" style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
 
                       (paymentForm = true), (duration = 'Monthly')
                     ">
@@ -192,6 +192,7 @@
 <script>
 import axios from "axios";
 import numeral from "numeral";
+import { shallowReactive } from "vue";
 
 import * as easings from "vuetify/lib/services/goto/easing-patterns";
 
@@ -204,6 +205,7 @@ export default {
     },
     data() {
         return {
+            showBillState:false,
             numeral,
             active:false,
             plan_name: "",
@@ -305,6 +307,36 @@ export default {
                 this.d_4 = true;
             }
         },
+           async Check_Billing() {
+            let that = this;
+            axios
+                .get("https://web-production-27f796.up.railway.app/api/estates/estate-due-disable/"+this.estateId, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        that.snackbar = true;
+                        that.snackbarText = response.data;
+                        that.active = response.data.is_active;
+                    
+
+if (response.data.payment_status === 'Due') {
+                            that.d_5 = true;
+                            that.d_5 = false;
+                        } else {
+                            that.d_5 = false;
+                            that.d_5 = true;
+                        }                    
+                        console.log("Check billing", response.data);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
         ////Stk Query////
         StkQuery() {
             let that = this;
@@ -351,6 +383,11 @@ export default {
 
                         that.amount = response.data.billing_rate;
                         that.plan_amount = response.data.billing_rate;
+                        if (response.data.billing_rate < 2500) {
+                            that.plan_name = "Band 1";
+                        } else if (response.data.billing_rate > 25000) {
+
+                        }
                         if (response.data.billing_rate < 2500) {
                             that.plan_name = "Band 1";
                         } else if (response.data.billing_rate > 25000) {
@@ -410,6 +447,11 @@ export default {
             // that.snackbar = true;
             // that.snackbarText = response.data;
             that.houseHoldCount = response.data.length;
+            if(that.houseHoldCount ==0){
+                that.shallowReactive = false;
+            }else{
+                that.shallowReactive = true;
+            }
             console.log("Households count", that.houseHoldCount);
           } else if (response.status == 400) {
             that.snackbar2 = true;
@@ -431,11 +473,11 @@ export default {
                         // that.snackbar = true;
                         // that.snackbarText = response.data;
 
-                        if (response.data.payment_status === 'Paid') {
-                            that.d_5 = false;
-                        } else {
-                            that.d_5 = true;
-                        }
+                        // if (response.data.payment_status === 'Paid') {
+                        //     that.d_5 = false;
+                        // } else {
+                        //     that.d_5 = true;
+                        // }
                         that.active = response.data.is_active;
                         console.log("Estates sub", response.data);
                     } else if (response.status == 400) {
@@ -574,6 +616,7 @@ export default {
     },
     created() {
         this.getBilling();
+        this.Check_Billing();
         this.Fetch_ActiveSubs();
         this.Fetch_MessageSubs();
         this.Fetch_EstateHouseHolds();
