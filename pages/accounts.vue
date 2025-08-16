@@ -2,6 +2,9 @@
   <div>
     <v-card color="black">
       <v-row justify="" align="">
+        <v-img :src="loginbg">
+
+        </v-img>
         <v-col cols="12" sm="12" md="12"> </v-col>
 
         <v-col cols="12" sm="12" md="12"> </v-col>
@@ -77,6 +80,7 @@ export default {
       pin: null,
       verify_pin: null,
       b2c: false,
+      loginbg: require("@/assets/login_bg.png"),
       bg: require("@/assets/bg.png"),
       logo: require("@/assets/logo.svg"),
       errorResponse: "",

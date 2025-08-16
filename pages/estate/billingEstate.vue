@@ -54,7 +54,7 @@
                                 </div>
                             </v-card-text>
                             <v-card-actions>
-                                <v-btn :disabled="active" style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
+                                <v-btn :disabled="active" style="margin: 8px; color: #000" rounded color="white" class="text-white" @click="
 
                       (paymentForm = true), (duration = 'Monthly')
                     ">
@@ -89,7 +89,7 @@
                                 </div>
                             </v-card-text>
                             <v-card-actions>
-                                <v-btn :disabled="active" style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
+                                <v-btn :disabled="active" style="margin: 8px; color: #000" rounded color="white" class="text-white" @click="
 
                       (paymentForm = true), (duration = 'Monthly')
                     ">
@@ -124,7 +124,7 @@
                                 </div>
                             </v-card-text>
                             <v-card-actions>
-                                <v-btn :disabled="active" style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
+                                <v-btn :disabled="active" style="margin: 8px; color: #000" rounded color="white" class="text-white" @click="
 
                       (paymentForm = true), (duration = 'Monthly')
                     ">
@@ -159,7 +159,7 @@
                                 </div>
                             </v-card-text>
                             <v-card-actions>
-                                <v-btn :disabled="active" style="margin: 8px; color: #8051FF" rounded color="white" class="text-white" @click="
+                                <v-btn :disabled="active" style="margin: 8px; color: #000" rounded color="white" class="text-white" @click="
 
                       (paymentForm = true), (duration = 'Monthly')
                     ">
