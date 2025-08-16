@@ -1019,7 +1019,7 @@ export default {
             let that = this;
             that.houseHolds.splice(that.houseHolds);
             axios
-                .get("https://web-production-27f796.up.railway.app/api/households/getall/", {})
+                .get("https://web-production-27f796.up.railway.app/api/households/getBHsHldEstId/"+this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1042,7 +1042,7 @@ export default {
             let that = this;
             that.estate_houseHolds.splice(that.estate_houseHolds);
             axios
-                .get(`https://web-production-27f796.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
+                .get(`https://web-production-27f796.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
