@@ -26,7 +26,7 @@
                 <v-card-subtitle>
                     <h3 style="font-size: 1.3rem; margin: 12px;"> Sign in with email</h3>
 
-                    Sign in to your account for you to procceed
+                    Sign in to your account for you to procceed.
                 </v-card-subtitle>
 
                 <div class="container">
