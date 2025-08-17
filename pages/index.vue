@@ -29,7 +29,7 @@
                     Sign in to your account for you to procceed.
                 </v-card-subtitle>
 
-                <div class="container">
+                <div class="container" style="padding: 12px;">
                     <v-form ref="form" v-model="valid" lazy-validation>
 
                         <v-autocomplete v-model="select" :loading="loading" :items="items" :search-input.sync="search" cache-items @change="getEStateID(select)" class="mx-4" flat hide-no-data hide-details label="   Which estate are you from?   " solo></v-autocomplete>
@@ -56,8 +56,8 @@
                     </h4>
                     <br>
                     <div class="d-flex">
-                        <a @click="signUpGoogle">
-                            <v-card outlined class="mx-auto text-center" max-width="144">
+                        <a style="padding: 10px;" @click="signUpGoogle">
+                            <v-card outlined class="mx-auto text-center" max-width="100">
                                 <div class="container">
                                     <v-img contain :src="google" height="20"></v-img>
                                 </div>
@@ -65,8 +65,8 @@
                             </v-card>
                         </a>
                         <v-spacer></v-spacer>
-                        <a>
-                            <v-card outlined class="mx-auto text-center" max-width="144">
+                        <a style="padding: 10px;">
+                            <v-card outlined class="mx-auto text-center" max-width="100">
                                 <div class="container">
                                     <v-img contain :src="facebook" height="20"></v-img>
                                 </div>
