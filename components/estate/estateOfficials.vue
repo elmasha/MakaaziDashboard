@@ -19,15 +19,15 @@
             </v-card-actions>
         </div>
     </v-card>
-    <v-card color="#f0f0f0" elevation="0" class="" style="padding: 1rem;">
-        <v-row justify="" align="" class="">
+    <v-card color="#f0f0f0" elevation="0"  style="padding: 1rem;">
+        <v-row class="">
 
             <v-col cols="12" sm="12" md="12" lg="12">
                 <div>
                     <div class="container">
                         <v-card elevation="0">
                             <v-subheader></v-subheader>
-                            <v-data-table :headers="headers" :items="houseHolds" :items-per-page="10" class="elevation-0">
+                            <v-data-table :headers="headers" :items="officials" :items-per-page="10" class="elevation-0">
                                 <!-- index column -->
                                 <template #item.index="{ item }">
                                     {{ item.index }}
@@ -257,11 +257,7 @@ export default {
                 },
 
             ],
-            headers: [{
-                    text: "Active",
-                    value: "active",
-                    align: "right",
-                },
+            headers: [
                 {
                     text: "#",
                     value: "index",
@@ -269,12 +265,12 @@ export default {
                 },
                 {
                     text: "Name",
-                    value: "primary_owner",
+                    value: "full_name",
                     width: 200,
                 },
                 {
-                    text: "House no",
-                    value: "house_number",
+                    text: "Role",
+                    value: "role",
                     align: "right",
                 },
 
@@ -284,41 +280,12 @@ export default {
                     align: "right",
                 },
                 {
-                    text: "Court",
-                    value: "court",
+                    text: "Estate URN",
+                    value: "estate_urn",
                     align: "right",
                 },
 
-                {
-                    text: "Section",
-                    value: "section",
-                    align: "right",
-                },{
-                    text: "Caretaker",
-                    value: "caretaker_name",
-                    align: "right",
-                },
-
-                {
-                    text: "Spouse",
-                    value: "spouse_name",
-                    align: "right",
-                },
-                {
-                    text: "Res status",
-                    value: "residence_status",
-                    align: "right",
-                },
-{
-                    text: "Official",
-                    value: "is_official",
-                    align: "right",
-                },
-                {
-                    text: "UID",
-                    value: "uid",
-                    align: "right",
-                },
+                
 
             ],
             paymentData: [{
@@ -447,6 +414,7 @@ export default {
             householdOwner: "",
             totalPayment: 0,
             totalPendingPayment: 0,
+            officials: [],
         };
     },
     methods: {
@@ -795,16 +763,15 @@ export default {
         },
         async Fetch_AllOfficials() {
             let that = this;
-            that.houseHolds.splice(that.houseHolds);
+            that.officials.splice(that.officials);
             axios
-                .get("https://web-production-27f796.up.railway.app/api/households/getall/", {})
+                .get("https://web-production-27f796.up.railway.app/api/officials/getOfficialByEstateId/"+this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
                         // that.snackbarText = response.data;
-                        that.houseHolds = response.data;
-                        that.totalResidence = response.data.length;
-                        console.log("Households", that.houseHolds);
+                        that.officials = response.data;
+                        console.log("Households", that.officials);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
                         that.snackbarText2 = response.data;
