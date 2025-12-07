@@ -330,7 +330,7 @@ export default {
         that.show6 = true;
         const created_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
         axios
-          .post("https://web-production-27f796.up.railway.app/api/estates/create", {
+          .post("https://makaaziserverapi-production.up.railway.app/api/estates/create", {
             estate_name: that.estateName,
             estate_urn: that.estateURN,
             estate_location: that.location,
@@ -362,11 +362,11 @@ export default {
      UploadEstateConfig(val) {
       let that = this;      
         axios
-          .post("https://web-production-27f796.up.railway.app/api/estates/create", {
+          .post("https://makaaziserverapi-production.up.railway.app/api/estates/create-config", {
             estate_id: val,
-            show_street: that.estateStreet,
-            show_section: that.estateSections,
-            show_court: Number(that.estateCourts),
+            street: that.estateStreet,
+            section: that.estateSections,
+            court: Number(that.estateCourts),
             
           })
           .then(function (response) {

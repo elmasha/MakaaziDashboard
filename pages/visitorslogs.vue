@@ -153,7 +153,7 @@ export default {
     async SendNotification() {
       let that = this;
       axios
-        .post(`https://makaazi-85b0afbcae5d.herokuapp.com/api/fcm/sendNotification`, {
+        .post(`https://makaaziserverapi-production.up.railway.app/api/fcm/sendNotification`, {
           fcmToken: that.deviceToken,
           title: "Visitor at Your Estate",
           body: `Hello ${that.householdOwner} A visitor ${that.visitorName}  has arrived  at ${that.timeIn}\n ​Purpose of Visit: ${that.reasonForVisit}​`,
@@ -177,7 +177,7 @@ export default {
     async getToken(val) {
       let that = this;
       axios
-        .get(`https://makaazi-85b0afbcae5d.herokuapp.com/api/fcm/get-token/${val}`, {})
+        .get(`https://makaaziserverapi-production.up.railway.app/api/fcm/get-token/${val}`, {})
         .then(function (response) {
           if (response.status == 200) {
             that.deviceToken = response.data.fcm_token;
@@ -213,7 +213,7 @@ export default {
       } else {
         that.show6 = true;
         axios
-          .post("https://makaazi-85b0afbcae5d.herokuapp.com/api/estates/create", {
+          .post("https://makaaziserverapi-production.up.railway.app/api/estates/create", {
             estate_name: that.estateName,
             estateURN: that.estateURN,
             location: that.location,
@@ -258,7 +258,7 @@ export default {
         that.houseHolds.splice(that.houseHolds);
         axios
           .get(
-            `https://makaazi-85b0afbcae5d.herokuapp.com/api/households/search/?query=${val}`,
+            `https://makaaziserverapi-production.up.railway.app/api/households/search/?query=${val}`,
             {}
           )
           .then(function (response) {

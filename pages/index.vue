@@ -32,7 +32,8 @@
                 <div class="container" style="padding: 12px;">
                     <v-form ref="form" v-model="valid" lazy-validation>
 
-                        <v-autocomplete v-model="select" :loading="loading" :items="items" :search-input.sync="search" cache-items @change="getEStateID(select)" class="mx-4" flat hide-no-data hide-details label="   Which estate are you from?   " solo></v-autocomplete>
+                        <v-autocomplete v-model="select" :loading="loading" :items="items"
+                         :search-input.sync="search" cache-items @change="getEStateID(select)" class="mx-4" flat hide-no-data hide-details label="   Which estate are you from?   " solo></v-autocomplete>
                         <div>
                             <v-card-subtitle>
                                 {{select}}
@@ -206,7 +207,7 @@ export default {
         async getEStateID(val) {
             let that = this;
             axios
-                .get(`https://web-production-27f796.up.railway.app/api/estates/estateName/${val}`, {})
+                .get(`https://makaaziserverapi-production.up.railway.app/api/estates/estateName/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -236,14 +237,14 @@ export default {
             that.estates.splice(that.estates);
             that.states.splice(that.states);
             axios
-                .get("https://web-production-27f796.up.railway.app/api/estates/getall", {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/estates/getall", {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
                         // that.snackbarText = response.data;
                         that.estates = response.data;
                         that.states = that.estates.map((item) => item.estate_name);
-                        console.log("Estates", that.estates);
+                        console.log("Estates", that.states);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
                         that.snackbarText2 = response.data;

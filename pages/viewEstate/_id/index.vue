@@ -340,7 +340,7 @@ export default {
     async Fetch_PostAllEstates() {
       let that = this;
       axios
-        .get(`https://web-production-27f796.up.railway.app/api/estates/estate/${that.$route.params.id}`, {})
+        .get(`https://makaaziserverapi-production.up.railway.app/api/estates/estate/${that.$route.params.id}`, {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -368,7 +368,7 @@ export default {
       let that = this;
       axios
         .get(
-          `https://web-production-27f796.up.railway.app/api/payments/getByEstateId/${that.$route.params.id}`,
+          `https://makaaziserverapi-production.up.railway.app/api/payments/getByEstateId/${that.$route.params.id}`,
           {}
         )
         .then(function (response) {
@@ -391,7 +391,7 @@ export default {
     async Fetch_ActiveHouseholds() {
       let that = this;
       axios
-        .get("https://web-production-27f796.up.railway.app/api/households/getActiveHouseHolds/0", {})
+        .get("https://makaaziserverapi-production.up.railway.app/api/households/getActiveHouseHolds/0", {})
         .then(function (response) {
           if (response.status == 200) {
             // that.snackbar = true;
@@ -413,7 +413,7 @@ export default {
       that.houseHolds.splice(that.houseHolds);
       axios
         .get(
-          `https://web-production-27f796.up.railway.app/api/households/getBHsHldEstId/${that.$route.params.id}`,
+          `https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/${that.$route.params.id}`,
           {}
         )
         .then(function (response) {

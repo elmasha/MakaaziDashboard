@@ -118,13 +118,13 @@
 
                                 </div>
                             </v-card-text>
-                            <v-card-actions>
+                            <v-card-action>
                                 <v-btn style="margin: 8px; color: white" rounded color="#8051FF" class="text-white" @click="
                       (paymentForm = true), (duration = 'Monthly')
                     ">
                                     Start Plan
                                 </v-btn>
-                            </v-card-actions>
+                            </v-card-action>
                         </v-card>
                     </v-col>
 
@@ -141,9 +141,7 @@
                                         <div class="">
                                             <div class="d-flex">
                                                 <span>Mpesa Payment</span>
-                                                <v-avatar style="margin: 10px" color="primary" size="30">
-                                                    <img alt="Avatar" :src="mpesaIcon" />
-                                                </v-avatar>
+                                                
                                                 <v-spacer></v-spacer>
                                                 <v-btn icon @click="paymentForm = false">
                                                     <v-icon color="red">mdi-close</v-icon>
@@ -205,6 +203,7 @@ export default {
     },
     data() {
         return {
+            shallowReactive:false,
             showBillState:false,
             numeral,
             active:false,
@@ -310,7 +309,7 @@ export default {
            async Check_Billing() {
             let that = this;
             axios
-                .get("https://web-production-27f796.up.railway.app/api/estates/estate-due-disable/"+this.estateId, {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/estates/estate-due-disable/"+this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
@@ -343,7 +342,7 @@ if (response.data.payment_status === 'Due') {
             that.snackbar_s = true;
             that.snackbarText_s = "Checking payment status...";
             axios
-                .post("https://web-production-27f796.up.railway.app/payment/stk_push_subscription/query", {
+                .post("https://makaaziserverapi-production.up.railway.app/payment/stk_push_subscription/query", {
                     checkoutRequestId: that.CheckoutRequestID,
                 })
                 .then(function (response) {
@@ -373,7 +372,7 @@ if (response.data.payment_status === 'Due') {
         getBilling() {
             let that = this;
             axios
-                .post("https://web-production-27f796.up.railway.app/api/estates/subscription", {
+                .post("https://makaaziserverapi-production.up.railway.app/api/estates/subscription", {
                     estate_id: this.estate_id,
 
                 })
@@ -412,7 +411,7 @@ if (response.data.payment_status === 'Due') {
         async Fetch_MessageSubs() {
             let that = this;
             axios
-                .get("https://web-production-27f796.up.railway.app/api/estates/estate-sub-msg/" + this.estateId, {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/estates/estate-sub-msg/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
@@ -439,7 +438,7 @@ if (response.data.payment_status === 'Due') {
       let that = this;
       axios
         .get(
-          `https://web-production-27f796.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`,
+          `https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`,
           {}
         )
         .then(function (response) {
@@ -467,7 +466,7 @@ if (response.data.payment_status === 'Due') {
         async Fetch_ActiveSubs() {
             let that = this;
             axios
-                .get("https://web-production-27f796.up.railway.app/api/estates/estate-sub/" + this.estateId, {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/estates/estate-sub/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -499,7 +498,7 @@ if (response.data.payment_status === 'Due') {
             this.status = "unseen";
             this.uid = this.$fire.auth.currentUser.uid;
             axios
-                .put("https://web-production-27f796.up.railway.app/notification/addNotification", {
+                .put("https://makaaziserverapi-production.up.railway.app/notification/addNotification", {
                     title: this.title,
                     body: this.body,
                     from_user: this.from,
@@ -538,7 +537,7 @@ if (response.data.payment_status === 'Due') {
         FetchUser() {
             let that = this;
             axios
-                .get(`https://web-production-27f796.up.railway.app/user/getUser/${that.$fire.auth.currentUser.uid}`, {})
+                .get(`https://makaaziserverapi-production.up.railway.app/user/getUser/${that.$fire.auth.currentUser.uid}`, {})
                 .then(function (response) {
                     console.log("Payment page", response.data[0]);
                     if (response.status == 200) {
@@ -587,7 +586,7 @@ if (response.data.payment_status === 'Due') {
                 that.snackbarError = true;
             } else {
                 axios
-                    .post("https://web-production-27f796.up.railway.app/payment/stk_push_subscription", {
+                    .post("https://makaaziserverapi-production.up.railway.app/payment/stk_push_subscription", {
                         phone_number: that.phone,
                         estate_id: this.estateId,
                     })

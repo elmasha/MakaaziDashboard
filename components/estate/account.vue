@@ -18,13 +18,13 @@
                             <v-progress-linear color="deep-purple" height="10" indeterminate></v-progress-linear>
                         </template>
 
-                        <v-img :src="estate_image" class="white--text align-end" gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)" height="220px">
+                        <v-img :src="estateImage" class="white--text align-end" gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)" height="220px">
                         </v-img>
 
                         <v-card-text>
                             <div class="d-flex">
                                 <v-avatar color="#8051FF" style="margin: 2px">
-                                    <v-img :src="logo_url" contain alt="John" height="300" />
+                                    <v-img :src="logoUrl" contain alt="John" height="300" />
                                 </v-avatar>
                                 <div>
                                     <h2 style="color: black; font-size: 1.6rem; margin: 18px">
@@ -207,6 +207,7 @@ export default {
     name: "InspirePage",
     data() {
         return {
+            loading:false,
             edit: false,
             snackbar_s: false,
             snackbarText_s: "",
@@ -244,7 +245,7 @@ export default {
         async Fetch_PostAllEstates() {
             let that = this;
             axios
-                .get(`https://web-production-27f796.up.railway.app/api/estates/estate/${that.$route.params.id}`, {})
+                .get(`https://makaaziserverapi-production.up.railway.app/api/estates/estate/${that.$route.params.id}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -373,7 +374,7 @@ export default {
             } else {
                 that.show6 = true;
                 axios
-                    .post("https://web-production-27f796.up.railway.app/api/estates/create", {
+                    .post("https://makaaziserverapi-production.up.railway.app/api/estates/create", {
                         estate_name: that.estateName,
                         estate_urn: that.estateURN,
                         estate_location: that.location,
@@ -407,7 +408,7 @@ export default {
         UploadEstateConfig(val) {
             let that = this;
             axios
-                .post("https://web-production-27f796.up.railway.app/api/estates/create", {
+                .post("https://makaaziserverapi-production.up.railway.app/api/estates/create", {
                     estate_id: val,
                     show_street: that.estateStreet,
                     show_section: that.estateSections,

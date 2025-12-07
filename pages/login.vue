@@ -204,7 +204,7 @@ export default {
         async getEStateID(val) {
             let that = this;
             axios
-                .get(`https://web-production-27f796.up.railway.app/api/estates/estateName/${val}`, {})
+                .get(`https://makaaziserverapi-production.up.railway.app/api/estates/estateName/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -234,7 +234,7 @@ export default {
             that.estates.splice(that.estates);
             that.states.splice(that.states);
             axios
-                .get("https://web-production-27f796.up.railway.app/api/estates/getall", {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/estates/getall", {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
