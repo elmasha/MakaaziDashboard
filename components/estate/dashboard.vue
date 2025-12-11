@@ -187,9 +187,36 @@
 
                 </div>
             </v-col>
-
             <v-col cols="12" sm="6" md="6" lg="6">
-                <div class="container">
+                <div>
+                    <div class="container">
+                        <v-card elevation="0">
+                            <v-subheader>Officials</v-subheader>
+                            <v-data-table :headers="headers_of" :items="officials" :items-per-page="5" class="elevation-0">
+                                <!-- index column -->
+                                <template #item.index="{ item }">
+                                    {{ item.index }}
+                                </template>
+
+                                <!-- overdue cell -->
+                                <template #item.overdue="{ item }">
+                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
+                                        {{ formatCurrency(item.overdue) }}
+                                    </span>
+                                </template>
+
+                                <!-- any month cell could use the default -->
+                            </v-data-table>
+
+                        </v-card>
+
+                    </div>
+
+                </div>
+            </v-col>
+
+            <v-col cols="12" sm="12" md="12" lg="12">
+                <div class="">
 
                     <v-card elevation="0">
                         <paymentSummary :estateId="estateId" />
@@ -406,6 +433,7 @@ export default {
         // this.Fetch_ActiveHouseholds();
         this.Fetch_PostAllEstates();
         this.Fetch_AllPayments();
+        this.Fetch_AllOfficials2();
         this.Fetch_EstateReceipt();
     },
     components: {
@@ -418,6 +446,35 @@ export default {
     data() {
         return {
             numeral,
+             headers_of: [
+                {
+                    text: "#",
+                    value: "index",
+                    width: 50,
+                },
+                {
+                    text: "Name",
+                    value: "full_name",
+                    width: 200,
+                },
+                {
+                    text: "Role",
+                    value: "role",
+                    align: "right",
+                },
+
+                {
+                    text: "Phone no",
+                    value: "contact_number",
+                    align: "right",
+                },
+                {
+                    text: "Estate URN",
+                    value: "estate_urn",
+                    align: "right",
+                },
+
+            ],
             headers2: [
 
                 {
@@ -521,6 +578,7 @@ export default {
             search_estates: [],
             payments: [],
             houseHolds: [],
+            officials: [],
             estate_houseHolds: [],
             rules: [
                 (value) => !!value || "Required.",
@@ -650,6 +708,28 @@ export default {
         };
     },
     methods: {
+         async Fetch_AllOfficials2() {
+            let that = this;
+            that.officials.splice(that.officials);
+            axios
+                .get("https://makaaziserverapi-production.up.railway.app/api/officials/getOfficialByEstateId/"+this.estateId, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        // that.snackbar = true;
+                        // that.snackbarText = response.data;
+                        that.officials = response.data;
+                        console.log("Households", that.officials);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
         async Fetch_EstateReceipt() {
             let that = this;
             that.paymentsReceipt.splice(that.paymentsReceipt);
