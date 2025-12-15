@@ -14,13 +14,13 @@
                             </p>
 
                             <br>
-                            <v-card elevation="0" color="black" dark v-show="shallowReactive" >
+                            <v-card elevation="0" color="black" dark v-show="shallowReactive">
                                 <div class="container">
                                     <div class="d-flex" style="padding: 10px;">
-                                         <strong style="color: greenyellow;" v-show="active">Active</strong>
-                                          <strong style="color:  red;" v-show="!active">InActive</strong>
+                                        <strong style="color: greenyellow;" v-show="active">Active</strong>
+                                        <strong style="color:  red;" v-show="!active">InActive</strong>
                                     </div>
-                                   
+
                                     <p style="padding: 10px;">{{ message }}</p>
                                 </div>
                             </v-card>
@@ -31,11 +31,13 @@
                     <v-col cols="12" v-show="d_1" sm="6" md="6" class="">
                         <v-card class="mx-auto" color="#8051FF" dark>
                             <v-card-action>
-                               <div class="container">
-                                 <div class="d-flex"> <p class="text-h5 text--white">Band 1 </p>
-                                <v-spacer></v-spacer> <b style="margin-top: 8px;margin-left: 4px;">Monthly</b></div>
-                               
-                               </div>
+                                <div class="container">
+                                    <div class="d-flex">
+                                        <p class="text-h5 text--white">Band 1 </p>
+                                        <v-spacer></v-spacer> <b style="margin-top: 8px;margin-left: 4px;">Monthly</b>
+                                    </div>
+
+                                </div>
                             </v-card-action>
 
                             <v-card-text>
@@ -141,7 +143,7 @@
                                         <div class="">
                                             <div class="d-flex">
                                                 <span>Mpesa Payment</span>
-                                                
+
                                                 <v-spacer></v-spacer>
                                                 <v-btn icon @click="paymentForm = false">
                                                     <v-icon color="red">mdi-close</v-icon>
@@ -155,6 +157,12 @@
                                                 </div>
                                             </div>
                                     </v-card-text>
+                                    <div  class="d-flex" style="padding: 0.8rem;border-radius: 1rem;background-color: antiquewhite;color: black;">
+                                        <p style="font-size: 0.9rem;"> An STK push will prompted on the <b>{{ phonePrefix+phone_numer }}</b>
+                                            check for an mpesa prompting you to pay <b>{{ numeral(total_price).format("0,0") }}</b> ksh</p>
+                                    </div>
+                                    <br>
+                                    <v-text-field type="number" v-if="selectedOption === 'Mpesa'" v-model="phone_numer" :prefix="phonePrefix" placeholder="(7.. format)" label="Enter Phone Number" dense></v-text-field>
 
                                     <v-btn ref="button" style="margin: 10px; font-size: 1.2rem; color: red" color="black" class="white--text" @click="StkPush()">Initiate Stk Push</v-btn>
                                     <v-spacer />
@@ -190,7 +198,9 @@
 <script>
 import axios from "axios";
 import numeral from "numeral";
-import { shallowReactive } from "vue";
+import {
+    shallowReactive
+} from "vue";
 
 import * as easings from "vuetify/lib/services/goto/easing-patterns";
 
@@ -203,12 +213,12 @@ export default {
     },
     data() {
         return {
-            shallowReactive:false,
-            showBillState:false,
+            shallowReactive: false,
+            showBillState: false,
             numeral,
-            active:false,
+            active: false,
             plan_name: "",
-            message:'',
+            message: '',
             total_households_count: 0,
             plan_amount: 0,
             d_1: false,
@@ -306,24 +316,23 @@ export default {
                 this.d_4 = true;
             }
         },
-           async Check_Billing() {
+        async Check_Billing() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/estates/estate-due-disable/"+this.estateId, {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/estates/estate-due-disable/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
                         that.snackbarText = response.data;
                         that.active = response.data.is_active;
-                    
 
-if (response.data.payment_status === 'Due') {
+                        if (response.data.payment_status === 'Due') {
                             that.d_5 = true;
                             that.d_5 = false;
                         } else {
                             that.d_5 = false;
                             that.d_5 = true;
-                        }                    
+                        }
                         console.log("Check billing", response.data);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
@@ -435,34 +444,33 @@ if (response.data.payment_status === 'Due') {
                 });
         },
         async Fetch_EstateHouseHolds() {
-      let that = this;
-      axios
-        .get(
-          `https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`,
-          {}
-        )
-        .then(function (response) {
-          if (response.status == 200) {
-            // that.snackbar = true;
-            // that.snackbarText = response.data;
-            that.houseHoldCount = response.data.length;
-            if(that.houseHoldCount ==0){
-                that.shallowReactive = false;
-            }else{
-                that.shallowReactive = true;
-            }
-            console.log("Households count", that.houseHoldCount);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
+            let that = this;
+            axios
+                .get(
+                    `https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`, {}
+                )
+                .then(function (response) {
+                    if (response.status == 200) {
+                        // that.snackbar = true;
+                        // that.snackbarText = response.data;
+                        that.houseHoldCount = response.data.length;
+                        if (that.houseHoldCount == 0) {
+                            that.shallowReactive = false;
+                        } else {
+                            that.shallowReactive = true;
+                        }
+                        console.log("Households count", that.houseHoldCount);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
         async Fetch_ActiveSubs() {
             let that = this;
             axios

@@ -20,7 +20,7 @@
         </div>
     </v-card>
     <v-card color="#f0f0f0" elevation="0" class="" style="padding: 1rem;">
-        <v-row >
+        <v-row>
             <v-col cols="12" sm="12" md="12">
 
             </v-col>
@@ -33,10 +33,12 @@
                                 <div class="container">
                                     <div class="d-flex">
                                         <v-chip color="#b7ff005b">
-                                        <v-icon color="#b6ff00">mdi-cash-multiple</v-icon>
-                                    </v-chip>
-                                    <v-spacer></v-spacer>
-                                    <v-btn icon @click="Fetch_AllPayments"> <v-icon color="#808080">mdi-refresh</v-icon></v-btn>
+                                            <v-icon color="#b6ff00">mdi-cash-multiple</v-icon>
+                                        </v-chip>
+                                        <v-spacer></v-spacer>
+                                        <v-btn icon @click="Fetch_AllPayments">
+                                            <v-icon color="#808080">mdi-refresh</v-icon>
+                                        </v-btn>
                                     </div>
                                     <v-card-subtitle>
                                         <h4>Total Payment </h4>
@@ -113,8 +115,8 @@
                                         <v-icon color="#000">mdi-white-balance-incandescent</v-icon>
                                     </v-chip>
                                     <v-card-subtitle>
-                                          <h4></h4>
-                                        <h4>Open   Incidents</h4>
+                                        <h4></h4>
+                                        <h4>Open Incidents</h4>
                                     </v-card-subtitle>
                                     <v-card-actions>
                                         <div class="d-flex">
@@ -135,7 +137,7 @@
                         <div>
                             <v-card-title>Payments by Month</v-card-title>
                             <div>
-                                <MyBarChart :estateId="estateId"/>
+                                <MyBarChart :estateId="estateId" />
                                 <!-- <HouseholdBarChart :payments="paymentData" /> -->
                             </div>
                         </div>
@@ -144,7 +146,30 @@
                 </div>
             </v-col>
             <v-col cols="12" sm="6" md="6">
-                <div class="">
+                <div class="container">
+                    <div>
+                        <v-card elevation="0">
+                            <v-subheader>Recent payments</v-subheader>
+                            <v-data-table :headers="headers44" :items="paymentsReceipt" :items-per-page="5" class="elevation-0">
+                                <!-- index column -->
+                                <template #item.index="{ item }">
+                                    {{ item.index }}
+                                </template>
+
+                                <!-- overdue cell -->
+                                <template #item.overdue="{ item }">
+                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
+                                        {{ formatCurrency(item.overdue) }}
+                                    </span>
+                                </template>
+
+                                <!-- any month cell could use the default -->
+                            </v-data-table>
+                        </v-card>
+                    </div>
+
+                </div>
+                <!-- <div class="">
 
                     <v-card elevation="0">
 
@@ -152,12 +177,11 @@
                             <v-card-title>Household registration trend</v-card-title>
                             <div>
                                 <barChart :estateId="estateId" />
-                                <!-- <HouseholdBarChart :payments="paymentData" /> -->
                             </div>
                         </div>
                     </v-card>
 
-                </div>
+                </div> -->
             </v-col>
 
             <v-col cols="12" sm="6" md="6" lg="6">
@@ -446,8 +470,7 @@ export default {
     data() {
         return {
             numeral,
-             headers_of: [
-                {
+            headers_of: [{
                     text: "#",
                     value: "index",
                     width: 50,
@@ -672,47 +695,46 @@ export default {
             householdOwner: "",
             totalPayment: 0,
             totalPendingPayment: 0,
-             headers44: [
-        {
-          text: "#",
-          value: "index",
-          width: 50,
-        },
-        {
-          text: "Method",
-          value: "payment_method",
-          width: 200,
-        },
-        {
-          text: "Receipt",
-          value: "transaction_id",
-          align: "right",
-        },
-        {
-          text: "Status",
-          value: "payment_status",
-          align: "right",
-        },
-        {
-          text: "Charge id",
-          value: "charge_id",
-          align: "right",
-        },
-        {
-          text: "Amount",
-          value: "amount_paid",
-          align: "right",
-        },
-        
-      ],
+            headers44: [{
+                    text: "#",
+                    value: "index",
+                    width: 50,
+                },
+                {
+                    text: "Method",
+                    value: "payment_method",
+                    width: 200,
+                },
+                {
+                    text: "Receipt",
+                    value: "transaction_id",
+                    align: "right",
+                },
+                {
+                    text: "Status",
+                    value: "payment_status",
+                    align: "right",
+                },
+                {
+                    text: "Charge id",
+                    value: "charge_id",
+                    align: "right",
+                },
+                {
+                    text: "Amount",
+                    value: "amount_paid",
+                    align: "right",
+                },
+
+            ],
         };
     },
     methods: {
-         async Fetch_AllOfficials2() {
+        async Fetch_AllOfficials2() {
             let that = this;
             that.officials.splice(that.officials);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/officials/getOfficialByEstateId/"+this.estateId, {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/officials/getOfficialByEstateId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -734,7 +756,7 @@ export default {
             let that = this;
             that.paymentsReceipt.splice(that.paymentsReceipt);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/payments/getByEstateId/"+this.estateId, {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/payments/getByEstateId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1050,29 +1072,29 @@ export default {
             }
         },
         async Fetch_AllPayments() {
-    let that = this;
-    axios
-        .get("https://makaaziserverapi-production.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
-        .then(function (response) {
-            if (response.status === 200) {
-                that.payments = response.data;
+            let that = this;
+            axios
+                .get("https://makaaziserverapi-production.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
+                .then(function (response) {
+                    if (response.status === 200) {
+                        that.payments = response.data;
 
-                // Calculate totals from all rows
-                that.totalPayment = that.payments.reduce((sum, row) => sum + Number(row.total_paid || 0), 0);
-                that.totalPendingPayment = that.payments.reduce((sum, row) => sum + Number(row.overdue || 0), 0);
+                        // Calculate totals from all rows
+                        that.totalPayment = that.payments.reduce((sum, row) => sum + Number(row.total_paid || 0), 0);
+                        that.totalPendingPayment = that.payments.reduce((sum, row) => sum + Number(row.overdue || 0), 0);
 
-                console.log("Payments total", that.totalPayment, that.totalPendingPayment);
-            } else if (response.status === 400) {
-                that.snackbar2 = true;
-                that.snackbarText2 = response.data;
-            }
-        })
-        .catch(function (error) {
-            console.log(error);
-            that.snackbarText2 = error.message || "An error occurred";
-            that.snackbar2 = true;
-        });
-},
+                        console.log("Payments total", that.totalPayment, that.totalPendingPayment);
+                    } else if (response.status === 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error.message || "An error occurred";
+                    that.snackbar2 = true;
+                });
+        },
         async Fetch_ActiveHouseholds() {
             let that = this;
             axios
@@ -1099,7 +1121,7 @@ export default {
             let that = this;
             that.houseHolds.splice(that.houseHolds);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/"+this.estateId, {})
+                .get("https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
