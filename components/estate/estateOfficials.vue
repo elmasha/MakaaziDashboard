@@ -19,7 +19,7 @@
             </v-card-actions>
         </div>
     </v-card>
-    <v-card color="#f0f0f0" elevation="0"  style="padding: 1rem;">
+    <v-card color="#f0f0f0" elevation="0" style="padding: 1rem;">
         <v-row class="">
 
             <v-col cols="12" sm="12" md="12" lg="12">
@@ -38,6 +38,14 @@
                                     <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
                                         {{ formatCurrency(item.overdue) }}
                                     </span>
+                                </template>
+
+                                <template v-slot:item.actions="{ item }">
+
+                                    <v-icon small class="mr-2" @click="dialog = true">
+                                        mdi-delete
+                                    </v-icon>
+
                                 </template>
 
                                 <!-- any month cell could use the default -->
@@ -71,104 +79,24 @@
           </template> -->
                 <template v-slot:default="dialog">
                     <v-card>
-                        <v-toolbar color="#b6ff00" light>Add Official/Agent
-                            <br />
+                        <v-toolbar color="#b6ff00" light>Remove Official
 
                             <v-spacer></v-spacer>
                             <v-card-actions class="justify-end">
                                 <v-btn text @click="dialog.value = false">Close</v-btn>
                             </v-card-actions>
                         </v-toolbar>
-                        <v-card-text>
-                            <div class="text-span pa-2">
-                                <h2>{{ estate_name }}</h2>
-                                <br />
-                                <h3>{{ estate_urn }}</h3>
-                            </div>
-                        </v-card-text>
-
                         <div class="container">
-                            <div class="">
-                                <v-select v-model="role" :items="roles" label="Role" flat required></v-select>
-
-                                <div class="">
-                                    <v-text-field clearable v-model="household_search" @change="searchHouseholdsEstate(household_search)" placeholder="Search households" flat rounded style="background-color: beige; height: 50px" required></v-text-field>
-                                </div>
-                            </div>
-                            <div class="row text--center" id="all_items">
-                                <!-- <div v-for="tag in houseHolds" :key="tag.id" class="col-md-6"></div> -->
-
-                                <v-list subheader>
-                                    <v-subheader>Households</v-subheader>
-
-                                    <v-list-item v-for="hs in estate_houseHolds" :key="hs.title">
-                                        <v-list-item @click="
-                          (householdOwner = hs.primary_owner), getToken(hs.household_id)
-                        ">
-                                            <v-list-item-avatar>
-                                                <v-avatar color="#8051FF" size="48">
-                                                    <span style="color: black">{{
-                              hs.primary_owner.substring(0, 3)
-                            }}</span>
-                                                </v-avatar>
-                                            </v-list-item-avatar>
-
-                                            <v-list-item-content>
-                                                <v-list-item-title>{{ hs.primary_owner }}</v-list-item-title>
-                                            </v-list-item-content>
-                                            <v-list-item-icon>
-                                                <v-spacer></v-spacer>
-
-                                                <div>
-                                                    <v-card-actions>
-                                                        <v-icon color="green" v-show="hs.is_official ? false : true">mdi-account-badge</v-icon>
-                                                    </v-card-actions>
-                                                </div>
-                                            </v-list-item-icon>
-
-                                            <v-list-item-action>
-                                                <div v-show="hs.is_official ? true : false">
-                                                    <span style="font-size: 0.6rem">Assign official</span>
-
-                                                    <v-btn icon color="orange" v-show="hs.is_official ? true : false" @click="
-                                getToken(hs.household_id),
-                                  assignOfficials(hs.household_id, hs.uid),
-                                  (full_name = hs.primary_owner),
-                                  (householdOwner = hs.primary_owner),
-                                  (contact_number = hs.contact_number)
-                              ">
-                                                        <v-icon>mdi-account-network-outline</v-icon>
-                                                    </v-btn>
-                                                </div>
-                                                <div v-show="true">
-                                                    <v-btn style="margin: 4px" icon v-show="hs.is_official ? false : true" @click="
-                                assignOfficials2(hs.household_id),
-                                  DeleteOfficial(hs.contact_number)
-                              ">
-                                                        <v-icon>mdi-close</v-icon>
-                                                    </v-btn>
-                                                    <span style="font-size: 0.6rem"></span>
-                                                </div>
-                                            </v-list-item-action>
-                                            <v-icon style="margin: 4px" :color="hs.active ? 'grey' : 'blue'">
-                                                mdi-check-decagram
-                                            </v-icon>
-                                        </v-list-item>
-                                    </v-list-item>
-                                </v-list>
-                            </div>
+                           <p style="padding:30px"> Remove Officail from this estate</p>
+                            <br>
+                           <div class="d-flex">
+                             <v-btn color="red">Remove</v-btn>
+                            <v-spacer></v-spacer>
+                            <v-btn>Cancle</v-btn>
+                         </div>
                         </div>
-                        <v-form v-show="false" @submit.prevent="AddOfficial">
-                            <v-text-field v-model="full_name" label="Full Name" outlined required></v-text-field>
+                         
 
-                            <v-select v-model="role" :items="roles" label="Role" outlined required></v-select>
-
-                            <v-text-field v-model="contact_number" label="Contact Number" outlined required></v-text-field>
-
-                            <v-text-field v-model="email" label="Email Address" outlined required></v-text-field>
-
-                            <v-btn color="#b6ff00" class="mt-4" type="submit" style="color: black">Submit</v-btn>
-                        </v-form>
                     </v-card>
                 </template>
             </v-dialog>
@@ -222,43 +150,8 @@ export default {
     data() {
         return {
             numeral,
-            headers2: [
 
-                {
-                    text: "Name",
-                    value: "primary_owner",
-                    width: 200,
-                },
-                {
-                    text: "House no",
-                    value: "house_number",
-                    align: "right",
-                },
-
-                {
-                    text: "Phone no",
-                    value: "contact_number",
-                    align: "right",
-                },
-                {
-                    text: "Payment receipt",
-                    value: "total_paid",
-                    align: "right",
-                },
-                {
-                    text: "Payment method",
-                    value: "total_paid",
-                    align: "right",
-                },
-                {
-                    text: "Amount",
-                    value: "total_paid",
-                    align: "right",
-                },
-
-            ],
-            headers: [
-                {
+            headers: [{
                     text: "#",
                     value: "index",
                     width: 50,
@@ -284,9 +177,11 @@ export default {
                     value: "estate_urn",
                     align: "right",
                 },
-
-                
-
+                {
+                    text: 'Remove official',
+                    value: 'actions',
+                    sortable: false
+                },
             ],
             paymentData: [{
                     month: 'January',
@@ -426,7 +321,7 @@ export default {
         async getToken(val) {
             let that = this;
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/fcm/get-token/${val}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/fcm/get-token/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.deviceToken = response.data.fcm_token;
@@ -446,7 +341,7 @@ export default {
             let that = this;
 
             axios
-                .post(`https://makaaziserverapi-production.up.railway.app/api/fcm/sendNotification`, {
+                .post(`https://makaaziserverapi-production-252f.up.railway.app/api/fcm/sendNotification`, {
                     fcmToken: that.deviceToken,
                     title: that.title,
                     body: that.body,
@@ -482,7 +377,7 @@ export default {
                 that.estate_houseHolds.splice(that.estate_houseHolds);
                 axios
                     .get(
-                        `https://makaaziserverapi-production.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
+                        `https://makaaziserverapi-production-252f.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
                     )
                     .then(function (response) {
                         if (response.status == 200) {
@@ -509,7 +404,7 @@ export default {
                 let that = this;
                 that.payments.splice(that.payments);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/payments/searchAll/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/payments/searchAll/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -535,7 +430,7 @@ export default {
                 let that = this;
                 that.estates.splice(that.estates);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/estates/search/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/estates/search/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -561,7 +456,7 @@ export default {
                 let that = this;
                 that.houseHolds.splice(that.houseHolds);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/households/search/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/households/search/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -588,7 +483,7 @@ export default {
                 that.snackbarText2 = "Select a role";
             } else {
                 axios
-                    .patch(`https://makaaziserverapi-production.up.railway.app/api/households/update_household/${val}`, {
+                    .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
                         is_official: 0,
                         official_role: that.role,
                     })
@@ -613,7 +508,7 @@ export default {
         async assignOfficials2(val) {
             let that = this;
             axios
-                .patch(`https://makaaziserverapi-production.up.railway.app/api/households/update_household/${val}`, {
+                .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
                     is_official: 1,
                     official_role: "none",
                 })
@@ -637,7 +532,7 @@ export default {
         async DeleteOfficial(val) {
             let that = this;
             axios
-                .put(`https://makaaziserverapi-production.up.railway.app/api/officials/delete_official/${val}`, {})
+                .put(`https://makaaziserverapi-production-252f.up.railway.app/api/officials/delete_official/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
@@ -662,7 +557,7 @@ export default {
                 that.householdOwner +
                 " your account has been verified welcome to makaazi App";
             axios
-                .post(`https://makaaziserverapi-production.up.railway.app/api/officials/addOfficial`, {
+                .post(`https://makaaziserverapi-production-252f.up.railway.app/api/officials/addOfficial`, {
                     full_name: that.full_name,
                     estate_id: that.estate_id,
                     role: that.role,
@@ -718,7 +613,7 @@ export default {
         async Fetch_AllPayments() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
                 .then(function (response) {
                     if (response.status === 200) {
                         that.payments = response.data;
@@ -742,7 +637,7 @@ export default {
         async Fetch_ActiveHouseholds() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -765,7 +660,7 @@ export default {
             let that = this;
             that.officials.splice(that.officials);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/officials/getOfficialByEstateId/"+this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/officials/getOfficialByEstateId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -787,7 +682,7 @@ export default {
             let that = this;
             that.estate_houseHolds.splice(that.estate_houseHolds);
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -809,7 +704,7 @@ export default {
             let that = this;
             that.estates.splice(that.estates);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/estates/getall", {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/estates/getall", {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;

@@ -248,31 +248,7 @@
 
                 </div>
             </v-col>
-            <v-col cols="12" sm="6" md="6" lg="6">
-                <div class="container">
-                    <div>
-                        <v-card elevation="0">
-                            <v-subheader>Recent payments</v-subheader>
-                            <v-data-table :headers="headers44" :items="paymentsReceipt" :items-per-page="5" class="elevation-0">
-                                <!-- index column -->
-                                <template #item.index="{ item }">
-                                    {{ item.index }}
-                                </template>
-
-                                <!-- overdue cell -->
-                                <template #item.overdue="{ item }">
-                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
-                                        {{ formatCurrency(item.overdue) }}
-                                    </span>
-                                </template>
-
-                                <!-- any month cell could use the default -->
-                            </v-data-table>
-                        </v-card>
-                    </div>
-
-                </div>
-            </v-col>
+       
 
             <v-col cols="12" sm="6" md="6" lg="6">
                 <v-row>
@@ -734,7 +710,7 @@ export default {
             let that = this;
             that.officials.splice(that.officials);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/officials/getOfficialByEstateId/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/officials/getOfficialByEstateId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -756,7 +732,7 @@ export default {
             let that = this;
             that.paymentsReceipt.splice(that.paymentsReceipt);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/payments/getByEstateId/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/payments/getByEstateId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -782,7 +758,7 @@ export default {
         async getToken(val) {
             let that = this;
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/fcm/get-token/${val}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/fcm/get-token/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.deviceToken = response.data.fcm_token;
@@ -802,7 +778,7 @@ export default {
             let that = this;
 
             axios
-                .post(`https://makaaziserverapi-production.up.railway.app/api/fcm/sendNotification`, {
+                .post(`https://makaaziserverapi-production-252f.up.railway.app/api/fcm/sendNotification`, {
                     fcmToken: that.deviceToken,
                     title: that.title,
                     body: that.body,
@@ -838,7 +814,7 @@ export default {
                 that.estate_houseHolds.splice(that.estate_houseHolds);
                 axios
                     .get(
-                        `https://makaaziserverapi-production.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
+                        `https://makaaziserverapi-production-252f.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
                     )
                     .then(function (response) {
                         if (response.status == 200) {
@@ -865,7 +841,7 @@ export default {
                 let that = this;
                 that.payments.splice(that.payments);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/payments/searchAll/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/payments/searchAll/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -891,7 +867,7 @@ export default {
                 let that = this;
                 that.estates.splice(that.estates);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/estates/search/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/estates/search/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -917,7 +893,7 @@ export default {
                 let that = this;
                 that.houseHolds.splice(that.houseHolds);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/households/search/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/households/search/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -944,7 +920,7 @@ export default {
                 that.snackbarText2 = "Select a role";
             } else {
                 axios
-                    .patch(`https://makaaziserverapi-production.up.railway.app/api/households/update_household/${val}`, {
+                    .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
                         is_official: 0,
                         official_role: that.role,
                     })
@@ -969,7 +945,7 @@ export default {
         async assignOfficials2(val) {
             let that = this;
             axios
-                .patch(`https://makaaziserverapi-production.up.railway.app/api/households/update_household/${val}`, {
+                .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
                     is_official: 1,
                     official_role: "none",
                 })
@@ -993,7 +969,7 @@ export default {
         async DeleteOfficial(val) {
             let that = this;
             axios
-                .put(`https://makaaziserverapi-production.up.railway.app/api/officials/delete_official/${val}`, {})
+                .put(`https://makaaziserverapi-production-252f.up.railway.app/api/officials/delete_official/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
@@ -1018,7 +994,7 @@ export default {
                 that.householdOwner +
                 " your account has been verified welcome to makaazi App";
             axios
-                .post(`https://makaaziserverapi-production.up.railway.app/api/officials/addOfficial`, {
+                .post(`https://makaaziserverapi-production-252f.up.railway.app/api/officials/addOfficial`, {
                     full_name: that.full_name,
                     estate_id: that.estate_id,
                     role: that.role,
@@ -1074,7 +1050,7 @@ export default {
         async Fetch_AllPayments() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
                 .then(function (response) {
                     if (response.status === 200) {
                         that.payments = response.data;
@@ -1098,7 +1074,7 @@ export default {
         async Fetch_ActiveHouseholds() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1121,7 +1097,7 @@ export default {
             let that = this;
             that.houseHolds.splice(that.houseHolds);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getBHsHldEstId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1144,7 +1120,7 @@ export default {
             let that = this;
             that.estate_houseHolds.splice(that.estate_houseHolds);
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1166,7 +1142,7 @@ export default {
             let that = this;
             that.estates.splice(that.estates);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/estates/getall", {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/estates/getall", {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;

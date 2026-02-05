@@ -20,7 +20,7 @@
         </div>
     </v-card>
     <v-card color="#f0f0f0" elevation="0" class="" style="padding: 1rem;">
-        <v-row >
+        <v-row>
 
             <v-col cols="12" sm="12" md="12" lg="12">
                 <div>
@@ -34,16 +34,21 @@
                                 </template>
 
                                 <!-- overdue cell -->
-                                <template #item.overdue="{ item }">
-                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
-                                        {{ formatCurrency(item.overdue) }}
+                                <template #item.is_official="{ item }">
+                                    <span :class="{ 'Official': item.is_official == 0, 'Non Official': item.is_official == 1 }" >
+                                        {{ item.official_role}}  {{ checkOfficials(item.is_official) }}
                                     </span>
                                 </template>
 
                                 <template v-slot:item.actions="{ item }">
-                                    <v-icon small class="mr-2" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
+                                    <v-icon v-if="item.is_official == 0" small class="mr-2" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
                                     contact_number = item.contact_number,dialog = true">
                                         mdi-account-badge
+                                    </v-icon>
+
+                                    <v-icon v-if="item.is_official == 1" small class="mr-2" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
+                                    contact_number = item.contact_number,dialog = true">
+                                        mdi-trash
                                     </v-icon>
 
                                 </template>
@@ -99,13 +104,13 @@
                             <div class="">
                                 <v-select v-model="role" :items="roles" label="Role" flat required></v-select>
                             </div>
-                            <div class="row text--center" >
+                            <div class="row text--center">
                                 <!-- <div v-for="tag in houseHolds" :key="tag.id" class="col-md-6"></div> -->
 
                                 <v-list subheader>
                                     <v-subheader>Set Official</v-subheader>
 
-                                    <v-list-item >
+                                    <v-list-item>
                                         <v-list-item>
                                             <v-list-item-avatar>
                                                 <v-avatar color="#8051FF" size="48">
@@ -130,12 +135,11 @@
                                                 </div> -->
                                             </v-list-item-icon>
 
-                                         
                                         </v-list-item>
-                                         <v-btn color="black" style="color: black;" outlined @click="assignOfficials(officialID, officialUID)">Add an official</v-btn>
+                                        <v-btn color="black" style="color: black;" outlined @click="assignOfficials(officialID, officialUID)">Add an official</v-btn>
                                     </v-list-item>
                                 </v-list>
-                               
+
                             </div>
                         </div>
                         <v-form v-show="false" @submit.prevent="AddOfficial">
@@ -266,7 +270,7 @@ export default {
                     align: "right",
                 },
                 {
-                    text: 'Add officials',
+                    text: 'Assing officials',
                     value: 'actions',
                     sortable: false
                 },
@@ -359,9 +363,9 @@ export default {
             show: false,
             show6: false,
             timerCount: 25,
-            officialName:null,
-            officialUID:null,
-             officialID:null,
+            officialName: null,
+            officialUID: null,
+            officialID: null,
             valid: true,
             name: "",
             nameRules: [
@@ -403,27 +407,28 @@ export default {
             totalPendingPayment: 0,
         };
     },
-    methods: { async Fetch_Estates() {
-      let that = this;
-      axios
-        .get(`https://makaaziserverapi-production.up.railway.app/api/estates/estate/${this.estateId}`, {})
-        .then(function (response) {
-          if (response.status == 200) {
-            // that.snackbar = true;
-            // that.snackbarText = response.data;           
-            that.estate_urn = response.data.estate_urn;
-            console.log("Estates", response.data);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
+    methods: {
+        async Fetch_Estates() {
+            let that = this;
+            axios
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/estates/estate/${this.estateId}`, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        // that.snackbar = true;
+                        // that.snackbarText = response.data;           
+                        that.estate_urn = response.data.estate_urn;
+                        console.log("Estates", response.data);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
         formatCurrency(val) {
             return (val || 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
@@ -432,7 +437,7 @@ export default {
         async getToken(val) {
             let that = this;
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/fcm/get-token/${val}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/fcm/get-token/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.deviceToken = response.data.fcm_token;
@@ -452,7 +457,7 @@ export default {
             let that = this;
 
             axios
-                .post(`https://makaaziserverapi-production.up.railway.app/api/fcm/sendNotification`, {
+                .post(`https://makaaziserverapi-production-252f.up.railway.app/api/fcm/sendNotification`, {
                     fcmToken: that.deviceToken,
                     title: that.title,
                     body: that.body,
@@ -488,7 +493,7 @@ export default {
                 that.estate_houseHolds.splice(that.estate_houseHolds);
                 axios
                     .get(
-                        `https://makaaziserverapi-production.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
+                        `https://makaaziserverapi-production-252f.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
                     )
                     .then(function (response) {
                         if (response.status == 200) {
@@ -515,7 +520,7 @@ export default {
                 let that = this;
                 that.payments.splice(that.payments);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/payments/searchAll/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/payments/searchAll/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -541,7 +546,7 @@ export default {
                 let that = this;
                 that.estates.splice(that.estates);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/estates/search/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/estates/search/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -567,7 +572,7 @@ export default {
                 let that = this;
                 that.houseHolds.splice(that.houseHolds);
                 axios
-                    .get(`https://makaaziserverapi-production.up.railway.app/api/households/search/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/households/search/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -594,7 +599,7 @@ export default {
                 that.snackbarText2 = "Select a role";
             } else {
                 axios
-                    .patch(`https://makaaziserverapi-production.up.railway.app/api/households/update_household/${val}`, {
+                    .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
                         is_official: 0,
                         official_role: that.role,
                     })
@@ -619,7 +624,7 @@ export default {
         async assignOfficials2(val) {
             let that = this;
             axios
-                .patch(`https://makaaziserverapi-production.up.railway.app/api/households/update_household/${val}`, {
+                .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
                     is_official: 1,
                     official_role: "none",
                 })
@@ -643,7 +648,7 @@ export default {
         async DeleteOfficial(val) {
             let that = this;
             axios
-                .put(`https://makaaziserverapi-production.up.railway.app/api/officials/delete_official/${val}`, {})
+                .put(`https://makaaziserverapi-production-252f.up.railway.app/api/officials/delete_official/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
@@ -668,7 +673,7 @@ export default {
                 that.householdOwner +
                 " your account has been verified welcome to makaazi App";
             axios
-                .post(`https://makaaziserverapi-production.up.railway.app/api/officials/addOfficial`, {
+                .post(`https://makaaziserverapi-production-252f.up.railway.app/api/officials/addOfficial`, {
                     full_name: that.officialName,
                     estate_id: this.estateId,
                     role: that.role,
@@ -724,7 +729,7 @@ export default {
         async Fetch_AllPayments() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
                 .then(function (response) {
                     if (response.status === 200) {
                         that.payments = response.data;
@@ -748,7 +753,7 @@ export default {
         async Fetch_ActiveHouseholds() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -771,7 +776,7 @@ export default {
             let that = this;
             that.houseHolds.splice(that.houseHolds);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/households/getall/", {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getall/", {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -794,7 +799,7 @@ export default {
             let that = this;
             that.estate_houseHolds.splice(that.estate_houseHolds);
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -816,7 +821,7 @@ export default {
             let that = this;
             that.estates.splice(that.estates);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/estates/getall", {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/estates/getall", {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;

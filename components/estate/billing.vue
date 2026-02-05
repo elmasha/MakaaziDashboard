@@ -130,9 +130,7 @@
                         </v-card>
                     </v-col>
 
-                    <v-col cols="12" sm="4" md="4"></v-col>
-                    <v-col cols="12" sm="4" md="4"></v-col>
-                    <v-col cols="12" sm="12" md="12" v-show="paymentForm">
+                    <v-col cols="12" sm="6" md="6" v-show="paymentForm">
                         <div class="container">
                             <v-card dark color="#8051FF" elevation="0">
                                 <div>
@@ -157,7 +155,7 @@
                                                 </div>
                                             </div>
                                     </v-card-text>
-                                    <div  class="d-flex" style="padding: 0.8rem;border-radius: 1rem;background-color: antiquewhite;color: black;">
+                                    <div class="d-flex" style="padding: 0.8rem;border-radius: 1rem;background-color: antiquewhite;color: black;">
                                         <p style="font-size: 0.9rem;"> An STK push will prompted on the <b>{{ phonePrefix+phone_numer }}</b>
                                             check for an mpesa prompting you to pay <b>{{ numeral(total_price).format("0,0") }}</b> ksh</p>
                                     </div>
@@ -173,14 +171,7 @@
                 </v-row>
             </div>
         </v-col>
-        <v-col cols="12" sm="4" md="4" v-show="!showSide">
-            <v-card elevation="0" color="#8051FF" height="100vh">
-                <v-card-title>
-                    <h1 style="margin: 30px; color: white; font-size: 2.2rem">Estate Billing</h1>
-                </v-card-title>
-                <v-img style="margin: 10px" :src="walletIcon" contain height="400"> </v-img>
-            </v-card>
-        </v-col>
+
     </v-row>
 
     <v-snackbar color="primary accent-8" :timeout="6000" v-model="snackbar_s" centered bottom>
@@ -319,7 +310,7 @@ export default {
         async Check_Billing() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/estates/estate-due-disable/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/estates/estate-due-disable/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
@@ -351,7 +342,7 @@ export default {
             that.snackbar_s = true;
             that.snackbarText_s = "Checking payment status...";
             axios
-                .post("https://makaaziserverapi-production.up.railway.app/payment/stk_push_subscription/query", {
+                .post("https://makaaziserverapi-production-252f.up.railway.app/payment/stk_push_subscription/query", {
                     checkoutRequestId: that.CheckoutRequestID,
                 })
                 .then(function (response) {
@@ -381,7 +372,7 @@ export default {
         getBilling() {
             let that = this;
             axios
-                .post("https://makaaziserverapi-production.up.railway.app/api/estates/subscription", {
+                .post("https://makaaziserverapi-production-252f.up.railway.app/api/estates/subscription", {
                     estate_id: this.estate_id,
 
                 })
@@ -420,7 +411,7 @@ export default {
         async Fetch_MessageSubs() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/estates/estate-sub-msg/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/estates/estate-sub-msg/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
@@ -447,7 +438,7 @@ export default {
             let that = this;
             axios
                 .get(
-                    `https://makaaziserverapi-production.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`, {}
+                    `https://makaaziserverapi-production-252f.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`, {}
                 )
                 .then(function (response) {
                     if (response.status == 200) {
@@ -474,7 +465,7 @@ export default {
         async Fetch_ActiveSubs() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/estates/estate-sub/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/estates/estate-sub/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -506,7 +497,7 @@ export default {
             this.status = "unseen";
             this.uid = this.$fire.auth.currentUser.uid;
             axios
-                .put("https://makaaziserverapi-production.up.railway.app/notification/addNotification", {
+                .put("https://makaaziserverapi-production-252f.up.railway.app/notification/addNotification", {
                     title: this.title,
                     body: this.body,
                     from_user: this.from,
@@ -545,7 +536,7 @@ export default {
         FetchUser() {
             let that = this;
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/user/getUser/${that.$fire.auth.currentUser.uid}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/user/getUser/${that.$fire.auth.currentUser.uid}`, {})
                 .then(function (response) {
                     console.log("Payment page", response.data[0]);
                     if (response.status == 200) {
@@ -594,7 +585,7 @@ export default {
                 that.snackbarError = true;
             } else {
                 axios
-                    .post("https://makaaziserverapi-production.up.railway.app/payment/stk_push_subscription", {
+                    .post("https://makaaziserverapi-production-252f.up.railway.app/payment/stk_push_subscription", {
                         phone_number: that.phone,
                         estate_id: this.estateId,
                     })

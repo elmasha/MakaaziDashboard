@@ -10,12 +10,12 @@
         <v-spacer></v-spacer>
 
     </v-app-bar>
-     
+
     <div class="">
-      
+
         <div class="container">
-            <v-card class="mx-auto text-center" max-width="354" >
- <v-progress-linear v-show="progress_bar" indeterminate color="black"></v-progress-linear>
+            <v-card class="mx-auto text-center" max-width="354">
+                <v-progress-linear v-show="progress_bar" indeterminate color="black"></v-progress-linear>
                 <br>
                 <v-card-actions>
 
@@ -32,8 +32,7 @@
                 <div class="container" style="padding: 12px;">
                     <v-form ref="form" v-model="valid" lazy-validation>
 
-                        <v-autocomplete v-model="select" :loading="loading" :items="items"
-                         :search-input.sync="search" cache-items @change="getEStateID(select)" class="mx-4" flat hide-no-data hide-details label="   Which estate are you from?   " solo></v-autocomplete>
+                        <v-autocomplete v-model="select" :loading="loading" :items="items" :search-input.sync="search" cache-items @change="getEStateID(select)" class="mx-4" flat hide-no-data hide-details label="   Which estate are you from?   " solo></v-autocomplete>
                         <div>
                             <v-card-subtitle>
                                 {{select}}
@@ -207,7 +206,7 @@ export default {
         async getEStateID(val) {
             let that = this;
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/estates/estateName/${val}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/estates/estateName/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -237,7 +236,7 @@ export default {
             that.estates.splice(that.estates);
             that.states.splice(that.states);
             axios
-                .get("https://makaaziserverapi-production.up.railway.app/api/estates/getall", {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/estates/getall", {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -396,8 +395,8 @@ export default {
             if (this.select == null) {
                 this.snackbar2 = true;
                 this.snackbarText2 = "Provide your estate";
-            }else if(this.checkbox == false){
-this.snackbar2 = true;
+            } else if (this.checkbox == false) {
+                this.snackbar2 = true;
                 this.snackbarText2 = "Check terms and condition";
             } else {
                 let that = this;

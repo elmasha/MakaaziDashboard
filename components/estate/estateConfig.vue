@@ -379,7 +379,7 @@ export default {
             let that = this;
             that.estateConfig.splice(that.estateConfig);
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/estates-config/get_estates/${this.estateId}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/estates-config/get_estates/${this.estateId}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;

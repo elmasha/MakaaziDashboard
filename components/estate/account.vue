@@ -245,7 +245,7 @@ export default {
         async Fetch_PostAllEstates() {
             let that = this;
             axios
-                .get(`https://makaaziserverapi-production.up.railway.app/api/estates/estate/${that.$route.params.id}`, {})
+                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/estates/estate/${that.$route.params.id}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -374,7 +374,7 @@ export default {
             } else {
                 that.show6 = true;
                 axios
-                    .post("https://makaaziserverapi-production.up.railway.app/api/estates/create", {
+                    .post("https://makaaziserverapi-production-252f.up.railway.app/api/estates/create", {
                         estate_name: that.estateName,
                         estate_urn: that.estateURN,
                         estate_location: that.location,
@@ -408,7 +408,7 @@ export default {
         UploadEstateConfig(val) {
             let that = this;
             axios
-                .post("https://makaaziserverapi-production.up.railway.app/api/estates/create", {
+                .post("https://makaaziserverapi-production-252f.up.railway.app/api/estates/create", {
                     estate_id: val,
                     show_street: that.estateStreet,
                     show_section: that.estateSections,

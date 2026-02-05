@@ -186,7 +186,7 @@ export default {
     async refresh() {
       try {
         const response = await axios.get(
-          "https://makaaziserverapi-production.up.railway.app/api/household-payments/year-by-estate/" + this.estateId
+          "https://makaaziserverapi-production-252f.up.railway.app/api/household-payments/year-by-estate/" + this.estateId
         );
 
         if (response.status === 200) {
