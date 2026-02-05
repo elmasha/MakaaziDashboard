@@ -150,7 +150,7 @@
                                             <div class="">
                                                 <div class="d-flex">
                                                     <v-text-field active-class="green" outlined hint="254767**456*" v-model="phone" type="number" label="Provide mpesa number"></v-text-field>
-                                                    < </div> <p class="text-h4" style="color: white">Ksh/{{ numeral(amount).format('0,0') }}</p>
+                                                     </div> <p class="text-h4" style="color: white">Ksh/{{ numeral(amount).format('0,0') }}</p>
                                                         <p>{{ "   -- " }}{{ duration }}</p>
                                                 </div>
                                             </div>
@@ -315,8 +315,7 @@ export default {
                     if (response.status == 200) {
                         that.snackbar = true;
                         that.snackbarText = response.data;
-                        that.active = response.data.is_active;
-
+                        // that.active = response.data.is_active;
                         if (response.data.payment_status === 'Due') {
                             that.d_5 = true;
                             that.d_5 = false;

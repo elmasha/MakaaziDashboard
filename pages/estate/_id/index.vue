@@ -1,7 +1,7 @@
 <template>
 <div>
     <v-card color="white" elevation="0">
-        <v-app-bar color="white" light elevation="0">
+        <v-app-bar color="white" fixed light elevation="0">
             <v-app-bar-nav-icon @click="drawer = true"></v-app-bar-nav-icon>
 
             <div class="d-flex" style="background-color: #b6ff00; border-radius: 120px; padding: 4px">
@@ -75,7 +75,7 @@
             </template>
         </v-navigation-drawer>
 
-        <v-row >
+        <v-row  style="margin-top: 64px;">
             <v-col cols="12" sm="12" md="12">
                 <div class="" style="padding: 1.3rem;">
                     <dashboard v-show="d_1" :estateId="estateId" />

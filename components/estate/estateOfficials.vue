@@ -87,15 +87,14 @@
                             </v-card-actions>
                         </v-toolbar>
                         <div class="container">
-                           <p style="padding:30px"> Remove Officail from this estate</p>
+                            <p style="padding:30px"> Remove Officail from this estate</p>
                             <br>
-                           <div class="d-flex">
-                             <v-btn color="red">Remove</v-btn>
-                            <v-spacer></v-spacer>
-                            <v-btn>Cancle</v-btn>
-                         </div>
+                            <div class="d-flex">
+                                <v-btn color="red">Remove</v-btn>
+                                <v-spacer></v-spacer>
+                                <v-btn>Cancle</v-btn>
+                            </div>
                         </div>
-                         
 
                     </v-card>
                 </template>
@@ -345,6 +344,7 @@ export default {
                     fcmToken: that.deviceToken,
                     title: that.title,
                     body: that.body,
+                    uid: this.estate_id.toString(),
                 })
                 .then(function (response) {
                     if (response.status == 200) {
