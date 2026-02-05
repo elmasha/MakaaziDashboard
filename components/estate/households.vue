@@ -776,7 +776,7 @@ export default {
             let that = this;
             that.houseHolds.splice(that.houseHolds);
             axios
-                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getall/", {})
+                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getBHsHldEstId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
