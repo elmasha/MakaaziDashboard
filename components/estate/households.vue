@@ -41,12 +41,12 @@
                                 </template>
 
                                 <template v-slot:item.actions="{ item }">
-                                    <v-icon v-if="item.is_official == 1" small class="mr-2" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
+                                    <v-icon v-if="item.is_official == 1" small class="mr-3" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
                                     contact_number = item.contact_number,dialog = true">
                                         mdi-account-badge
                                     </v-icon>
 
-                                    <v-icon v-if="item.is_official == 1" small class="mr-2" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
+                                    <v-icon v-if="item.is_official == 1" small class="mr-3" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
                                     contact_number = item.contact_number,dialog = true">
                                         mdi-trash
                                     </v-icon>
