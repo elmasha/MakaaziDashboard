@@ -192,10 +192,11 @@ export default {
     mounted() {
         console.log("Estate ID:", this.estateId);
         this.Fetch_AllOfficials();
-        // this.Fetch_ActiveHouseholds();
-        this.Fetch_PostAllEstates();
-        this.Fetch_AllPayments();
-        this.Fetch_Estates();
+    // this.Fetch_ActiveHouseholds();
+    // this.Fetch_PostAllEstates();
+    // this.Fetch_AllPayments();
+    // this.Fetch_Estates();
+    
     },
     components: {
         Map,
