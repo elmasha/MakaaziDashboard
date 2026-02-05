@@ -36,12 +36,12 @@
                                 <!-- overdue cell -->
                                 <template #item.is_official="{ item }">
                                     <span :class="{ 'Official': item.is_official == 0, 'Non Official': item.is_official == 1 }" >
-                                        {{ item.official_role}}  {{ checkOfficials(item.is_official) }}
+                                        {{ item.official_role}} 
                                     </span>
                                 </template>
 
                                 <template v-slot:item.actions="{ item }">
-                                    <v-icon v-if="item.is_official == 0" small class="mr-2" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
+                                    <v-icon v-if="item.is_official == 1" small class="mr-2" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
                                     contact_number = item.contact_number,dialog = true">
                                         mdi-account-badge
                                     </v-icon>
@@ -196,7 +196,7 @@ export default {
     // this.Fetch_PostAllEstates();
     // this.Fetch_AllPayments();
     // this.Fetch_Estates();
-    
+
     },
     components: {
         Map,
