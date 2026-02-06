@@ -248,7 +248,6 @@
 
                 </div>
             </v-col>
-       
 
             <v-col cols="12" sm="6" md="6" lg="6">
                 <v-row>
@@ -738,6 +737,8 @@ export default {
                         // that.snackbar = true;
                         // that.snackbarText = response.data;
                         that.paymentsReceipt = response.data;
+                        that.totalPayment = that.paymentsReceipt.reduce((sum, row) => sum + Number(row.amount_paid || 0), 0);
+
                         console.log("payments Receipt", that.paymentsReceipt);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
@@ -1056,7 +1057,6 @@ export default {
                         that.payments = response.data;
 
                         // Calculate totals from all rows
-                        that.totalPayment = that.payments.reduce((sum, row) => sum + Number(row.total_paid || 0), 0);
                         that.totalPendingPayment = that.payments.reduce((sum, row) => sum + Number(row.overdue || 0), 0);
 
                         console.log("Payments total", that.totalPayment, that.totalPendingPayment);

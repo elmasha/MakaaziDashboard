@@ -42,7 +42,7 @@
 
                                 <template v-slot:item.actions="{ item }">
 
-                                    <v-icon small class="mr-2" @click="dialog = true">
+                                    <v-icon small class="mr-2" @click="dialog = true, officials_id = item.contact_number,officials_id2 = item.official_id">
                                         mdi-delete
                                     </v-icon>
 
@@ -90,9 +90,9 @@
                             <p style="padding:30px"> Remove Officail from this estate</p>
                             <br>
                             <div class="d-flex">
-                                <v-btn color="red">Remove</v-btn>
+                                <v-btn color="red" @click="RemoveOfficial2(officials_id2)">Remove</v-btn>
                                 <v-spacer></v-spacer>
-                                <v-btn>Cancle</v-btn>
+                                <v-btn @click="dialog.value = false">Cancel</v-btn>
                             </div>
                         </div>
 
@@ -149,7 +149,8 @@ export default {
     data() {
         return {
             numeral,
-
+            officials_id: null,
+            officials_id2: null,
             headers: [{
                     text: "#",
                     value: "index",
@@ -505,7 +506,7 @@ export default {
                     });
             }
         },
-        async assignOfficials2(val) {
+        async RemoveOfficial2(val) {
             let that = this;
             axios
                 .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
@@ -514,9 +515,8 @@ export default {
                 })
                 .then(function (response) {
                     if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        that.Fetch_EstateOfficials(that.estate_id);
+                        
+                        that.DeleteOfficial(that.officials_id);
                         console.log("Official assigned");
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
@@ -537,7 +537,7 @@ export default {
                     if (response.status == 200) {
                         that.snackbar = true;
                         that.snackbarText = response.data;
-                        that.Fetch_EstateOfficials(that.estate_id);
+                        that.Fetch_AllOfficials();
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
                         that.snackbarText2 = response.data;
@@ -666,7 +666,7 @@ export default {
                         // that.snackbar = true;
                         // that.snackbarText = response.data;
                         that.officials = response.data;
-                        console.log("Households", that.officials);
+                        console.log("Officials", that.officials);
                     } else if (response.status == 400) {
                         that.snackbar2 = true;
                         that.snackbarText2 = response.data;

@@ -112,13 +112,14 @@ export default {
   methods: {
     async prepareChartData() {
       let that = this;
-       await axios.get(`https://makaaziserverapi-production-252f.up.railway.app/api/charts/monthly-estate-summary/?estate_id=`+that.estateId+`&year=`+2025,{})
+      let year = new Date().getFullYear();
+       await axios.get(`https://makaaziserverapi-production-252f.up.railway.app/api/charts/monthly-estate-summary/?estate_id=`+this.estateId+`&year=`+year,{})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
                         // that.snackbarText = response.data;
                        that.data = response.data;
-                       console.log("Total per month",response.data[0].january)
+                       console.log("Total per month",response.data)
 
                        that.months2 = [`${response.data[0].january}`,`${response.data[0].february}`,`${response.data[0].march}`,`${response.data[0].april}`,`${response.data[0].may}`,
                        `${response.data[0].june}`,`${response.data[0].july}`,`${response.data[0].august}`,
