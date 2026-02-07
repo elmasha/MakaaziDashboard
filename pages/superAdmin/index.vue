@@ -40,7 +40,7 @@
             </v-list>
         </v-navigation-drawer>
 
-        <v-row justify="" align="" class="">
+        <v-row justify=""  class="">
             <v-col cols="12" sm="12" md="12">
                 <div class="container">
                     <div class="">
@@ -53,7 +53,7 @@
                     </div>
                     <v-expand-transition>
                         <v-row class="container" v-show="true">
-                            <v-col cols="6" sm="2" md="2">
+                            <v-col cols="6" sm="3" md="3">
                                 <v-card color="#8051FF" elevation="0" dark>
                                     <v-card-subtitle>
                                         <h4>Total Estates</h4>
@@ -63,7 +63,7 @@
                                     </v-card-actions>
                                 </v-card>
                             </v-col>
-                            <v-col cols="6" sm="2" md="2">
+                            <v-col cols="6" sm="3" md="3">
                                 <v-card color="#dadada" elevation="0">
                                     <v-card-subtitle>
                                         <h4>Total HouseHolds</h4>
@@ -73,7 +73,7 @@
                                     </v-card-actions>
                                 </v-card>
                             </v-col>
-                            <v-col cols="6" sm="2" md="2">
+                            <v-col cols="6" sm="3" md="3">
                                 <v-card color="#dadada" elevation="0">
                                     <v-card-subtitle>
                                         <h4>Active Residents</h4>
@@ -84,7 +84,7 @@
                                 </v-card>
                             </v-col>
                            
-                            <v-col cols="6" sm="2" md="2">
+                            <v-col cols="6" sm="3" md="3">
                                 <v-card color="#000" elevation="0" dark>
                                     <v-card-subtitle>
                                         <h4>Total Revenue</h4>
