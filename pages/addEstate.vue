@@ -365,7 +365,7 @@ export default {
                 that.show6 = true;
                 const created_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
                 axios
-                    .post("https://makaaziserverapi-production-252f.up.railway.app/api/estates/create", {
+                    .post("https://makaaziserverapi-production-c036.up.railway.app/api/estates/create", {
                         estate_name: that.estateName + " Estate",
                         estate_urn: that.estateURN,
                         estate_location: that.location,
@@ -398,7 +398,7 @@ export default {
         UploadEstateConfig(val) {
             let that = this;
             axios
-                .post("https://makaaziserverapi-production-252f.up.railway.app/api/estates-config/create", {
+                .post("https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/create", {
                     estate_id: val,
                     show_street: that.estateStreet || 0,
                     show_section: that.estateSections || 0,
@@ -427,7 +427,7 @@ export default {
         UploadEstatSection() {
             let that = this;
             axios
-                .post("https://makaaziserverapi-production-252f.up.railway.app/api/estates-config/add-section", {
+                .post("https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/add-section", {
                     estate_id: that.estate_id,
                     section_name: that.estateSections_input,
 
@@ -453,7 +453,7 @@ export default {
         UploadEstateStreet() {
             let that = this;
             axios
-                .post("https://makaaziserverapi-production-252f.up.railway.app/api/estates-config/add-street", {
+                .post("https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/add-street", {
                     estate_id: that.estate_id,
                     street_name: that.estateStreet_input,
 
@@ -479,7 +479,7 @@ export default {
         UploadEstateCourt() {
             let that = this;
             axios
-                .post("https://makaaziserverapi-production-252f.up.railway.app/api/estates-config/add-court", {
+                .post("https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/add-court", {
                     estate_id: that.estate_id,
                     court_name: that.estateCourts_input,
 

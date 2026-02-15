@@ -215,6 +215,55 @@
                 <div>
                     <div class="container">
                         <v-card elevation="0">
+                            <div class="d-flex">
+                                <div class="container">
+                                <v-subheader>Estate Addresses</v-subheader>
+                                <label for="" style="font-size: 0.7rem;">Available Address for this estate</label>
+                                <v-chip-group mandatory class="mb-2">
+                                    <v-chip v-show="show_section" @click="label = 'Section',Fetch_EstateAddress()" class="ma-2" label>Section</v-chip>
+                                    <v-chip v-show="show_street" @click="label = 'Street',Fetch_EstateAddress()" class="ma-2" label>Street</v-chip>
+                                    <v-chip v-show="show_court" @click="label = 'Court',Fetch_EstateAddress()" class="ma-2" label>Court</v-chip>
+                                </v-chip-group>
+                            </div>
+                            <v-spacer/>
+                            <v-spacer/>
+                             <div class="container">
+                                <v-btn  @click="dialogAddress = true">
+                                    Add Address
+                                <v-icon color="#808080">mdi-plus</v-icon>    
+                            </v-btn>
+                            <v-btn icon @click="Fetch_EstateAddress()">
+                                <v-icon color="#808080">mdi-refresh</v-icon>    
+                            </v-btn>
+                             </div>
+                            
+                            </div>
+                            <v-data-table :headers="headers_config" :items="addressEstate" :items-per-page="5" class="elevation-0">
+                                <!-- index column -->
+                                <!-- <template #item.index="{ item }">
+                                    {{ item.index }}
+                                </template> -->
+
+                                <!-- overdue cell -->
+                                <!-- <template #item.overdue="{ item }">
+                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
+                                        {{ formatCurrency(item.overdue) }}
+                                    </span>
+                                </template> -->
+
+                                <!-- any month cell could use the default -->
+                            </v-data-table>
+
+                        </v-card>
+
+                    </div>
+
+                </div>
+            </v-col>
+            <v-col cols="12" sm="6" md="6" lg="6">
+                <div>
+                    <div class="container">
+                        <v-card elevation="0">
                             <v-subheader>Officials</v-subheader>
                             <v-data-table :headers="headers_of" :items="officials" :items-per-page="5" class="elevation-0">
                                 <!-- index column -->
@@ -393,6 +442,59 @@
                     </v-card>
                 </template>
             </v-dialog>
+             <v-dialog v-model="dialogAddress" transition="dialog-top-transition" max-width="600">
+                <v-card>
+                    <div class="container">
+                        <v-form>
+                        <v-container>
+                            <v-row>
+
+                                <v-col cols="12" md="6" v-show="show_section">
+                                    <div class="d-flex">
+                                        <v-text-field v-model="estateSections_input" label="Estate sections" required type="alphanumeric"></v-text-field>
+
+                                        <v-btn color="black" @click="UploadEstatSection">
+                                            <div class="d-flex">
+                                                <v-icon small color="white">mdi-plus</v-icon>
+                                            </div>
+                                        </v-btn>
+                                    </div>
+                                </v-col>
+                                <v-col cols="12" md="6" v-show="show_street">
+                                    <div class="d-flex">
+                                        <v-text-field v-model="estateStreet_input" label="Estate streets" required type="alphanumeric">
+                                        </v-text-field>
+                                        <v-btn color="black" @click="UploadEstateStreet">
+                                            <div class="d-flex">
+                                                <v-icon small color="white">mdi-plus</v-icon>
+                                            </div>
+                                        </v-btn>
+                                    </div>
+
+                                </v-col>
+                                <v-col cols="12" md="6" v-show="show_court">
+                                    <div class="d-flex">
+                                        <v-text-field v-model="estateCourts_input" label="Estate courts" required type="alphanumeric"></v-text-field>
+                                        <v-btn color="black">
+                                            <div class="d-flex">
+                                                <v-icon small color="white" @click="UploadEstateCourt">mdi-plus</v-icon>
+                                            </div>
+                                        </v-btn>
+                                    </div>
+
+                                </v-col>
+
+                                <v-col cols="12" md="4">
+                                    <v-btn width="100%" color="black" class="text--white" style="color: white" @click="dialogAddress = false">Done</v-btn>
+                                </v-col>
+
+                            </v-row>
+
+                        </v-container>
+                    </v-form>
+                    </div>
+                </v-card>
+             </v-dialog>
         </v-col>
     </v-row>
 </div>
@@ -402,7 +504,6 @@
 import MyBarChart from '@/components/charts/barChartPayment'
 import CryptoJS from "crypto-js";
 import axios from "axios";
-import dayjs from "@nuxtjs/dayjs";
 import moment from "moment";
 import numeral from 'numeral';
 import Map from "@/components/map.vue";
@@ -434,6 +535,8 @@ export default {
         this.Fetch_AllPayments();
         this.Fetch_AllOfficials2();
         this.Fetch_EstateReceipt();
+        this.Fetch_EstateAddress();
+        this.Fetch_EstateConfig();
     },
     components: {
         Map,
@@ -444,7 +547,45 @@ export default {
     },
     data() {
         return {
+            dialogAddress:false,
+            estateCourts_input: null,
+            estateSections_input: null,
+            estateStreet_input: null,
+            label: "Section",
+            show_section: false,
+            show_street: false,
+            show_court: false,
+            config: null,
             numeral,
+            addressEstate: [],
+            headers_config: [{
+                    text: "#",
+                    value: "index",
+                    width: 50,
+                },
+                {
+                    text: "Name",
+                    value: "name",
+                    width: 200,
+                },
+                {
+                    text: "House count",
+                    value: "households",
+                    align: "right",
+                },
+
+                {
+                    text: "Total paid",
+                    value: "total_paid",
+                    align: "right",
+                },
+                {
+                    text: "Arrears",
+                    value: "arrears",
+                    align: "right",
+                },
+
+            ],
             headers_of: [{
                     text: "#",
                     value: "index",
@@ -705,11 +846,137 @@ export default {
         };
     },
     methods: {
+        UploadEstatSection() {
+            let that = this;
+            axios
+                .post("https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/add-section", {
+                    estate_id: this.estateId,
+                    section_name: that.estateSections_input,
+
+                })
+                .then(function (response) {
+                    console.log(response);
+                    if (response.status == 200) {
+                        that.snackbar = true;
+                        that.snackbarText = response.data;
+                        that.estateSections_input = null;
+                        that.Fetch_EstateAddress();
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+
+        },
+        UploadEstateStreet() {
+            let that = this;
+            axios
+                .post("https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/add-street", {
+                    estate_id: this.estateId,
+                    street_name: that.estateStreet_input,
+
+                })
+                .then(function (response) {
+                    console.log(response);
+                    if (response.status == 200) {
+                        that.snackbar = true;
+                        that.snackbarText = response.data;
+                        that.estateStreet_input = null;
+                        that.Fetch_EstateAddress();
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+
+        },
+        UploadEstateCourt() {
+            let that = this;
+            axios
+                .post("https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/add-court", {
+                    estate_id: this.estateId,
+                    court_name: that.estateCourts_input,
+
+                })
+                .then(function (response) {
+                    console.log(response);
+                    if (response.status == 200) {
+                        that.snackbar = true;
+                        that.snackbarText = response.data;
+                        that.estateCourts_input = null;
+                        that.Fetch_EstateAddress();
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
+        async Fetch_EstateConfig() {
+            let that = this;
+            axios
+                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/config/${this.estateId}`, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        // that.snackbar = true;
+                        // that.snackbarText = response.data;
+                        that.config = response.data;
+                        that.show_section = that.config.show_section;
+                        that.show_street = that.config.show_street;
+                        that.show_court = that.config.show_court;
+                        console.log("Config", that.config);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
+        async Fetch_EstateAddress() {
+            let that = this;
+            that.addressEstate.splice(0, that.addressEstate.length);
+            axios
+                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/officials/address-summary?estate_id=${this.estateId}&type=${this.label.toLowerCase()}`, {})
+                .then(function (response) {
+                    if (response.status == 200) {
+                        // that.snackbar = true;
+                        // that.snackbarText = response.data;
+                        that.addressEstate = response.data;
+                        console.log("Adress", that.addressEstate);
+                    } else if (response.status == 400) {
+                        that.snackbar2 = true;
+                        that.snackbarText2 = response.data;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    that.snackbarText2 = error;
+                    that.snackbar2 = true;
+                });
+        },
         async Fetch_AllOfficials2() {
             let that = this;
             that.officials.splice(that.officials);
             axios
-                .get("https://makaaziserverapi-production-252f.up.railway.app/api/officials/getOfficialByEstateId/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-c036.up.railway.app/api/officials/getOfficialByEstateId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -731,7 +998,7 @@ export default {
             let that = this;
             that.paymentsReceipt.splice(that.paymentsReceipt);
             axios
-                .get("https://makaaziserverapi-production-252f.up.railway.app/api/payments/getByEstateId/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-c036.up.railway.app/api/payments/getByEstateId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -759,7 +1026,7 @@ export default {
         async getToken(val) {
             let that = this;
             axios
-                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/fcm/get-token/${val}`, {})
+                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/fcm/get-token/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.deviceToken = response.data.fcm_token;
@@ -779,7 +1046,7 @@ export default {
             let that = this;
 
             axios
-                .post(`https://makaaziserverapi-production-252f.up.railway.app/api/fcm/sendNotification`, {
+                .post(`https://makaaziserverapi-production-c036.up.railway.app/api/fcm/sendNotification`, {
                     fcmToken: that.deviceToken,
                     title: that.title,
                     body: that.body,
@@ -815,7 +1082,7 @@ export default {
                 that.estate_houseHolds.splice(that.estate_houseHolds);
                 axios
                     .get(
-                        `https://makaaziserverapi-production-252f.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
+                        `https://makaaziserverapi-production-c036.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
                     )
                     .then(function (response) {
                         if (response.status == 200) {
@@ -842,7 +1109,7 @@ export default {
                 let that = this;
                 that.payments.splice(that.payments);
                 axios
-                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/payments/searchAll/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/payments/searchAll/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -868,7 +1135,7 @@ export default {
                 let that = this;
                 that.estates.splice(that.estates);
                 axios
-                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/estates/search/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/estates/search/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -894,7 +1161,7 @@ export default {
                 let that = this;
                 that.houseHolds.splice(that.houseHolds);
                 axios
-                    .get(`https://makaaziserverapi-production-252f.up.railway.app/api/households/search/?query=${val}`, {})
+                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/households/search/?query=${val}`, {})
                     .then(function (response) {
                         if (response.status == 200) {
                             // that.snackbar = true;
@@ -921,7 +1188,7 @@ export default {
                 that.snackbarText2 = "Select a role";
             } else {
                 axios
-                    .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
+                    .patch(`https://makaaziserverapi-production-c036.up.railway.app/api/households/update_household/${val}`, {
                         is_official: 0,
                         official_role: that.role,
                     })
@@ -946,7 +1213,7 @@ export default {
         async assignOfficials2(val) {
             let that = this;
             axios
-                .patch(`https://makaaziserverapi-production-252f.up.railway.app/api/households/update_household/${val}`, {
+                .patch(`https://makaaziserverapi-production-c036.up.railway.app/api/households/update_household/${val}`, {
                     is_official: 1,
                     official_role: "none",
                 })
@@ -970,7 +1237,7 @@ export default {
         async DeleteOfficial(val) {
             let that = this;
             axios
-                .put(`https://makaaziserverapi-production-252f.up.railway.app/api/officials/delete_official/${val}`, {})
+                .put(`https://makaaziserverapi-production-c036.up.railway.app/api/officials/delete_official/${val}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         that.snackbar = true;
@@ -995,7 +1262,7 @@ export default {
                 that.householdOwner +
                 " your account has been verified welcome to makaazi App";
             axios
-                .post(`https://makaaziserverapi-production-252f.up.railway.app/api/officials/addOfficial`, {
+                .post(`https://makaaziserverapi-production-c036.up.railway.app/api/officials/addOfficial`, {
                     full_name: that.full_name,
                     estate_id: that.estate_id,
                     role: that.role,
@@ -1051,7 +1318,7 @@ export default {
         async Fetch_AllPayments() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production-252f.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
+                .get("https://makaaziserverapi-production-c036.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
                 .then(function (response) {
                     if (response.status === 200) {
                         that.payments = response.data;
@@ -1074,7 +1341,7 @@ export default {
         async Fetch_ActiveHouseholds() {
             let that = this;
             axios
-                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-c036.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1097,7 +1364,7 @@ export default {
             let that = this;
             that.houseHolds.splice(that.houseHolds);
             axios
-                .get("https://makaaziserverapi-production-252f.up.railway.app/api/households/getBHsHldEstId/" + this.estateId, {})
+                .get("https://makaaziserverapi-production-c036.up.railway.app/api/households/getBHsHldEstId/" + this.estateId, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1120,7 +1387,7 @@ export default {
             let that = this;
             that.estate_houseHolds.splice(that.estate_houseHolds);
             axios
-                .get(`https://makaaziserverapi-production-252f.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`, {})
+                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/households/getBHsHldEstId/${this.estateId}`, {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
@@ -1142,7 +1409,7 @@ export default {
             let that = this;
             that.estates.splice(that.estates);
             axios
-                .get("https://makaaziserverapi-production-252f.up.railway.app/api/estates/getall", {})
+                .get("https://makaaziserverapi-production-c036.up.railway.app/api/estates/getall", {})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;
