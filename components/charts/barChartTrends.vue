@@ -89,7 +89,7 @@ export default {
   methods: {
     async prepareChartData() {
       let that = this;
-       await axios.get('https://makaaziserverapi-production-c036.up.railway.app/api/charts/trends/'+that.estateId,{})
+       await axios.get('https://makaaziserver22.up.railway.app/api/charts/trends/'+that.estateId,{})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;

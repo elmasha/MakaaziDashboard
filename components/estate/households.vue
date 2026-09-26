@@ -1,1446 +1,1295 @@
 <template>
-<div>
-    <v-card elevation="0">
-        <div class="">
-            <v-card-actions>
-                <v-card-title>
-                    <h2>HouseHolds</h2>
-                </v-card-title>
-                <v-spacer></v-spacer>
-                <!-- <v-btn icon>
-                                <v-icon>mdi-account</v-icon>
-                            </v-btn> -->
-                <v-btn icon>
-                    <v-icon>mdi-magnify</v-icon>
-                </v-btn>
-                <v-btn icon>
-                    <v-icon>mdi-cog-outline</v-icon>
-                </v-btn>
-            </v-card-actions>
+  <div class="households-page">
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Households</h1>
+        <p class="page-sub">
+          {{ filteredHouseholds.length }} of {{ houseHolds.length }} households
+        </p>
+      </div>
+      <div class="header-actions">
+        <button class="quick-btn" @click="refresh" :disabled="loading">
+          <v-icon size="16" :class="{ spinning: loading }">mdi-refresh</v-icon>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SEARCH & FILTERS
+         ============================================================ -->
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <v-icon size="18" color="#9ca3af" class="search-icon">mdi-magnify</v-icon>
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Search by name, phone, house #, or UID"
+          class="search-input"
+        />
+        <button v-if="search" class="search-clear" @click="search = ''">
+          <v-icon size="14">mdi-close</v-icon>
+        </button>
+      </div>
+
+      <div class="filter-tabs">
+        <button
+          v-for="f in filterOptions"
+          :key="f.value"
+          class="filter-tab"
+          :class="{ 'filter-tab-active': filter === f.value }"
+          @click="filter = f.value"
+        >
+          {{ f.label }}
+          <span v-if="f.count !== undefined" class="filter-count">{{ f.count }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         LOADING
+         ============================================================ -->
+    <div v-if="loading && !houseHolds.length" class="loading-list">
+      <v-skeleton-loader type="list-item-avatar-two-line" />
+      <v-skeleton-loader type="list-item-avatar-two-line" />
+      <v-skeleton-loader type="list-item-avatar-two-line" />
+      <v-skeleton-loader type="list-item-avatar-two-line" />
+    </div>
+
+    <!-- ============================================================
+         EMPTY
+         ============================================================ -->
+    <div v-else-if="!filteredHouseholds.length" class="empty-state">
+      <div class="empty-icon">
+        <v-icon size="42" color="#cbd5e1">
+          {{ search ? "mdi-magnify-close" : "mdi-home-search-outline" }}
+        </v-icon>
+      </div>
+      <div class="empty-title">
+        {{ search ? "No matches" : "No households yet" }}
+      </div>
+      <div class="empty-text">
+        {{ search ? "Try a different search term or clear the filters." : "Households will appear here once residents register." }}
+      </div>
+      <button v-if="search" class="empty-btn" @click="search = ''">
+        Clear search
+      </button>
+    </div>
+
+    <!-- ============================================================
+         LIST
+         ============================================================ -->
+    <div v-else class="household-list">
+      <div
+        v-for="h in filteredHouseholds"
+        :key="h.household_id"
+        class="household-card"
+        :class="{ 'household-card-official': h.is_official }"
+      >
+        <!-- Avatar -->
+        <div class="hh-avatar" :class="{ 'hh-avatar-official': h.is_official }">
+          {{ initialsOf(h.primary_owner) }}
         </div>
-    </v-card>
-    <v-card color="#f0f0f0" elevation="0" class="" style="padding: 1rem;">
-        <v-row>
 
-            <v-col cols="12" sm="12" md="12" lg="12">
-                <div>
-                    <div class="container">
-                        <v-card elevation="0">
-                            <v-subheader></v-subheader>
-                            <v-data-table :headers="headers" :items="houseHolds" :items-per-page="10" class="elevation-0">
-                                <!-- index column -->
-                                <template #item.index="{ item }">
-                                    {{ item.index }}
-                                </template>
+        <!-- Info -->
+        <div class="hh-info">
+          <div class="hh-name-row">
+            <span class="hh-name">{{ h.primary_owner }}</span>
+            <v-chip
+              v-if="h.is_official"
+              x-small
+              label
+              color="#d1fae5"
+              style="color: #065f46; font-weight: 700;"
+            >
+              <v-icon x-small left color="#065f46">mdi-shield-account</v-icon>
+              {{ h.official_role || "Official" }}
+            </v-chip>
+            <v-chip
+              v-if="!isActive(h)"
+              x-small
+              label
+              color="#fef3c7"
+              style="color: #92400e; font-weight: 700;"
+            >
+              Inactive
+            </v-chip>
+          </div>
 
-                                <!-- overdue cell -->
-                                <template #item.is_official="{ item }">
-                                    <span :class="{ 'Official': item.is_official == 0, 'Non Official': item.is_official == 1 }" >
-                                        {{ item.official_role}} 
-                                    </span>
-                                </template>
+          <div class="hh-meta">
+            <span class="hh-meta-item">
+              <v-icon size="12" color="#9ca3af">mdi-home-outline</v-icon>
+              {{ h.house_number || "No #" }}
+            </span>
+            <span class="hh-meta-dot">·</span>
+            <span class="hh-meta-item">
+              <v-icon size="12" color="#9ca3af">mdi-phone-outline</v-icon>
+              {{ h.contact_number || "—" }}
+            </span>
+            <span class="hh-meta-dot" v-if="h.section">·</span>
+            <span class="hh-meta-item" v-if="h.section">
+              <v-icon size="12" color="#9ca3af">mdi-map-marker-outline</v-icon>
+              {{ h.section }}
+            </span>
+          </div>
 
-                                <template v-slot:item.actions="{ item }">
-                                    <v-icon v-if="item.is_official == 1" small class="mr-3" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
-                                    contact_number = item.contact_number,dialog = true">
-                                        mdi-account-badge
-                                    </v-icon>
+          <div class="hh-tags">
+            <span v-if="h.court" class="hh-tag hh-tag-court">{{ h.court }}</span>
+            <span v-if="h.street" class="hh-tag hh-tag-street">{{ h.street }}</span>
+            <span v-if="h.residence_status" class="hh-tag hh-tag-status">
+              {{ h.residence_status }}
+            </span>
+            <span v-if="h.caretaker_name" class="hh-tag hh-tag-care">
+              <v-icon x-small>mdi-account-supervisor</v-icon>
+              {{ h.caretaker_name }}
+            </span>
+          </div>
+        </div>
 
-                                    <v-icon v-if="item.is_official == 0" small class="mr-3" @click="getToken(item.household_id),officialName = item.primary_owner,officialUID = item.uid,officialID = item.household_id
-                                    contact_number = item.contact_number,dialog = true">
-                                        mdi-trash
-                                    </v-icon>
+        <!-- Actions -->
+        <div class="hh-actions">
+          <button
+            v-if="!h.is_official"
+            class="hh-btn hh-btn-promote"
+            @click="openAssign(h)"
+          >
+            <v-icon size="14">mdi-shield-account-outline</v-icon>
+            <span>Make official</span>
+          </button>
+          <button
+            v-else
+            class="hh-btn hh-btn-demote"
+            @click="openRevoke(h)"
+          >
+            <v-icon size="14">mdi-account-remove-outline</v-icon>
+            <span>Revoke</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
-                                </template>
+    <!-- ============================================================
+         ASSIGN OFFICIAL DIALOG
+         ============================================================ -->
+    <v-dialog v-model="assignDialog" max-width="480" content-class="official-dialog">
+      <div class="dialog-shell">
+        <!-- Header -->
+        <div class="dialog-header">
+          <div class="dialog-header-icon">
+            <v-icon color="white" size="20">mdi-shield-account</v-icon>
+          </div>
+          <div class="flex-grow-1" style="min-width: 0">
+            <div class="dialog-title">Make official</div>
+            <div class="dialog-sub">{{ selected?.primary_owner || "—" }}</div>
+          </div>
+          <button class="dialog-close" @click="assignDialog = false">
+            <v-icon size="18" color="white">mdi-close</v-icon>
+          </button>
+        </div>
 
-                                <!-- any month cell could use the default -->
-                            </v-data-table>
+        <!-- Body -->
+        <div class="dialog-body">
+          <!-- Person preview -->
+          <div class="preview-row">
+            <div class="preview-avatar">
+              {{ initialsOf(selected?.primary_owner) }}
+            </div>
+            <div class="preview-info">
+              <div class="preview-name">{{ selected?.primary_owner }}</div>
+              <div class="preview-meta">
+                Hs {{ selected?.house_number || "—" }} ·
+                {{ selected?.contact_number || "—" }}
+              </div>
+            </div>
+          </div>
 
-                        </v-card>
+          <label class="field-label">Select role</label>
+          <div class="role-grid">
+            <button
+              v-for="r in roles"
+              :key="r.name"
+              class="role-card"
+              :class="{ 'role-card-active': role === r.name }"
+              @click="role = r.name"
+            >
+              <div class="role-icon" :class="`role-icon-${r.color}`">
+                <v-icon size="16" color="white">{{ r.icon }}</v-icon>
+              </div>
+              <div class="role-text">
+                <div class="role-name">{{ r.name }}</div>
+                <div class="role-sub">{{ r.description }}</div>
+              </div>
+              <v-icon
+                v-if="role === r.name"
+                size="18"
+                color="#7c3aed"
+                class="role-check"
+              >
+                mdi-check-circle
+              </v-icon>
+            </button>
+          </div>
+        </div>
 
-                    </div>
+        <!-- Footer -->
+        <div class="dialog-footer">
+          <v-btn text rounded class="text-capitalize flex-grow-1" @click="assignDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn
+            rounded
+            depressed
+            color="#7c3aed"
+            dark
+            class="text-capitalize font-weight-bold flex-grow-1"
+            :loading="saving"
+            :disabled="!role"
+            @click="confirmAssign"
+          >
+            Confirm
+          </v-btn>
+        </div>
+      </div>
+    </v-dialog>
 
-                </div>
-            </v-col>
+    <!-- ============================================================
+         CONFIRM REVOKE DIALOG
+         ============================================================ -->
+    <v-dialog v-model="revokeDialog" max-width="420" content-class="confirm-dialog">
+      <div class="confirm-shell">
+        <div class="confirm-icon">
+          <v-icon size="34" color="#ef4444">mdi-account-remove-outline</v-icon>
+        </div>
+        <div class="confirm-title">Revoke official role?</div>
+        <div class="confirm-text">
+          <strong>{{ selected?.primary_owner }}</strong> will lose the
+          <strong>{{ selected?.official_role }}</strong> role and return to being a regular resident.
+        </div>
+        <div class="confirm-actions">
+          <v-btn
+            block
+            rounded
+            text
+            class="text-capitalize flex-grow-1"
+            @click="revokeDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            block
+            rounded
+            depressed
+            color="#ef4444"
+            dark
+            class="text-capitalize font-weight-bold flex-grow-1"
+            :loading="saving"
+            @click="confirmRevoke"
+          >
+            Revoke
+          </v-btn>
+        </div>
+      </div>
+    </v-dialog>
 
-            <v-col cols="12" sm="12" md="12"> </v-col>
-        </v-row>
-
-        <v-snackbar color="primary accent-8" :timeout="6000" v-model="snackbar_s" centered bottom>
-            {{ snackbarText_s }}
-        </v-snackbar>
-        <v-snackbar color="success" :timeout="2000" v-model="snackbar" outlined center>
-            {{ snackbarText }}
-        </v-snackbar>
-        <v-snackbar color="error" :timeout="2500" v-model="snackbar2" outlined center>
-            {{ snackbarText2 }}
-        </v-snackbar>
-    </v-card>
-    <v-row justify="space-around">
-        <v-col cols="auto">
-            <v-dialog v-model="dialog" transition="dialog-top-transition" max-width="600">
-                <!-- <template v-slot:activator="{ on, attrs }">
-            <v-btn color="primary" v-bind="attrs" v-on="on">From the top</v-btn>
-          </template> -->
-                <template v-slot:default="dialog">
-                    <v-card>
-                        <v-toolbar color="#b6ff00" light>Add Official/Agent
-                            <br />
-
-                            <v-spacer></v-spacer>
-                            <v-card-actions class="justify-end">
-                                <v-btn text @click="dialog.value = false">Close</v-btn>
-                            </v-card-actions>
-                        </v-toolbar>
-                        <v-card-text>
-                            <div class="text-span pa-2">
-                                <!-- <h2>{{ estate_name }}</h2>
-                                <br />
-                                <h3>{{ estate_urn }}</h3> -->
-                            </div>
-                        </v-card-text>
-
-                        <div class="container">
-                            <div class="">
-                                <v-select v-model="role" :items="roles" label="Role" flat required></v-select>
-                            </div>
-                            <div class="row text--center">
-                                <!-- <div v-for="tag in houseHolds" :key="tag.id" class="col-md-6"></div> -->
-
-                                <v-list subheader>
-                                    <v-subheader>Set Official</v-subheader>
-
-                                    <v-list-item>
-                                        <v-list-item>
-                                            <v-list-item-avatar>
-                                                <v-avatar color="#8051FF" size="48">
-                                                    <span style="color: black">{{
-                              officialName.substring(0, 3)
-                            }}</span>
-                                                </v-avatar>
-                                            </v-list-item-avatar>
-
-                                            <v-list-item-content>
-                                                <v-list-item-title>{{ officialName }}</v-list-item-title>
-                                                <v-list-item-title>{{ role }}</v-list-item-title>
-                                                <v-list-item-title>{{ estate_urn }}</v-list-item-title>
-                                            </v-list-item-content>
-                                            <v-list-item-icon>
-                                                <v-spacer></v-spacer>
-
-                                                <!-- <div>
-                                                    <v-card-actions>
-                                                        <v-icon color="green" v-show="hs.is_official ? false : true">mdi-account-badge</v-icon>
-                                                    </v-card-actions>
-                                                </div> -->
-                                            </v-list-item-icon>
-
-                                        </v-list-item>
-                                        <v-btn color="black" style="color: black;" outlined @click="assignOfficials(officialID, officialUID)">Add an official</v-btn>
-                                    </v-list-item>
-                                </v-list>
-
-                            </div>
-                        </div>
-                        <v-form v-show="false" @submit.prevent="AddOfficial">
-                            <v-text-field v-model="full_name" label="Full Name" outlined required></v-text-field>
-
-                            <v-select v-model="role" :items="roles" label="Role" outlined required></v-select>
-
-                            <v-text-field v-model="contact_number" label="Contact Number" outlined required></v-text-field>
-
-                            <v-text-field v-model="email" label="Email Address" outlined required></v-text-field>
-
-                            <v-btn color="#b6ff00" class="mt-4" type="submit" style="color: black">Submit</v-btn>
-                        </v-form>
-                    </v-card>
-                </template>
-            </v-dialog>
-        </v-col>
-    </v-row>
-</div>
+    <!-- Snackbars -->
+    <v-snackbar v-model="snackbar" color="success" :timeout="2500" top rounded="pill">
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">mdi-check-circle</v-icon>
+        <span>{{ snackbarText }}</span>
+      </div>
+    </v-snackbar>
+    <v-snackbar v-model="snackbar2" color="error" :timeout="3000" top rounded="pill">
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">mdi-alert-circle</v-icon>
+        <span>{{ snackbarText2 }}</span>
+      </div>
+    </v-snackbar>
+  </div>
 </template>
 
 <script>
-import MyBarChart from '@/components/charts/barChartPayment'
-import CryptoJS from "crypto-js";
 import axios from "axios";
-import dayjs from "@nuxtjs/dayjs";
-import moment from "moment";
-import numeral from 'numeral';
-import Map from "@/components/map.vue";
 
-import HouseholdBarChart from '~/components/charts/HouseholdBarChart.vue'
-import barChart from '@/components/charts/barChartTrends.vue'
-import paymentSummary from "@/components/paymentSummary.vue";
-
-import {
-    uuid
-} from "vue-uuid";
-
-const keyValue = "fd85b4945YF'i"; // your key value (eg: key)
-const ivKey = "smslt";
+const API = "https://makaaziserver22.up.railway.app/api";
 
 export default {
-    name: "households",
-    props: {
-        estateId: {
-            type: Number,
-            required: true,
-        },
-    },
-    mounted() {
-        console.log("Estate ID:", this.estateId);
-        this.Fetch_AllOfficials();
-    // this.Fetch_ActiveHouseholds();
-    // this.Fetch_PostAllEstates();
-    // this.Fetch_AllPayments();
-    // this.Fetch_Estates();
+  name: "EstateHouseholds",
+  props: {
+    estateId: { type: Number, required: true },
+  },
+  data() {
+    return {
+      loading: false,
+      saving: false,
+      houseHolds: [],
 
-    },
-    components: {
-        Map,
-        paymentSummary,
-        HouseholdBarChart,
-        MyBarChart,
-        barChart
-    },
-    data() {
-        return {
-            numeral,
-            headers: [{
-                    text: "Active",
-                    value: "active",
-                    align: "right",
-                },
-                {
-                    text: "#",
-                    value: "index",
-                    width: 50,
-                },
-                {
-                    text: "Name",
-                    value: "primary_owner",
-                    width: 200,
-                },
-                {
-                    text: "House no",
-                    value: "house_number",
-                    align: "right",
-                },
+      // Filters
+      search: "",
+      filter: "all", // all | official | resident | inactive
 
-                {
-                    text: "Phone no",
-                    value: "contact_number",
-                    align: "right",
-                },
-                {
-                    text: "Court",
-                    value: "court",
-                    align: "right",
-                },
+      // Assign dialog
+      assignDialog: false,
+      selected: null,
+      role: null,
 
-                {
-                    text: "Section",
-                    value: "section",
-                    align: "right",
-                }, {
-                    text: "Caretaker",
-                    value: "caretaker_name",
-                    align: "right",
-                },
+      // Revoke dialog
+      revokeDialog: false,
 
-                {
-                    text: "Spouse",
-                    value: "spouse_name",
-                    align: "right",
-                },
-                {
-                    text: "Res status",
-                    value: "residence_status",
-                    align: "right",
-                },
-                {
-                    text: "Official",
-                    value: "is_official",
-                    align: "right",
-                },
-                {
-                    text: "UID",
-                    value: "uid",
-                    align: "right",
-                },
-                {
-                    text: 'Assing officials',
-                    value: 'actions',
-                    sortable: false
-                },
+      // Roles
+      roles: [
+        {
+          name: "Chairman",
+          description: "Estate leadership",
+          icon: "mdi-crown-outline",
+          color: "purple",
+        },
+        {
+          name: "Secretary",
+          description: "Records & documents",
+          icon: "mdi-file-document-outline",
+          color: "blue",
+        },
+        {
+          name: "Treasurer",
+          description: "Finances & collections",
+          icon: "mdi-cash-multiple",
+          color: "green",
+        },
+      ],
 
-            ],
-            paymentData: [{
-                    month: 'January',
-                    amount: 1200
-                },
-                {
-                    month: 'February',
-                    amount: 950
-                },
-                {
-                    month: 'March',
-                    amount: 1600
-                },
-                {
-                    month: 'April',
-                    amount: 1100
-                }
-            ],
-            roles: ["Chairman", "Secretary", "Treasurer"],
-            dialog: false,
-            totalEstate: 0,
-            totalResidence: 0,
-            totalActiveResidence: 0,
-            estate_name: null,
-            estate_urn: null,
-            show: true,
-            switch: false,
-            drawer: false,
-            group: null,
-            estates_search: "",
-            pay_search: "",
-            household_search: "",
-            search_estates: [],
-            payments: [],
-            houseHolds: [],
-            estate_houseHolds: [],
-            rules: [
-                (value) => !!value || "Required.",
-                (value) => (value || "").length <= 4 || "Max 4 characters",
-            ],
-            estates: [],
-            deposit: true,
-            depo_amount: "",
-            depo_number: "",
-            showB: false,
-            pin_input: "",
-            pin_input_deposit: "",
-            cash_deposit_dialog: false,
-            cash_refund_dialog: false,
-            pin_set_dialog: false,
-            pin_dialog: false,
-            pin_dialog2: false,
-            pin_view_bal_dialog: false,
-            pin: null,
-            pinbal: null,
-            pin_transfer: null,
-            pin_transact: null,
-            refund: false,
-            password_status: false,
-            stk_push: false,
-            verify_pin: null,
-            auth_state: false,
-            security_quiz: false,
-            security_key: false,
-            secretKey: null,
-            set_Pin: false,
-            pass_status: "",
-            pin: null,
-            verify_pin: null,
-            b2c: false,
-            bg: require("@/assets/bg.png"),
-            logo: require("@/assets/logo.svg"),
-            errorResponse: "",
-            successResponse: "",
-            Amount: "",
-            Phone: null,
-            UserName: "",
-            snackbar_s: false,
-            snackbarText_s: "",
-            snackbar: false,
-            snackbar2: false,
-            snackbarText: "",
-            snackbarText2: "",
-            status: false,
-            timerEnabled: false,
-            show: false,
-            show6: false,
-            timerCount: 25,
-            officialName: null,
-            officialUID: null,
-            officialID: null,
-            valid: true,
-            name: "",
-            nameRules: [
-                (v) => !!v || "Name is required",
-                (v) => (v && v.length <= 20) || "Name must be less than 10 characters",
-            ],
-            email: "",
-            emailRules: [
-                (v) => !!v || "E-mail is required",
-                (v) => /.+@.+\..+/.test(v) || "E-mail must be valid",
-            ],
-            select: null,
-            items: ["Item 1", "Item 2", "Item 3", "Item 4"],
-            checkbox: false,
-            CheckoutRequestID: "",
-            balance: "0",
-            transactions: [],
-            show6: false,
-            errorResponse: "",
-            successResponse: "",
-            timerEnabled3: false,
-            timerCount3: 2,
-            timerEnabled2: false,
-            timerCount2: 2,
-            uid: null,
-            payment: false,
-            full_name: null,
-            role: null,
-            contact_number: null,
-            email: null,
-            estate_urn: null,
-            estate_id: null,
-            payment_msg: "",
-            deviceToken: "",
-            title: "",
-            body: "",
-            householdOwner: "",
-            totalPayment: 0,
-            totalPendingPayment: 0,
-        };
-    },
-    methods: {
-        async Fetch_Estates() {
-            let that = this;
-            axios
-                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/estates/estate/${this.estateId}`, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;           
-                        that.estate_urn = response.data.estate_urn;
-                        console.log("Estates", response.data);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
+      // Snackbars
+      snackbar: false,
+      snackbarText: "",
+      snackbar2: false,
+      snackbarText2: "",
+    };
+  },
+  computed: {
+    filterOptions() {
+      const list = this.houseHolds;
+      return [
+        { value: "all", label: "All", count: list.length },
+        {
+          value: "official",
+          label: "Officials",
+          count: list.filter((h) => h.is_official).length,
         },
-        formatCurrency(val) {
-            return (val || 0).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-            });
+        {
+          value: "resident",
+          label: "Residents",
+          count: list.filter((h) => !h.is_official).length,
         },
-        async getToken(val) {
-            let that = this;
-            axios
-                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/fcm/get-token/${val}`, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.deviceToken = response.data.fcm_token;
-                        console.log("fcm_token", that.deviceToken, "user name", that.householdOwner);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
+        {
+          value: "inactive",
+          label: "Inactive",
+          count: list.filter((h) => !this.isActive(h)).length,
         },
-        async SendNotification() {
-            let that = this;
-
-            axios
-                .post(`https://makaaziserverapi-production-c036.up.railway.app/api/fcm/sendNotification`, {
-                    fcmToken: that.deviceToken,
-                    title: that.title,
-                    body: that.body,
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = "Success";
-                        console.log("Notification sent");
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async checkOfficial(val) {
-            if (val == 1) {
-                return false;
-            } else if (val == 0) {
-                return true;
-            }
-        },
-        async searchHouseholdsEstate(val) {
-            let that = this;
-            if (val == null) {
-                that.Fetch_EstateOfficials(that.estate_id);
-            } else {
-                that.estate_houseHolds.splice(that.estate_houseHolds);
-                axios
-                    .get(
-                        `https://makaaziserverapi-production-c036.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
-                    )
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.estate_houseHolds = response.data;
-                            console.log("Households", that.estate_houseHolds);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async searchPayments(val) {
-            if (val == "") {
-                this.Fetch_AllPayments();
-            } else {
-                let that = this;
-                that.payments.splice(that.payments);
-                axios
-                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/payments/searchAll/?query=${val}`, {})
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.payments = response.data;
-                            console.log("Search payments", that.payments);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async searchEstate(val) {
-            if (val == "") {
-                this.Fetch_PostAllEstates();
-            } else {
-                let that = this;
-                that.estates.splice(that.estates);
-                axios
-                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/estates/search/?query=${val}`, {})
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.estates = response.data;
-                            console.log("Search estates", that.estates);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async searchHouseholds(val) {
-            if (val == "") {
-                this.Fetch_AllOfficials();
-            } else {
-                let that = this;
-                that.houseHolds.splice(that.houseHolds);
-                axios
-                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/households/search/?query=${val}`, {})
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.houseHolds = response.data;
-                            console.log("Households", that.houseHolds);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async assignOfficials(val, val1) {
-            let that = this;
-
-            if (that.role == null) {
-                that.snackbar2 = true;
-                that.snackbarText2 = "Select a role";
-            } else {
-                axios
-                    .patch(`https://makaaziserverapi-production-c036.up.railway.app/api/households/update_household/${val}`, {
-                        is_official: 0,
-                        official_role: that.role,
-                    })
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            that.snackbar = true;
-                            that.snackbarText = response.data;
-                            that.AddOfficial(val1);
-                            console.log("Official assigned");
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async assignOfficials2(val) {
-            let that = this;
-            axios
-                .patch(`https://makaaziserverapi-production-c036.up.railway.app/api/households/update_household/${val}`, {
-                    is_official: 1,
-                    official_role: "none",
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        that.Fetch_EstateOfficials(that.estate_id);
-                        console.log("Official assigned");
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async DeleteOfficial(val) {
-            let that = this;
-            axios
-                .put(`https://makaaziserverapi-production-c036.up.railway.app/api/officials/delete_official/${val}`, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        that.Fetch_EstateOfficials(that.estate_id);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async AddOfficial(val) {
-            let that = this;
-            that.title = "Verification";
-            that.body =
-                "Hi! " +
-                that.householdOwner +
-                " your account has been verified welcome to makaazi App";
-            axios
-                .post(`https://makaaziserverapi-production-c036.up.railway.app/api/officials/addOfficial`, {
-                    full_name: that.officialName,
-                    estate_id: this.estateId,
-                    role: that.role,
-                    contact_number: that.contact_number,
-                    estate_urn: that.estate_urn,
-                    uid: val,
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        that.dialog = false;
-                        that.SendNotification();
-                        console.log("Official added");
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Search_estates(val) {
-            if (val == "") {
-                this.Fetch_PostAll();
-            } else {
-                let that = this;
-                axios
-                    .get(
-                        `https://node-mysql-5c19e7a5ca18.herokuapp.com/estates/searchestates?query=${val}`, {}
-                    )
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.estates = response.data;
-                            console.log("Search estates", that.estates);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async Fetch_AllPayments() {
-            let that = this;
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/household-payments/year-by-estate/" + this.estateId)
-                .then(function (response) {
-                    if (response.status === 200) {
-                        that.payments = response.data;
-
-                        // Calculate totals from all rows
-                        that.totalPayment = that.payments.reduce((sum, row) => sum + Number(row.total_paid || 0), 0);
-                        that.totalPendingPayment = that.payments.reduce((sum, row) => sum + Number(row.overdue || 0), 0);
-
-                        console.log("Payments total", that.totalPayment, that.totalPendingPayment);
-                    } else if (response.status === 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error.message || "An error occurred";
-                    that.snackbar2 = true;
-                });
-        },
-        async Fetch_ActiveHouseholds() {
-            let that = this;
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/households/getActiveHouseHolds/0/" + this.estateId, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-
-                        that.totalActiveResidence = response.data.length;
-                        console.log("Estates", that.estates);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Fetch_AllOfficials() {
-            let that = this;
-            that.houseHolds.splice(that.houseHolds);
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/households/getBHsHldEstId/" + this.estateId, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.houseHolds = response.data;
-                        that.totalResidence = response.data.length;
-                        console.log("Households", that.houseHolds);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Fetch_EstateOfficials(val) {
-            let that = this;
-            that.estate_houseHolds.splice(that.estate_houseHolds);
-            axios
-                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.estate_houseHolds = response.data;
-                        console.log("Households", that.estate_houseHolds);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Fetch_PostAllEstates() {
-            let that = this;
-            that.estates.splice(that.estates);
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/estates/getall", {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.estates = response.data;
-                        that.totalEstate = response.data.length;
-                        console.log("Estates", that.estates);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        loginAnonymously() {
-            this.$fire.auth
-                .signInAnonymously()
-                .catch(function (error) {
-                    this.snackbarText = error.message;
-                    this.snackbar = true;
-                    this.showLogin = false;
-                })
-                .then((user) => {
-                    //we are signed in
-                    let ID = uuid.v1();
-                    console.log(uuid.v1());
-                    const db = this.$fire.firestore;
-                    let uid = user.user.uid;
-                    console.log("user uid", uid);
-                });
-        },
-        CheckPhone() {
-            this.pin_dialog = true;
-            this.pin_transfer = null;
-        },
-        checkColor(val) {
-            if (val == "Deposit") {
-                return "green2";
-            } else if (val == "Withdraw") {
-                return "red";
-            } else if (val == "Tips") {
-                return "blue";
-            }
-        },
-        checkType(val) {
-            if (val == "Deposit") {
-                return "arrow-up";
-            } else if (val == "Withdraw") {
-                return "arrow-down";
-            } else if (val == "Tips") {
-                return "hand-coin";
-            }
-        },
-
-        verifyPin24(val) {
-            if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-                console.log("PIn match");
-                this.FetchBalance();
-                this.pin_status = "";
-                this.showB = true;
-                this.pin_view_bal_dialog = false;
-            } else {
-                console.log("PIn not match");
-                this.pin_status = "Invalid pin. \nProvide a valid pin number";
-                this.snackbar2 = true;
-                this.snackbarText2 = "Please enter a valid pin number";
-            }
-        },
-        verifyPin22(val) {
-            if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-                console.log("PIn match");
-                this.MpesaPaymentStk();
-                this.pin_status = "";
-                this.pin_dialog = false;
-            } else {
-                console.log("PIn not match");
-                this.pin_status = "Invalid pin. \nProvide a valid pin number";
-                this.snackbar2 = true;
-                this.snackbarText2 = "Invalid pin. \nProvide a valid pin number";
-            }
-        },
-        verifyPin2(val) {
-            if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-                console.log("PIn match");
-                this.mpesaB2c();
-                this.pin_status = "";
-                this.pin_dialog = false;
-                this.pin_transfer = null;
-            } else {
-                console.log("PIn not match");
-                this.pin_status = "Invalid pin. \nProvide a valid pin number";
-                this.snackbar2 = true;
-                this.snackbarText2 = "Invalid pin. \nProvide a valid pin number";
-            }
-        },
-        encrypteData(data) {
-            if (this.secretKey == null) {
-                this.pass_status = "UnAble detect key";
-            } else {
-                if (data != null) {
-                    const key = CryptoJS.PBKDF2(this.secretKey, "salt", {
-                        keySize: 256 / 32,
-                        iterations: 1000,
-                    });
-                    const iv = CryptoJS.enc.Utf8.parse(ivKey); // Convert string to WordArray
-                    const encrypted = CryptoJS.AES.encrypt(data, key, {
-                        iv: iv,
-                        mode: CryptoJS.mode.CBC,
-                    });
-
-                    this.encryptedText = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
-                    return encrypted.ciphertext.toString(CryptoJS.enc.Hex);
-                }
-            }
-        },
-        decrypteData(data) {
-            if (this.secretKey == null) {
-                this.pass_status = "UnAble detect key";
-            } else {
-                if (data) {
-                    const key = CryptoJS.PBKDF2(this.secretKey, "salt", {
-                        keySize: 256 / 32,
-                        iterations: 1000,
-                    });
-                    const iv = CryptoJS.enc.Utf8.parse(ivKey);
-                    const decrypted = CryptoJS.AES.decrypt({
-                            ciphertext: CryptoJS.enc.Hex.parse(data),
-                        },
-                        key, {
-                            iv: iv,
-                            mode: CryptoJS.mode.CBC,
-                        }
-                    );
-                    return decrypted.toString(CryptoJS.enc.Utf8);
-                }
-            }
-        },
-        CheckPassword(val, val2) {
-            if (val == val2) {
-                this.pass_status = "Password matches";
-                return true;
-            } else {
-                this.pass_status = "Password does not match";
-                return false;
-            }
-        },
-        ConfirmCode2() {
-            console.log("Code sent to you.", this.code_no2);
-
-            var credential = firebase.auth.PhoneAuthProvider.credential(
-                this.confirmation_Result.verificationId,
-                this.code_no2
-            );
-            if ((this.code_no2 = "")) {
-                this.snackbar2 = true;
-                this.snackbarText2 = "Provide Code sent to you";
-                console.log("Provide Code sent to you");
-            } else {
-                console.log("Verify Code", this.code_no2);
-                this.progress_bar = true;
-                firebase
-                    .auth()
-                    .signInWithCredential(credential)
-                    .then((user) => {
-                        // SMS sent. Prompt user to type the code from the message, then sign the
-                        // user in with confirmationResult.confirm(code).
-                        //this.$toast.success("Otp sent successfully");
-                        window.location.reload(true);
-                        this.FetchUserPin();
-                    })
-                    .catch((error) => {
-                        this.progress_bar = false;
-                        // Error; SMS not sent
-                        console.log("Error", error);
-                        this.snackbar2 = true;
-                        this.snackbarText2 = error;
-                    });
-            }
-        },
-        logout() {
-            this.$fire.auth.signOut();
-            window.location.reload(true);
-        },
-        mpesaB2cQuery() {
-            axios
-                .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/result_url", {})
-                .then(function (response) {
-                    console.log(response);
-                    if (response.status == 200) {
-                        this.snackbar = true;
-                        this.snackbarText = response.data;
-                        this.show6 = false;
-                        this.b2c = false;
-                    } else if (response.status == 400) {
-                        this.snackbar2 = true;
-                        this.snackbarText2 = response.data;
-                        this.errorMessage = response.data;
-                        this.show6 = false;
-                        this.b2c = false;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    this.snackbarText = error;
-                    this.snackbar = true;
-                    this.btn_disabled = false;
-                })
-                .then(function () {
-                    // this.timerEnabled = true;
-                });
-        },
-        mpesaB2c() {
-            let that = this;
-            if (that.Phone == null) {
-                that.snackbarText2 = "Provide Phone number..";
-                that.snackbar2 = true;
-            } else if (that.Amount == "") {
-                that.snackbarText2 = "Provide amount.";
-                that.snackbar2 = true;
-            } else if (that.Amount > 3000) {
-                that.snackbarText2 = "amount cannot exceed 1000.";
-                that.snackbar2 = true;
-            } else {
-                that.b2c = true;
-                that.show6 = true;
-                axios
-                    .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/b2c", {
-                        Phonenumber: that.Phone,
-                        amount: that.Amount,
-                        uid: that.$fire.auth.currentUser.uid,
-                    })
-                    .then(function (response) {
-                        console.log(response);
-                        if (response.status == 200) {
-                            if (response.data.ResponseCode == "0") {} else {}
-
-                            if (response.data.errorCode == "400.002.02") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.errorMessage;
-                                that.show6 = false;
-                                that.b2c = false;
-                                that.pin_transfer = null;
-                            } else if (response.data.errorCode == "500.001.1001") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.errorMessage;
-                                that.show6 = false;
-                                that.b2c = false;
-                                that.pin_transfer = null;
-                            } else {
-                                that.successResponse = response.data.CustomerMessage;
-                                that.CheckoutRequestID = response.data.CheckoutRequestID;
-                                console.log(response.data);
-                                that.b2c = false;
-                                that.FetchBalance();
-                                that.pin_dialog = false;
-                                that.show6 = false;
-                                that.timerEnabled3 = true;
-                                that.pin_transfer = null;
-                            }
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                            that.errorMessage = response.data;
-                            that.show6 = false;
-                            that.b2c = false;
-                            that.pin_transfer = null;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText = error;
-                        that.snackbar = true;
-                        that.btn_disabled = false;
-                        that.show6 = false;
-                        that.pin_transfer = null;
-                    });
-            }
-        },
-        validate() {
-            this.$refs.form.validate();
-        },
-        reset() {
-            this.$refs.form.reset();
-        },
-        resetValidation() {
-            this.$refs.form.resetValidation();
-        },
-        MpesaPaymentStk() {
-            let that = this;
-            if (that.depo_number == null) {
-                that.snackbarText2 = "Provide phone number..";
-                that.snackbar2 = true;
-            } else if (this.depo_amount == "") {
-                that.snackbarText2 = "Provide amount.";
-                that.snackbar2 = true;
-            } else {
-                that.show6 = true;
-                axios
-                    .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/stk_shop", {
-                        Phonenumber: that.depo_number,
-                        amount: that.depo_amount,
-                    })
-                    .then(function (response) {
-                        console.log(response);
-                        if (response.status == 200) {
-                            if (response.data.errorCode == "400.002.02") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.errorMessage;
-                                that.show6 = false;
-                                that.pin_transact = null;
-                            } else if (response.data.errorCode == "500.001.1001") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.errorMessage;
-                                that.show6 = false;
-                                that.pin_transact = null;
-                            } else {
-                                that.snackbar = true;
-                                that.snackbarText = response.data.CustomerMessage;
-                                that.successResponse = response.data.CustomerMessage;
-                                that.CheckoutRequestID = response.data.CheckoutRequestID;
-                                console.log(that.CheckoutRequestID);
-                                that.FetchBalance();
-                                that.timerEnabled = true;
-                                that.pin_dialog2 = false;
-
-                                that.pin_transact = null;
-                            }
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                            that.errorMessage = response.data;
-                            that.show6 = false;
-                            that.pin_transact = null;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                        that.show6 = false;
-                        that.pin_transact = null;
-                    });
-            }
-        },
-        ////Stk Query////
-        StkQuery() {
-            let that = this;
-            that.snackbar_s = true;
-            that.snackbarText_s = "Checking payment status...";
-            axios
-                .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/stk_shop/query", {
-                    checkoutRequestId: that.CheckoutRequestID,
-                })
-                .then(function (response) {
-                    console.log("StkPush Query", response.data);
-                    that.show6 = false;
-
-                    if (response.status == 200) {
-                        if (response.dsata.errorCode == "400.002.02") {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data.errorMessage;
-                            that.errorResponse = response.data.errorMessage;
-                            that.timerCount = 25;
-                            that.timerEnabled = false;
-                            that.pin_view_bal_dialog = false;
-                        } else if (response.data.errorCode == "500.001.1001") {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data.errorMessage;
-                            that.errorResponse = response.data.errorMessage;
-                            that.timerCount = 25;
-                            that.timerEnabled = false;
-                            that.pin_view_bal_dialog = false;
-                        } else {
-                            if (response.data.ResultCode == "0") {
-                                that.FetchBalance();
-                                that.snackbar = true;
-                                that.snackbarText = response.data.ResultDesc;
-                                that.successResponse = response.data.ResultDesc;
-                                that.timerEnabled = false;
-                                that.timerCount = 25;
-                                that.pin_view_bal_dialog = false;
-                            } else if (response.data.ResultCode == "1032") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = "Request was cancelled";
-                                that.errorResponse = "Request was cancelled";
-                                that.timerCount = 25;
-                                that.timerEnabled = false;
-                                that.pin_view_bal_dialog = false;
-                            } else if (response.data.ResultCode == "2001") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = "You entered a wrong pin";
-                                that.errorResponse = "You entered a wrong pin";
-                                that.timerCount = 25;
-                                that.timerEnabled = false;
-                                that.pin_view_bal_dialog = false;
-                            } else {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.ResultDesc;
-                                that.errorResponse = response.data.ResultDesc;
-                                that.timerEnabled = false;
-                                that.timerCount = 25;
-                                that.pin_view_bal_dialog = false;
-                            }
-                        }
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                        that.timerCount = 25;
-                        that.timerEnabled = false;
-                        that.pin_view_bal_dialog = false;
-                    }
-                })
-                .catch(function (error) {
-                    that.pin_view_bal_dialog = false;
-                    that.snackbar2 = true;
-                    that.snackbarText2 = error;
-                    that.timerCount = 25;
-                    that.timerEnabled = false;
-                    that.show6 = false;
-                });
-        },
-        loginAnonymously1() {
-            this.$fire.auth
-                .signInAnonymously()
-                .catch(function (error) {
-                    this.snackbarText = error.message;
-                    this.snackbar = true;
-                    this.showLogin = false;
-                })
-                .then((user) => {
-                    //we are signed in
-                    const start_time = this.$dayjs(new Date()).format("YYYY/MM/DD HH:mm:ss");
-                    let ID = uuid.v1();
-                    console.log(uuid.v1());
-                    const db = this.$fire.firestore;
-                    db.collection("Charge24_users")
-                        .doc(user.user.uid)
-                        .set({
-                            user_id: user.user.uid,
-                            start_time: start_time,
-                            ref: ID,
-                            active: true,
-                            phone_no: this.Phone,
-                        })
-                        .then((docRef) => {
-                            console.log("User logged in");
-                            this.snackbar = true;
-                            this.snackbarText = "Process Successfully completed";
-                            this.$router.push({
-                                path: "/timer",
-                            });
-                        })
-                        .catch((error) => {
-                            console.log("Error adding document: ", error);
-                        });
-                });
-        },
-        uploadDetails(val) {
-            const db = this.$fire.firestore;
-            const start_timer = this.$dayjs(new Date()).format("YYYY/MM/DD HH:mm:ss");
-            let ID = uuid.v1();
-            console.log(uuid.v1());
-            db.collection("charge24_users")
-                .doc(val)
-                .set({
-                    user_id: val,
-                    start_time: start_timer,
-                    ref: ID,
-                    active: true,
-                })
-                .then(() => {
-                    console.log("User logged in");
-                    this.$router.push({
-                        path: "/timer",
-                    });
-                })
-                .catch(function (error) {
-                    console.log("Error adding document: ", error);
-                });
-        },
-        logout() {
-            this.$fire.auth.signOut();
-            window.location.reload(true);
-        },
-        checkUser() {
-            if (this.$fire.auth.currentUser != null) {
-                this.secretKey = this.$fire.auth.currentUser.uid;
-                this.uid = this.$fire.auth.currentUser.uid;
-                this.FetchUserPin(this.$fire.auth.currentUser.uid);
-                console.log(this.secretKey, "keys");
-            } else {
-                this.auth_state = false;
-                console.log("No user logged in");
-            }
-        },
-        generateRandomNumber() {
-            const digits = "DY*1234FA6789";
-            let randomNumber = "";
-            const length = 9;
-
-            for (let i = 0; i < length; i++) {
-                const randomIndex = Math.floor(Math.random() * digits.length);
-                randomNumber += digits[randomIndex];
-            }
-
-            this.randomNineDigitNumber = randomNumber;
-
-            return randomNumber;
-        },
-        checkPin(val) {
-            console.log(val);
-        },
-        setPin() {
-            if (this.password_status == false) {
-                this.snackbar2 = true;
-                this.snackbarText2 = "Password does not match";
-            } else {
-                this.progress_bar = true;
-                const db = this.$fire.firestore;
-                const docRef = db
-                    .collection("charge24_admin_user")
-                    .doc(this.$fire.auth.currentUser.uid);
-
-                const newData = {
-                    pin: this.encrypteData(this.verify_pin),
-                    Account_id: this.encrypteData(this.$fire.auth.currentUser.uid),
-                    user_uid: this.$fire.auth.currentUser.uid,
-                    // Add more fields as needed
-                };
-
-                db.runTransaction(async (transaction) => {
-                        transaction.set(docRef, newData);
-                    })
-                    .then((docRef) => {
-                        console.log("Pin set Successfully ");
-                        this.snackbar = true;
-                        this.snackbarText = "Pin set Successfully ";
-                        this.progress_bar = false;
-                        this.FetchUserPin();
-                    })
-                    .catch((error) => {
-                        this.snackbar2 = true;
-                        this.snackbarText2 = error;
-                        this.progress_bar = false;
-                        console.error("Error adding listing: ", error);
-                    });
-            }
-        },
-        resetPin2() {
-            const db = this.$fire.firestore;
-            console.log("Reset pin", uuid.v1());
-            db.collection("charge24_admin_user")
-                .doc(this.$fire.auth.currentUser.uid)
-                .update({
-                    payment: false,
-                })
-                .then(() => {
-                    that.show6 = false;
-                    this.timerCount2 = 2;
-                    this.timerCount3 = 2;
-                })
-                .catch(function (error) {
-                    console.log("Error adding document: ", error);
-                });
-        },
+      ];
     },
 
-    created() {},
+    filteredHouseholds() {
+      const q = (this.search || "").trim().toLowerCase();
+      return this.houseHolds.filter((h) => {
+        // Filter by tab
+        if (this.filter === "official" && !h.is_official) return false;
+        if (this.filter === "resident" && h.is_official) return false;
+        if (this.filter === "inactive" && this.isActive(h)) return false;
+
+        // Search
+        if (!q) return true;
+        return (
+          (h.primary_owner || "").toLowerCase().includes(q) ||
+          (h.contact_number || "").toLowerCase().includes(q) ||
+          (h.house_number || "").toLowerCase().includes(q) ||
+          (h.uid || "").toLowerCase().includes(q)
+        );
+      });
+    },
+  },
+  mounted() {
+    this.fetchHouseholds();
+  },
+  methods: {
+    // =========================================================
+    // DATA
+    // =========================================================
+    async fetchHouseholds() {
+      if (!this.estateId) return;
+      this.loading = true;
+      try {
+        const { data } = await axios.get(
+          `${API}/households/getBHsHldEstId/${this.estateId}`
+        );
+        this.houseHolds = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn("Households fetch failed:", err.message);
+        this.houseHolds = [];
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    refresh() {
+      return this.fetchHouseholds();
+    },
+
+    // =========================================================
+    // ASSIGN
+    // =========================================================
+    openAssign(h) {
+      this.selected = h;
+      this.role = null;
+      this.assignDialog = true;
+    },
+
+    async confirmAssign() {
+      if (!this.role || !this.selected) return;
+      this.saving = true;
+      try {
+        // 1. Update household
+        await axios.patch(
+          `${API}/households/update_household/${this.selected.household_id}`,
+          { is_official: 1, official_role: this.role }
+        );
+
+        // 2. Add to officials table
+        await axios.post(`${API}/officials/addOfficial`, {
+          full_name: this.selected.primary_owner,
+          estate_id: this.estateId,
+          role: this.role,
+          contact_number: this.selected.contact_number,
+          estate_urn: this.selected.estate_urn || null,
+          uid: this.selected.uid,
+        });
+
+        this.showSuccess(
+          `${this.selected.primary_owner} is now ${this.role}`
+        );
+        this.assignDialog = false;
+        this.selected = null;
+        this.role = null;
+        await this.fetchHouseholds();
+      } catch (err) {
+        console.error(err);
+        this.showError(
+          err.response?.data?.error || "Could not assign official"
+        );
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    // =========================================================
+    // REVOKE
+    // =========================================================
+    openRevoke(h) {
+      this.selected = h;
+      this.revokeDialog = true;
+    },
+
+    async confirmRevoke() {
+      if (!this.selected) return;
+      this.saving = true;
+      try {
+        // 1. Demote the household
+        await axios.patch(
+          `${API}/households/update_household/${this.selected.household_id}`,
+          { is_official: 0, official_role: "none" }
+        );
+
+        // 2. Delete from officials table (by contact_number)
+        await axios
+          .put(`${API}/officials/delete_official/${this.selected.contact_number}`)
+          .catch(() => null); // ignore if route differs
+
+        this.showSuccess(`${this.selected.primary_owner} demoted`);
+        this.revokeDialog = false;
+        this.selected = null;
+        await this.fetchHouseholds();
+      } catch (err) {
+        console.error(err);
+        this.showError(
+          err.response?.data?.error || "Could not revoke official"
+        );
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+    initialsOf(name) {
+      if (!name) return "?";
+      return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+    },
+
+    isActive(h) {
+      const v = h?.active;
+      return v === 1 || v === "1" || v === true;
+    },
+
+    showSuccess(msg) {
+      this.snackbar = true;
+      this.snackbarText = msg;
+    },
+    showError(msg) {
+      this.snackbar2 = true;
+      this.snackbarText2 = msg;
+    },
+  },
 };
 </script>
 
-<style>
-#all_items {
-    --scrollbarBG: #00000000;
-    --scrollbarBG: #b7ff005b;
-    --thumbBG: #2f2c2c00;
-    scrollbar-width: thin;
-    scrollbar-color: var(--thumbBG) var(--scrollbarBG);
-    overflow-y: scroll;
+<style scoped>
+.households-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1200px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+
+.page-sub {
+  font-size: 0.82rem;
+  color: #7c7a95;
+  margin: 4px 0 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 10px;
+  color: #4b5563;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.quick-btn:hover:not(:disabled) {
+  border-color: #7c3aed;
+  color: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.quick-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   FILTER BAR
+   ============================================================ */
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  pointer-events: none;
+}
+
+.search-input {
+  flex: 1;
+  width: 100%;
+  padding: 11px 40px 11px 42px;
+  border: 1px solid #e9e7f2;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #1e1b4b;
+  background: #fafaff;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #7c3aed;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+}
+
+.search-input::placeholder {
+  color: #b9b7c9;
+}
+
+.search-clear {
+  position: absolute;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e9e7f2;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: background 0.2s ease;
+}
+
+.search-clear:hover {
+  background: #c7b8ff;
+  color: white;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filter-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid #e9e7f2;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #7c7a95;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.filter-tab:hover {
+  color: #7c3aed;
+  border-color: #c7b8ff;
+}
+
+.filter-tab-active {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 6px 16px -6px rgba(124, 58, 237, 0.6);
+}
+
+.filter-count {
+  background: rgba(255, 255, 255, 0.25);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.filter-tab:not(.filter-tab-active) .filter-count {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ============================================================
+   LIST
+   ============================================================ */
+.household-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loading-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.household-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.household-card:hover {
+  border-color: #c7b8ff;
+  box-shadow: 0 8px 20px -10px rgba(124, 58, 237, 0.15);
+  transform: translateY(-1px);
+}
+
+.household-card-official {
+  background: linear-gradient(135deg, #f9fdf9, #f0fdf4);
+  border-color: #bbf7d0;
+}
+
+.hh-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 14px -6px rgba(124, 58, 237, 0.5);
+}
+
+.hh-avatar-official {
+  background: linear-gradient(135deg, #059669, #10b981);
+  box-shadow: 0 6px 14px -6px rgba(16, 185, 129, 0.5);
+}
+
+.hh-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hh-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.hh-name {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hh-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.hh-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hh-meta-dot {
+  color: #cbd5e1;
+}
+
+.hh-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hh-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+
+.hh-tag-court {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.hh-tag-street {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.hh-tag-status {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.hh-tag-care {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.hh-actions {
+  flex-shrink: 0;
+}
+
+.hh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.hh-btn-promote {
+  background: #f3eeff;
+  color: #7c3aed;
+  border-color: #e9e0ff;
+}
+
+.hh-btn-promote:hover {
+  background: #7c3aed;
+  color: white;
+  box-shadow: 0 6px 14px -6px rgba(124, 58, 237, 0.6);
+}
+
+.hh-btn-demote {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+.hh-btn-demote:hover {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 6px 14px -6px rgba(239, 68, 68, 0.6);
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  padding: 60px 24px;
+  text-align: center;
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 18px;
+}
+
+.empty-icon {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: #fafaff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.empty-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e1b4b;
+}
+
+.empty-text {
+  font-size: 0.82rem;
+  color: #9ca3af;
+  margin-top: 6px;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+.empty-btn {
+  margin-top: 16px;
+  padding: 9px 18px;
+  background: #f3eeff;
+  border: 1px solid #e9e0ff;
+  border-radius: 10px;
+  color: #7c3aed;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.empty-btn:hover {
+  background: #7c3aed;
+  color: white;
+}
+
+/* ============================================================
+   DIALOG — Assign
+   ============================================================ */
+::v-deep .official-dialog {
+  overflow: hidden !important;
+  border-radius: 22px !important;
+  margin: 16px auto !important;
+  max-width: 480px !important;
+  width: calc(100% - 32px) !important;
+  max-height: calc(100vh - 32px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 30px 60px -20px rgba(30, 27, 75, 0.35) !important;
+}
+
+.dialog-shell {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  min-height: 0;
+  background: white;
+  border-radius: 22px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.dialog-header {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  padding: 16px 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dialog-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.18), transparent 50%);
+  pointer-events: none;
+}
+
+.dialog-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dialog-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.dialog-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dialog-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dialog-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.dialog-body {
+  padding: 22px 24px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fafaff;
+  border: 1px solid #e9e7f2;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.preview-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.preview-info {
+  min-width: 0;
+}
+
+.preview-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #1e1b4b;
+}
+
+.preview-meta {
+  font-size: 0.74rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.role-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.role-card:hover {
+  border-color: #c7b8ff;
+  background: #fafaff;
+}
+
+.role-card-active {
+  border-color: #7c3aed;
+  background: #faf8ff;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+}
+
+.role-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-icon-purple {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+.role-icon-blue {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+}
+.role-icon-green {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.role-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e1b4b;
+}
+
+.role-sub {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.role-check {
+  flex-shrink: 0;
+}
+
+.dialog-footer {
+  padding: 14px 20px 16px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  gap: 8px;
+  background: white;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   DIALOG — Confirm revoke
+   ============================================================ */
+::v-deep .confirm-dialog {
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  margin: 16px auto !important;
+  max-width: 420px !important;
+  width: calc(100% - 32px) !important;
+  box-shadow: 0 30px 60px -20px rgba(30, 27, 75, 0.35) !important;
+}
+
+.confirm-shell {
+  background: white;
+  padding: 28px 24px 20px;
+  text-align: center;
+}
+
+.confirm-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #fef2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.confirm-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.confirm-text {
+  font-size: 0.85rem;
+  color: #6b7280;
+  line-height: 1.55;
+  margin-bottom: 22px;
+}
+
+.confirm-text strong {
+  color: #1e1b4b;
+  font-weight: 700;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 700px) {
+  .household-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .hh-avatar {
+    align-self: flex-start;
+  }
+
+  .hh-actions {
     width: 100%;
-    align-items: start;
-    bottom: 0;
-    padding: 3px;
-    height: 100vh;
-    justify-content: start;
-}
+  }
 
-#all_items::-webkit-scrollbar {
-    width: 8px;
-}
-
-#all_items::-webkit-scrollbar-track {
-    background: var(--scrollbarBG);
-}
-
-#all_items::-webkit-scrollbar-thumb {
-    background-color: var(--thumbBG);
-    border-radius: 8px;
-    border: 3px solid var(--scrollbarBG);
-}
-
-.blur {
-    filter: blur(9px);
-    /* Adjust the value (5px) to increase or decrease the blur intensity */
-}
-
-#charter {
-    transition: 0.5s ease;
-    background-image: url("@/assets/bg.png");
-    background-attachment: fixed;
-    background-position: center;
-    background-size: contain;
-    background-color: black;
+  .hh-btn {
     width: 100%;
-    height: 260px;
+    justify-content: center;
+  }
 }
 </style>

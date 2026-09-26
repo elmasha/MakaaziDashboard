@@ -113,7 +113,7 @@ export default {
     async prepareChartData() {
       let that = this;
       let year = new Date().getFullYear();
-       await axios.get(`https://makaaziserverapi-production-c036.up.railway.app/api/charts/monthly-estate-summary/?estate_id=`+this.estateId+`&year=`+year,{})
+       await axios.get(`https://makaaziserver22.up.railway.app/api/charts/monthly-estate-summary/?estate_id=`+this.estateId+`&year=`+year,{})
                 .then(function (response) {
                     if (response.status == 200) {
                         // that.snackbar = true;

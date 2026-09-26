@@ -1,224 +1,311 @@
 <template>
-<div>
-    <v-card color="white" elevation="0">
-        <v-app-bar color="white" fixed light elevation="0">
-            <v-app-bar-nav-icon @click="drawer = true"></v-app-bar-nav-icon>
+  <div class="estate-shell">
+    <!-- ============================================================
+         SIDEBAR — desktop
+         ============================================================ -->
+    <aside v-if="!isMobile" class="estate-sidebar">
+      <div class="brand-block">
+        <div class="brand-mark">
+          <v-icon color="white" size="20">mdi-shield-account</v-icon>
+        </div>
+        <div>
+          <div class="brand-name">Makaazi</div>
+          <div class="brand-sub">Estate Console</div>
+        </div>
+      </div>
 
-            <div class="d-flex" style="background-color: #b6ff00; border-radius: 120px; padding: 4px">
-                <v-avatar color="black" size="28">
-                    <span style="color: #b6ff00">Inc</span>
-                </v-avatar>
-                <v-toolbar-title style="color: black; margin-start: 8px; margin-right: 8px">Intech</v-toolbar-title>
-            </div>
+      <div v-if="estate_name" class="estate-chip">
+        <v-avatar size="32" class="estate-chip-avatar">
+          <span>{{ estateInitials }}</span>
+        </v-avatar>
+        <div class="estate-chip-text">
+          <div class="estate-chip-name">{{ estate_name }}</div>
+          <div class="estate-chip-urn">{{ estate_urn || "—" }}</div>
+        </div>
+      </div>
 
-            <v-spacer></v-spacer>
-             <v-btn icon>
-                <v-icon>mdi-dot</v-icon>
-            </v-btn>
-
-             <v-btn icon>
-                <v-icon>mdi-dot</v-icon>
-            </v-btn>
-            <v-btn icon>
-                <v-icon>mdi-bell</v-icon>
-            </v-btn>
-            <v-btn icon>
-                <v-icon>mdi-logout</v-icon>
-            </v-btn>
-        </v-app-bar>
-
-        <!-- <v-navigation-drawer  absolute temporary>
-
-          <v-list>
-        <v-list-item
-          v-for="item in items"
-          :key="item.title"
-          link
+      <nav class="nav-list">
+        <button
+          v-for="item in items_dashboard"
+          :key="item.view"
+          class="nav-item"
+          :class="{ 'nav-item-active': currentView === item.view }"
+          @click="MoveNavigation(item.view)"
         >
-          <v-list-item-icon>
-            <v-icon>{{ item.icon }}</v-icon>
-          </v-list-item-icon>
+          <span class="nav-icon-wrap">
+            <v-icon size="18">{{ item.icon }}</v-icon>
+          </span>
+          <span class="nav-label">{{ item.title }}</span>
+          <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
+        </button>
+      </nav>
 
-          <v-list-item-content>
-            <v-list-item-title>{{ item.title }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-      </v-navigation-drawer> -->
+      <div class="sidebar-footer">
+        <button class="logout-btn" @click="logout">
+          <v-icon size="16" class="mr-2">mdi-logout</v-icon>
+          Sign out
+        </button>
+      </div>
+    </aside>
 
-        <v-navigation-drawer v-model="drawer" color="black" light absolute temporary height="100vh">
-            <v-list>
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
+    <main class="estate-main" :class="{ 'estate-main-mobile': isMobile }">
+      <header class="estate-topbar">
+        <button v-if="isMobile" class="topbar-icon-btn" @click="drawer = true">
+          <v-icon size="20">mdi-menu</v-icon>
+        </button>
 
-                <v-list-item v-for="item in items_dashboard" :key="item.title" style="color: aliceblue;">
-                     <v-list-item-icon @click="MoveNavigation(item.title), drawer = false">
-                          <v-icon style="color:#fff">{{ item.icon }}</v-icon>
-                    </v-list-item-icon>
+        <div class="topbar-title">
+          <h1 class="topbar-heading">{{ currentTitle }}</h1>
+          <p class="topbar-sub">
+            <span class="topbar-dot" :class="{ 'topbar-dot-active': estate_active }"></span>
+            {{ estate_name || 'Loading estate…' }}
+          </p>
+        </div>
 
-                    <v-list-item-content @click="MoveNavigation(item.title), drawer = false">                                            
-                        <div class="d-flex">
-                        <v-list-item-title style="margin-left: 8px;">{{ item.title }}</v-list-item-title>
-                       </div> 
-                      
-                    </v-list-item-content>
-                    <v-list-item-action @click="MoveNavigation(item.title), drawer = false">
-                     
-                    </v-list-item-action>
-                </v-list-item>
-            </v-list>
+        <v-spacer></v-spacer>
 
-            <template v-slot:append>
-                <div class="pa-2">
-                    <v-btn block>
-                        Logout
-                    </v-btn>
-                </div>
+        <button class="topbar-icon-btn" @click="openAddOfficial" title="Add official">
+          <v-icon size="20">mdi-account-plus-outline</v-icon>
+        </button>
+        <button class="topbar-icon-btn" @click="notify" title="Notifications">
+          <v-icon size="20">mdi-bell-outline</v-icon>
+          <span v-if="unreadCount" class="notif-dot"></span>
+        </button>
+        <button class="topbar-avatar" @click="MoveNavigation('account')">
+          {{ initials }}
+        </button>
+      </header>
+
+      <div class="estate-content">
+        <transition name="view-fade" mode="out-in">
+          <div :key="currentView" class="estate-view">
+            <dashboard v-if="currentView === 'dashboard'" :estateId="estateId" />
+            <account v-else-if="currentView === 'account'" :estateId="estateId" />
+            <billing v-else-if="currentView === 'billing'" :estateId="estateId" />
+            <estateOfficials v-else-if="currentView === 'officials'" :estateId="estateId" />
+            <households v-else-if="currentView === 'residents'" :estateId="estateId" />
+            <estateConfig v-else-if="currentView === 'config'" :estateId="estateId" />
+          </div>
+        </transition>
+      </div>
+    </main>
+
+    <!-- ============================================================
+         MOBILE DRAWER
+         ============================================================ -->
+    <v-navigation-drawer
+      v-model="drawer"
+      temporary
+      absolute
+      width="280"
+      class="mobile-drawer"
+    >
+      <div class="mobile-drawer-inner">
+        <div class="brand-block">
+          <div class="brand-mark">
+            <v-icon color="white" size="20">mdi-shield-account</v-icon>
+          </div>
+          <div>
+            <div class="brand-name">Makaazi</div>
+            <div class="brand-sub">Estate Console</div>
+          </div>
+        </div>
+
+        <div v-if="estate_name" class="estate-chip">
+          <v-avatar size="32" class="estate-chip-avatar">
+            <span>{{ estateInitials }}</span>
+          </v-avatar>
+          <div class="estate-chip-text">
+            <div class="estate-chip-name">{{ estate_name }}</div>
+            <div class="estate-chip-urn">{{ estate_urn || "—" }}</div>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <button
+            v-for="item in items_dashboard"
+            :key="item.view"
+            class="nav-item"
+            :class="{ 'nav-item-active': currentView === item.view }"
+            @click="MoveNavigation(item.view), (drawer = false)"
+          >
+            <span class="nav-icon-wrap">
+              <v-icon size="18">{{ item.icon }}</v-icon>
+            </span>
+            <span class="nav-label">{{ item.title }}</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button class="logout-btn" @click="logout">
+            <v-icon size="16" class="mr-2">mdi-logout</v-icon>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </v-navigation-drawer>
+
+    <!-- ============================================================
+         MOBILE BOTTOM NAV
+         ============================================================ -->
+    <nav v-if="isMobile" class="bottom-nav">
+      <button
+        v-for="item in bottomNavItems"
+        :key="item.view"
+        class="bottom-nav-btn"
+        :class="{ 'bottom-nav-btn-active': currentView === item.view }"
+        @click="MoveNavigation(item.view)"
+      >
+        <v-icon size="20">{{ item.icon }}</v-icon>
+        <span class="bottom-nav-label">{{ item.shortTitle || item.title }}</span>
+      </button>
+    </nav>
+
+    <!-- ============================================================
+         ADD OFFICIAL DIALOG
+         ============================================================ -->
+    <v-dialog v-model="dialog" max-width="600" content-class="official-dialog">
+      <div class="dialog-shell">
+        <div class="dialog-header">
+          <div class="dialog-header-icon">
+            <v-icon color="white" size="20">mdi-account-plus</v-icon>
+          </div>
+          <div class="flex-grow-1" style="min-width: 0">
+            <div class="dialog-title">Add estate official</div>
+            <div class="dialog-sub">
+              {{ estate_name || "—" }} · {{ estate_urn || "—" }}
+            </div>
+          </div>
+          <button class="dialog-close" @click="dialog = false">
+            <v-icon size="18" color="white">mdi-close</v-icon>
+          </button>
+        </div>
+
+        <div class="dialog-body">
+          <label class="field-label">Official role</label>
+          <v-select
+            v-model="role"
+            :items="roles"
+            dense
+            outlined
+            rounded
+            hide-details
+            placeholder="Select role"
+            class="mb-5"
+          >
+            <template v-slot:prepend-inner>
+              <v-icon size="18" color="#9ca3af">mdi-shield-account-outline</v-icon>
             </template>
-        </v-navigation-drawer>
+          </v-select>
 
-        <v-row  style="margin-top: 64px;">
-            <v-col cols="12" sm="12" md="12">
-                <div class="" style="padding: 1.3rem;">
-                    <dashboard v-show="d_1" :estateId="estateId" />
-                    <households v-show="d_5" :estateId="estateId" />
-                    <estateConfig v-show="d_7" :estateId="estateId" />
-                    <estateOfficials v-show="d_4" :estateId="estateId" />                    
-                    <billing :estateId="estateId" v-show="d_3" />
-                    <account v-show="d_2" :estateId="estateId" />
+          <label class="field-label">Assign to household</label>
+          <v-text-field
+            v-model="household_search"
+            dense
+            outlined
+            rounded
+            hide-details
+            placeholder="Search by name, phone, or house number"
+            prepend-inner-icon="mdi-magnify"
+            class="mb-5"
+            @input="onSearchInput"
+          ></v-text-field>
+
+          <div v-if="loadingHouseholds" class="list-loader">
+            <v-skeleton-loader type="list-item-avatar-two-line" />
+            <v-skeleton-loader type="list-item-avatar-two-line" />
+            <v-skeleton-loader type="list-item-avatar-two-line" />
+          </div>
+
+          <div v-else-if="estate_houseHolds.length === 0" class="empty-state">
+            <div class="empty-icon">
+              <v-icon size="34" color="#cbd5e1">mdi-home-search-outline</v-icon>
+            </div>
+            <div class="empty-title">No households found</div>
+            <div class="empty-text">
+              {{ household_search ? "Try a different search term." : "No households registered yet." }}
+            </div>
+          </div>
+
+          <div v-else class="household-list">
+            <div
+              v-for="hs in estate_houseHolds"
+              :key="hs.household_id"
+              class="household-item"
+              :class="{ 'household-item-official': hs.is_official }"
+            >
+              <div class="household-avatar" :class="roleColor(hs)">
+                {{ (hs.primary_owner || '?').substring(0, 2).toUpperCase() }}
+              </div>
+              <div class="household-info">
+                <div class="household-name">
+                  {{ hs.primary_owner }}
+                  <v-icon v-if="hs.is_official" size="14" color="#10b981" class="ml-1">
+                    mdi-check-decagram
+                  </v-icon>
                 </div>
-            </v-col>
+                <div class="household-meta">
+                  <span v-if="hs.house_number">Hs {{ hs.house_number }}</span>
+                  <span v-if="hs.house_number && hs.contact_number" class="dot-sep">·</span>
+                  <span v-if="hs.contact_number">{{ hs.contact_number }}</span>
+                  <span v-if="hs.is_official && hs.official_role" class="official-role">
+                    {{ hs.official_role }}
+                  </span>
+                </div>
+              </div>
+              <div class="household-action">
+                <v-btn
+                  v-if="!hs.is_official"
+                  small
+                  rounded
+                  depressed
+                  color="#7c3aed"
+                  dark
+                  class="text-capitalize action-btn"
+                  @click="assignOfficial(hs)"
+                >
+                  Assign
+                </v-btn>
+                <v-btn
+                  v-else
+                  small
+                  rounded
+                  text
+                  class="text-capitalize action-btn action-btn-revoke"
+                  @click="revokeOfficial(hs)"
+                >
+                  Revoke
+                </v-btn>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </v-dialog>
 
-        </v-row>
-
-        <v-snackbar color="primary accent-8" :timeout="6000" v-model="snackbar_s" centered bottom>
-            {{ snackbarText_s }}
-        </v-snackbar>
-        <v-snackbar color="success" :timeout="2000" v-model="snackbar" outlined center>
-            {{ snackbarText }}
-        </v-snackbar>
-        <v-snackbar color="error" :timeout="2500" v-model="snackbar2" outlined center>
-            {{ snackbarText2 }}
-        </v-snackbar>
-    </v-card>
-    <v-row justify="space-around">
-        <v-col cols="auto">
-            <v-dialog v-model="dialog" transition="dialog-top-transition" max-width="600">
-                <!-- <template v-slot:activator="{ on, attrs }">
-            <v-btn color="primary" v-bind="attrs" v-on="on">From the top</v-btn>
-          </template> -->
-                <template v-slot:default="dialog">
-                    <v-card>
-                        <v-toolbar color="#b6ff00" light>Add Official/Agent
-                            <br />
-
-                            <v-spacer></v-spacer>
-                            <v-card-action class="justify-end">
-                                <v-btn text @click="dialog.value = false">Close</v-btn>
-                            </v-card-action>
-                        </v-toolbar>
-                        <v-card-text>
-                            <div class="text-span pa-2">
-                                <h2>{{ estate_name }}</h2>
-                                <br />
-                                <h3>{{ estate_urn }}</h3>
-                            </div>
-                        </v-card-text>
-
-                        <div class="container">
-                            <div class="">
-                                <v-select v-model="role" :items="roles" label="Role" flat required></v-select>
-
-                                <div class="">
-                                    <v-text-field clearable v-model="household_search" @change="searchHouseholdsEstate(household_search)" placeholder="Search households" flat rounded style="background-color: beige; height: 50px" required></v-text-field>
-                                </div>
-                            </div>
-                            <div class="row text--center" id="all_items">
-                                <!-- <div v-for="tag in houseHolds" :key="tag.id" class="col-md-6"></div> -->
-
-                                <v-list subheader>
-                                    <v-subheader>Households</v-subheader>
-
-                                    <v-list-item v-for="hs in estate_houseHolds" :key="hs.title">
-                                        <v-list-item @click="
-                          (householdOwner = hs.primary_owner), getToken(hs.household_id)
-                        ">
-                                            <v-list-item-avatar>
-                                                <v-avatar color="#8051FF" size="48">
-                                                    <span style="color: black">{{
-                              hs.primary_owner.substring(0, 3)
-                            }}</span>
-                                                </v-avatar>
-                                            </v-list-item-avatar>
-
-                                            <v-list-item-content>
-                                                <v-list-item-title>{{ hs.primary_owner }}</v-list-item-title>
-                                            </v-list-item-content>
-                                            <v-list-item-icon>
-                                                <v-spacer></v-spacer>
-
-                                                <div>
-                                                    <v-card-action>
-                                                        <v-icon color="green" v-show="hs.is_official ? false : true">mdi-account-badge</v-icon>
-                                                    </v-card-action>
-                                                </div>
-                                            </v-list-item-icon>
-
-                                            <v-list-item-action>
-                                                <div v-show="hs.is_official ? true : false">
-                                                    <span style="font-size: 0.6rem">Assign official</span>
-
-                                                    <v-btn icon color="orange" v-show="hs.is_official ? true : false" @click="
-                                getToken(hs.household_id),
-                                  assignOfficials(hs.household_id, hs.uid),
-                                  (full_name = hs.primary_owner),
-                                  (householdOwner = hs.primary_owner),
-                                  (contact_number = hs.contact_number)
-                              ">
-                                                        <v-icon>mdi-account-network-outline</v-icon>
-                                                    </v-btn>
-                                                </div>
-                                                <div v-show="true">
-                                                    <v-btn style="margin: 4px" icon v-show="hs.is_official ? false : true" @click="
-                                assignOfficials2(hs.household_id),
-                                  DeleteOfficial(hs.contact_number)
-                              ">
-                                                        <v-icon>mdi-close</v-icon>
-                                                    </v-btn>
-                                                    <span style="font-size: 0.6rem"></span>
-                                                </div>
-                                            </v-list-item-action>
-                                            <v-icon style="margin: 4px" :color="hs.active ? 'grey' : 'blue'">
-                                                mdi-check-decagram
-                                            </v-icon>
-                                        </v-list-item>
-                                    </v-list-item>
-                                </v-list>
-                            </div>
-                        </div>
-                        <v-form v-show="false" @submit.prevent="AddOfficial">
-                            <v-text-field v-model="full_name" label="Full Name" outlined required></v-text-field>
-
-                            <v-select v-model="role" :items="roles" label="Role" outlined required></v-select>
-
-                            <v-text-field v-model="contact_number" label="Contact Number" outlined required></v-text-field>
-
-                            <v-text-field v-model="email" label="Email Address" outlined required></v-text-field>
-
-                            <v-btn color="#b6ff00" class="mt-4" type="submit" style="color: black">Submit</v-btn>
-                        </v-form>
-                    </v-card>
-                </template>
-            </v-dialog>
-        </v-col>
-    </v-row>
-</div>
+    <v-snackbar v-model="snackbar_s" color="#7c3aed" :timeout="3000" top rounded="pill">
+      {{ snackbarText_s }}
+    </v-snackbar>
+    <v-snackbar v-model="snackbar" color="success" :timeout="2500" top rounded="pill">
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">mdi-check-circle</v-icon>
+        <span>{{ snackbarText }}</span>
+      </div>
+    </v-snackbar>
+    <v-snackbar v-model="snackbar2" color="error" :timeout="3500" top rounded="pill">
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">mdi-alert-circle</v-icon>
+        <span>{{ snackbarText2 }}</span>
+      </div>
+    </v-snackbar>
+  </div>
 </template>
 
 <script>
-import CryptoJS from "crypto-js";
 import axios from "axios";
-import dayjs from "@nuxtjs/dayjs";
-import moment from "moment";
-import Map from "@/components/map.vue";
 import dashboard from "@/components/estate/dashboard.vue";
 import billing from "@/components/estate/billing.vue";
 import households from "@/components/estate/households.vue";
@@ -226,1293 +313,1010 @@ import estateConfig from "@/components/estate/estateConfig.vue";
 import estateOfficials from "@/components/estate/estateOfficials.vue";
 import account from "@/components/estate/account.vue";
 
-
-import {
-    uuid
-} from "vue-uuid";
-
-const keyValue = "fd85b4945YF'i"; // your key value (eg: key)
-const ivKey = "smslt";
+const API = "https://makaaziserver22.up.railway.app/api";
 
 export default {
-    name: "index",
-    computed: {
-        estateId() {
-            return parseInt(this.$route.params.id);
-        },
-    },
-    mounted() {
-        this.Fetch_AllOfficials();
-        // this.Fetch_ActiveHouseholds();
-        this.Fetch_PostAllEstates();
-        this.Fetch_AllPayments();
-        this.Fetch_ActiveSubs();
-        this.Check_Billing();
-    },
-    components: {
-        Map,
-        dashboard,
-        billing,
-        households,
-        estateConfig,
-        estateOfficials,
-        account
-    },
-    data() {
-        return {
-            active:false,
-            d_1: true,
-            d_2: false,
-            d_3: false,
-            d_4: false,
-            d_5: false,
-            d_6: false,
-            d_7: false,
-            items_dashboard: [{
-                    title: 'Dashboard',
-                    icon: 'mdi-view-dashboard'
-                },
-                {
-                    title: 'Account',
-                    icon: 'mdi-account-box'
-                },
-                {
-                    title: 'Billing',
-                    icon: 'mdi-account-credit-card-outline'
-                },
-                {
-                    title: 'Estate officials',
-                    icon: 'mdi-home-group'
-                },
-                {
-                    title: 'Resident',
-                    icon: 'mdi-account-box'
-                },
-                {
-                    title: 'Visitors logs',
-                    icon: 'mdi-account-settings-outline'
-                },
-                {
-                    title: 'Estate Config',
-                    icon: 'mdi-store-settings'
-                },
-            ],
-            roles: ["Chairman", "Secretary", "Treasurer"],
-            dialog: false,
-            totalEstate: 0,
-            totalResidence: 0,
-            totalPaid: 0,
-            totalActiveResidence: 0,
-            estate_name: null,
-            estate_urn: null,
-            show: true,
-            switch: false,
-            drawer: false,
-            group: null,
-            estates_search: "",
-            pay_search: "",
-            household_search: "",
-            search_estates: [],
-            payments: [],
-            houseHolds: [],
-            estate_houseHolds: [],
-            rules: [
-                (value) => !!value || "Required.",
-                (value) => (value || "").length <= 4 || "Max 4 characters",
-            ],
-            estates: [],
-            deposit: true,
-            depo_amount: "",
-            depo_number: "",
-            showB: false,
-            pin_input: "",
-            pin_input_deposit: "",
-            cash_deposit_dialog: false,
-            cash_refund_dialog: false,
-            pin_set_dialog: false,
-            pin_dialog: false,
-            pin_dialog2: false,
-            pin_view_bal_dialog: false,
-            pin: null,
-            pinbal: null,
-            pin_transfer: null,
-            pin_transact: null,
-            refund: false,
-            password_status: false,
-            stk_push: false,
-            verify_pin: null,
-            auth_state: false,
-            security_quiz: false,
-            security_key: false,
-            secretKey: null,
-            set_Pin: false,
-            pass_status: "",
-            pin: null,
-            verify_pin: null,
-            b2c: false,
-            bg: require("@/assets/bg.png"),
-            logo: require("@/assets/logo.svg"),
-            errorResponse: "",
-            successResponse: "",
-            Amount: "",
-            Phone: null,
-            UserName: "",
-            snackbar_s: false,
-            snackbarText_s: "",
-            snackbar: false,
-            snackbar2: false,
-            snackbarText: "",
-            snackbarText2: "",
-            status: false,
-            timerEnabled: false,
-            show: false,
-            show6: false,
-            timerCount: 25,
-            valid: true,
-            name: "",
-            nameRules: [
-                (v) => !!v || "Name is required",
-                (v) => (v && v.length <= 20) || "Name must be less than 10 characters",
-            ],
-            email: "",
-            emailRules: [
-                (v) => !!v || "E-mail is required",
-                (v) => /.+@.+\..+/.test(v) || "E-mail must be valid",
-            ],
-            select: null,
-            items: ["Item 1", "Item 2", "Item 3", "Item 4"],
-            checkbox: false,
-            CheckoutRequestID: "",
-            balance: "0",
-            transactions: [],
-            show6: false,
-            errorResponse: "",
-            successResponse: "",
-            timerEnabled3: false,
-            timerCount3: 2,
-            timerEnabled2: false,
-            timerCount2: 2,
-            uid: null,
-            payment: false,
-            full_name: null,
-            role: null,
-            contact_number: null,
-            email: null,
-            estate_urn: null,
-            estate_id: null,
-            payment_msg: "",
-            deviceToken: "",
-            title: "",
-            body: "",
-            householdOwner: "",
-        };
-    },
-    methods: {
-        MoveNavigation(val) {
+  name: "EstateConsole",
 
-            if (val === 'Dashboard') {
-                this.d_1 = true;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Account') {
-                this.d_1 = false;
-                this.d_2 = true;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Billing') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = true;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Estate officials') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = true;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Resident') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = true;
-                this.d_6 = false;
-                this.d_7 = false;
-            } else if (val === 'Visitors logs') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = true;
-                this.d_7 = false;
-            } else if (val === 'Estate Config') {
-                this.d_1 = false;
-                this.d_2 = false;
-                this.d_3 = false;
-                this.d_4 = false;
-                this.d_5 = false;
-                this.d_6 = false;
-                this.d_7 = true;
-            }
+  components: {
+    dashboard,
+    billing,
+    households,
+    estateConfig,
+    estateOfficials,
+    account,
+  },
 
-        },
-        async getToken(val) {
-            let that = this;
-            axios
-                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/fcm/get-token/${val}`, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.deviceToken = response.data.fcm_token;
-                        console.log("fcm_token", that.deviceToken, "user name", that.householdOwner);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async SendNotification() {
-            let that = this;
+  data() {
+    return {
+      isMobile: false,
+      drawer: false,
+      currentView: "dashboard",
 
-            axios
-                .post(`https://makaaziserverapi-production-c036.up.railway.app/api/fcm/sendNotification`, {
-                    fcmToken: that.deviceToken,
-                    title: that.title,
-                    body: that.body,
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        console.log("Notification sent");
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async checkOfficial(val) {
-            if (val == 1) {
-                return false;
-            } else if (val == 0) {
-                return true;
-            }
-        },
-        async searchHouseholdsEstate(val) {
-            let that = this;
-            if (val == null) {
-                that.Fetch_EstateOfficials(that.estate_id);
-            } else {
-                that.estate_houseHolds.splice(that.estate_houseHolds);
-                axios
-                    .get(
-                        `https://makaaziserverapi-production-c036.up.railway.app/api/households/search/${that.estate_id}?query=${val}`, {}
-                    )
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.estate_houseHolds = response.data;
-                            console.log("Households", that.estate_houseHolds);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async searchPayments(val) {
-            if (val == "") {
-                this.Fetch_AllPayments();
-            } else {
-                let that = this;
-                that.payments.splice(that.payments);
-                axios
-                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/payments/searchAll/?query=${val}`, {})
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.payments = response.data;
-                            console.log("Search payments", that.payments);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async searchEstate(val) {
-            if (val == "") {
-                this.Fetch_PostAllEstates();
-            } else {
-                let that = this;
-                that.estates.splice(that.estates);
-                axios
-                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/estates/search/?query=${val}`, {})
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.estates = response.data;
-                            console.log("Search estates", that.estates);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async searchHouseholds(val) {
-            if (val == "") {
-                this.Fetch_AllOfficials();
-            } else {
-                let that = this;
-                that.houseHolds.splice(that.houseHolds);
-                axios
-                    .get(`https://makaaziserverapi-production-c036.up.railway.app/api/households/search/?query=${val}`, {})
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.houseHolds = response.data;
-                            console.log("Households", that.houseHolds);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async assignOfficials(val, val1) {
-            let that = this;
+      estateId: null,
+      estate_name: "",
+      estate_urn: "",
+      estate_active: true,
 
-            if (that.role == null) {
-                that.snackbar2 = true;
-                that.snackbarText2 = "Select a role";
-            } else {
-                axios
-                    .patch(`https://makaaziserverapi-production-c036.up.railway.app/api/households/update_household/${val}`, {
-                        is_official: 0,
-                        official_role: that.role,
-                    })
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            that.snackbar = true;
-                            that.snackbarText = response.data;
-                            that.AddOfficial(val1);
-                            console.log("Official assigned");
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async assignOfficials2(val) {
-            let that = this;
-            axios
-                .patch(`https://makaaziserverapi-production-c036.up.railway.app/api/households/update_household/${val}`, {
-                    is_official: 1,
-                    official_role: "none",
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        that.Fetch_EstateOfficials(that.estate_id);
-                        console.log("Official assigned");
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async DeleteOfficial(val) {
-            let that = this;
-            axios
-                .put(`https://makaaziserverapi-production-c036.up.railway.app/api/officials/delete_official/${val}`, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        that.Fetch_EstateOfficials(that.estate_id);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async AddOfficial(val) {
-            let that = this;
-            that.title = "Verification";
-            that.body =
-                "Hi! " +
-                that.householdOwner +
-                " your account has been verified welcome to makaazi App";
-            axios
-                .post(`https://makaaziserverapi-production-c036.up.railway.app/api/officials/addOfficial`, {
-                    full_name: that.full_name,
-                    estate_id: that.estate_id,
-                    role: that.role,
-                    contact_number: that.contact_number,
-                    estate_urn: that.estate_urn,
-                    uid: val,
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        that.SendNotification();
-                        that.Fetch_EstateOfficials(that.estate_id);
-                        console.log("Official added");
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Search_estates(val) {
-            if (val == "") {
-                this.Fetch_PostAll();
-            } else {
-                let that = this;
-                axios
-                    .get(
-                        `https://node-mysql-5c19e7a5ca18.herokuapp.com/estates/searchestates?query=${val}`, {}
-                    )
-                    .then(function (response) {
-                        if (response.status == 200) {
-                            // that.snackbar = true;
-                            // that.snackbarText = response.data;
-                            that.estates = response.data;
-                            console.log("Search estates", that.estates);
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                    });
-            }
-        },
-        async Fetch_AllPayments() {
-            let that = this;
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/payments/getAll", {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.payments = response.data;
-                        console.log("Payments", that.payments);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-         async Fetch_ActiveSubs() {
-            let that = this;
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/estates/estate-sub/"+that.$route.params.id, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        console.log("Estates sub", response.data);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Fetch_ActiveHouseholds() {
-            let that = this;
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/households/getActiveHouseHolds/0", {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
+      dialog: false,
+      roles: ["Chairman", "Secretary", "Treasurer"],
+      role: null,
+      household_search: "",
+      estate_houseHolds: [],
+      loadingHouseholds: false,
 
-                        that.totalActiveResidence = response.data.length;
-                        console.log("Estates", that.estates);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Check_Billing() {
-            let that = this;
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/estates/estate-due-disable/"+that.$route.params.id, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        that.snackbar = true;
-                        that.snackbarText = response.data;
-                        that.active = response.data.is_active;
-                    
-                        console.log("Check billing", response.data);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Fetch_AllOfficials() {
-            let that = this;
-            that.houseHolds.splice(that.houseHolds);
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/households/getall/", {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.houseHolds = response.data;
-                        that.totalResidence = response.data.length;
-                        console.log("Households", that.houseHolds);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Fetch_EstateOfficials(val) {
-            let that = this;
-            that.estate_houseHolds.splice(that.estate_houseHolds);
-            axios
-                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.estate_houseHolds = response.data;
-                        console.log("Households", that.estate_houseHolds);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        async Fetch_PostAllEstates() {
-            let that = this;
-            that.estates.splice(that.estates);
-            axios
-                .get("https://makaaziserverapi-production-c036.up.railway.app/api/estates/getall", {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.estates = response.data;
-                        that.totalEstate = response.data.length;
-                        console.log("Estates", that.estates);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
-        },
-        loginAnonymously() {
-            this.$fire.auth
-                .signInAnonymously()
-                .catch(function (error) {
-                    this.snackbarText = error.message;
-                    this.snackbar = true;
-                    this.showLogin = false;
-                })
-                .then((user) => {
-                    //we are signed in
-                    let ID = uuid.v1();
-                    console.log(uuid.v1());
-                    const db = this.$fire.firestore;
-                    let uid = user.user.uid;
-                    console.log("user uid", uid);
-                });
-        },
-        CheckPhone() {
-            this.pin_dialog = true;
-            this.pin_transfer = null;
-        },
-        checkColor(val) {
-            if (val == "Deposit") {
-                return "green2";
-            } else if (val == "Withdraw") {
-                return "red";
-            } else if (val == "Tips") {
-                return "blue";
-            }
-        },
-        checkType(val) {
-            if (val == "Deposit") {
-                return "arrow-up";
-            } else if (val == "Withdraw") {
-                return "arrow-down";
-            } else if (val == "Tips") {
-                return "hand-coin";
-            }
-        },
+      unreadCount: 0,
+      snackbar_s: false,
+      snackbarText_s: "",
+      snackbar: false,
+      snackbarText: "",
+      snackbar2: false,
+      snackbarText2: "",
+    };
+  },
 
-        verifyPin24(val) {
-            if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-                console.log("PIn match");
-                this.FetchBalance();
-                this.pin_status = "";
-                this.showB = true;
-                this.pin_view_bal_dialog = false;
-            } else {
-                console.log("PIn not match");
-                this.pin_status = "Invalid pin. \nProvide a valid pin number";
-                this.snackbar2 = true;
-                this.snackbarText2 = "Please enter a valid pin number";
-            }
-        },
-        verifyPin22(val) {
-            if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-                console.log("PIn match");
-                this.MpesaPaymentStk();
-                this.pin_status = "";
-                this.pin_dialog = false;
-            } else {
-                console.log("PIn not match");
-                this.pin_status = "Invalid pin. \nProvide a valid pin number";
-                this.snackbar2 = true;
-                this.snackbarText2 = "Invalid pin. \nProvide a valid pin number";
-            }
-        },
-        verifyPin2(val) {
-            if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-                console.log("PIn match");
-                this.mpesaB2c();
-                this.pin_status = "";
-                this.pin_dialog = false;
-                this.pin_transfer = null;
-            } else {
-                console.log("PIn not match");
-                this.pin_status = "Invalid pin. \nProvide a valid pin number";
-                this.snackbar2 = true;
-                this.snackbarText2 = "Invalid pin. \nProvide a valid pin number";
-            }
-        },
-        encrypteData(data) {
-            if (this.secretKey == null) {
-                this.pass_status = "UnAble detect key";
-            } else {
-                if (data != null) {
-                    const key = CryptoJS.PBKDF2(this.secretKey, "salt", {
-                        keySize: 256 / 32,
-                        iterations: 1000,
-                    });
-                    const iv = CryptoJS.enc.Utf8.parse(ivKey); // Convert string to WordArray
-                    const encrypted = CryptoJS.AES.encrypt(data, key, {
-                        iv: iv,
-                        mode: CryptoJS.mode.CBC,
-                    });
-
-                    this.encryptedText = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
-                    return encrypted.ciphertext.toString(CryptoJS.enc.Hex);
-                }
-            }
-        },
-        decrypteData(data) {
-            if (this.secretKey == null) {
-                this.pass_status = "UnAble detect key";
-            } else {
-                if (data) {
-                    const key = CryptoJS.PBKDF2(this.secretKey, "salt", {
-                        keySize: 256 / 32,
-                        iterations: 1000,
-                    });
-                    const iv = CryptoJS.enc.Utf8.parse(ivKey);
-                    const decrypted = CryptoJS.AES.decrypt({
-                            ciphertext: CryptoJS.enc.Hex.parse(data),
-                        },
-                        key, {
-                            iv: iv,
-                            mode: CryptoJS.mode.CBC,
-                        }
-                    );
-                    return decrypted.toString(CryptoJS.enc.Utf8);
-                }
-            }
-        },
-        CheckPassword(val, val2) {
-            if (val == val2) {
-                this.pass_status = "Password matches";
-                return true;
-            } else {
-                this.pass_status = "Password does not match";
-                return false;
-            }
-        },
-        ConfirmCode2() {
-            console.log("Code sent to you.", this.code_no2);
-
-            var credential = firebase.auth.PhoneAuthProvider.credential(
-                this.confirmation_Result.verificationId,
-                this.code_no2
-            );
-            if ((this.code_no2 = "")) {
-                this.snackbar2 = true;
-                this.snackbarText2 = "Provide Code sent to you";
-                console.log("Provide Code sent to you");
-            } else {
-                console.log("Verify Code", this.code_no2);
-                this.progress_bar = true;
-                firebase
-                    .auth()
-                    .signInWithCredential(credential)
-                    .then((user) => {
-                        // SMS sent. Prompt user to type the code from the message, then sign the
-                        // user in with confirmationResult.confirm(code).
-                        //this.$toast.success("Otp sent successfully");
-                        window.location.reload(true);
-                        this.FetchUserPin();
-                    })
-                    .catch((error) => {
-                        this.progress_bar = false;
-                        // Error; SMS not sent
-                        console.log("Error", error);
-                        this.snackbar2 = true;
-                        this.snackbarText2 = error;
-                    });
-            }
-        },
-        logout() {
-            this.$fire.auth.signOut();
-            window.location.reload(true);
-        },
-        mpesaB2cQuery() {
-            axios
-                .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/result_url", {})
-                .then(function (response) {
-                    console.log(response);
-                    if (response.status == 200) {
-                        this.snackbar = true;
-                        this.snackbarText = response.data;
-                        this.show6 = false;
-                        this.b2c = false;
-                    } else if (response.status == 400) {
-                        this.snackbar2 = true;
-                        this.snackbarText2 = response.data;
-                        this.errorMessage = response.data;
-                        this.show6 = false;
-                        this.b2c = false;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    this.snackbarText = error;
-                    this.snackbar = true;
-                    this.btn_disabled = false;
-                })
-                .then(function () {
-                    // this.timerEnabled = true;
-                });
-        },
-        mpesaB2c() {
-            let that = this;
-            if (that.Phone == null) {
-                that.snackbarText2 = "Provide Phone number..";
-                that.snackbar2 = true;
-            } else if (that.Amount == "") {
-                that.snackbarText2 = "Provide amount.";
-                that.snackbar2 = true;
-            } else if (that.Amount > 3000) {
-                that.snackbarText2 = "amount cannot exceed 1000.";
-                that.snackbar2 = true;
-            } else {
-                that.b2c = true;
-                that.show6 = true;
-                axios
-                    .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/b2c", {
-                        Phonenumber: that.Phone,
-                        amount: that.Amount,
-                        uid: that.$fire.auth.currentUser.uid,
-                    })
-                    .then(function (response) {
-                        console.log(response);
-                        if (response.status == 200) {
-                            if (response.data.ResponseCode == "0") {} else {}
-
-                            if (response.data.errorCode == "400.002.02") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.errorMessage;
-                                that.show6 = false;
-                                that.b2c = false;
-                                that.pin_transfer = null;
-                            } else if (response.data.errorCode == "500.001.1001") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.errorMessage;
-                                that.show6 = false;
-                                that.b2c = false;
-                                that.pin_transfer = null;
-                            } else {
-                                that.successResponse = response.data.CustomerMessage;
-                                that.CheckoutRequestID = response.data.CheckoutRequestID;
-                                console.log(response.data);
-                                that.b2c = false;
-                                that.FetchBalance();
-                                that.pin_dialog = false;
-                                that.show6 = false;
-                                that.timerEnabled3 = true;
-                                that.pin_transfer = null;
-                            }
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                            that.errorMessage = response.data;
-                            that.show6 = false;
-                            that.b2c = false;
-                            that.pin_transfer = null;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText = error;
-                        that.snackbar = true;
-                        that.btn_disabled = false;
-                        that.show6 = false;
-                        that.pin_transfer = null;
-                    });
-            }
-        },
-        validate() {
-            this.$refs.form.validate();
-        },
-        reset() {
-            this.$refs.form.reset();
-        },
-        resetValidation() {
-            this.$refs.form.resetValidation();
-        },
-        MpesaPaymentStk() {
-            let that = this;
-            if (that.depo_number == null) {
-                that.snackbarText2 = "Provide phone number..";
-                that.snackbar2 = true;
-            } else if (this.depo_amount == "") {
-                that.snackbarText2 = "Provide amount.";
-                that.snackbar2 = true;
-            } else {
-                that.show6 = true;
-                axios
-                    .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/stk_shop", {
-                        Phonenumber: that.depo_number,
-                        amount: that.depo_amount,
-                    })
-                    .then(function (response) {
-                        console.log(response);
-                        if (response.status == 200) {
-                            if (response.data.errorCode == "400.002.02") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.errorMessage;
-                                that.show6 = false;
-                                that.pin_transact = null;
-                            } else if (response.data.errorCode == "500.001.1001") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.errorMessage;
-                                that.show6 = false;
-                                that.pin_transact = null;
-                            } else {
-                                that.snackbar = true;
-                                that.snackbarText = response.data.CustomerMessage;
-                                that.successResponse = response.data.CustomerMessage;
-                                that.CheckoutRequestID = response.data.CheckoutRequestID;
-                                console.log(that.CheckoutRequestID);
-                                that.FetchBalance();
-                                that.timerEnabled = true;
-                                that.pin_dialog2 = false;
-
-                                that.pin_transact = null;
-                            }
-                        } else if (response.status == 400) {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data;
-                            that.errorMessage = response.data;
-                            that.show6 = false;
-                            that.pin_transact = null;
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        that.snackbarText2 = error;
-                        that.snackbar2 = true;
-                        that.show6 = false;
-                        that.pin_transact = null;
-                    });
-            }
-        },
-        ////Stk Query////
-        StkQuery() {
-            let that = this;
-            that.snackbar_s = true;
-            that.snackbarText_s = "Checking payment status...";
-            axios
-                .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/stk_shop/query", {
-                    checkoutRequestId: that.CheckoutRequestID,
-                })
-                .then(function (response) {
-                    console.log("StkPush Query", response.data);
-                    that.show6 = false;
-
-                    if (response.status == 200) {
-                        if (response.dsata.errorCode == "400.002.02") {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data.errorMessage;
-                            that.errorResponse = response.data.errorMessage;
-                            that.timerCount = 25;
-                            that.timerEnabled = false;
-                            that.pin_view_bal_dialog = false;
-                        } else if (response.data.errorCode == "500.001.1001") {
-                            that.snackbar2 = true;
-                            that.snackbarText2 = response.data.errorMessage;
-                            that.errorResponse = response.data.errorMessage;
-                            that.timerCount = 25;
-                            that.timerEnabled = false;
-                            that.pin_view_bal_dialog = false;
-                        } else {
-                            if (response.data.ResultCode == "0") {
-                                that.FetchBalance();
-                                that.snackbar = true;
-                                that.snackbarText = response.data.ResultDesc;
-                                that.successResponse = response.data.ResultDesc;
-                                that.timerEnabled = false;
-                                that.timerCount = 25;
-                                that.pin_view_bal_dialog = false;
-                            } else if (response.data.ResultCode == "1032") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = "Request was cancelled";
-                                that.errorResponse = "Request was cancelled";
-                                that.timerCount = 25;
-                                that.timerEnabled = false;
-                                that.pin_view_bal_dialog = false;
-                            } else if (response.data.ResultCode == "2001") {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = "You entered a wrong pin";
-                                that.errorResponse = "You entered a wrong pin";
-                                that.timerCount = 25;
-                                that.timerEnabled = false;
-                                that.pin_view_bal_dialog = false;
-                            } else {
-                                that.snackbar2 = true;
-                                that.snackbarText2 = response.data.ResultDesc;
-                                that.errorResponse = response.data.ResultDesc;
-                                that.timerEnabled = false;
-                                that.timerCount = 25;
-                                that.pin_view_bal_dialog = false;
-                            }
-                        }
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                        that.timerCount = 25;
-                        that.timerEnabled = false;
-                        that.pin_view_bal_dialog = false;
-                    }
-                })
-                .catch(function (error) {
-                    that.pin_view_bal_dialog = false;
-                    that.snackbar2 = true;
-                    that.snackbarText2 = error;
-                    that.timerCount = 25;
-                    that.timerEnabled = false;
-                    that.show6 = false;
-                });
-        },
-        loginAnonymously1() {
-            this.$fire.auth
-                .signInAnonymously()
-                .catch(function (error) {
-                    this.snackbarText = error.message;
-                    this.snackbar = true;
-                    this.showLogin = false;
-                })
-                .then((user) => {
-                    //we are signed in
-                    const start_time = this.$dayjs(new Date()).format("YYYY/MM/DD HH:mm:ss");
-                    let ID = uuid.v1();
-                    console.log(uuid.v1());
-                    const db = this.$fire.firestore;
-                    db.collection("Charge24_users")
-                        .doc(user.user.uid)
-                        .set({
-                            user_id: user.user.uid,
-                            start_time: start_time,
-                            ref: ID,
-                            active: true,
-                            phone_no: this.Phone,
-                        })
-                        .then((docRef) => {
-                            console.log("User logged in");
-                            this.snackbar = true;
-                            this.snackbarText = "Process Successfully completed";
-                            this.$router.push({
-                                path: "/timer",
-                            });
-                        })
-                        .catch((error) => {
-                            console.log("Error adding document: ", error);
-                        });
-                });
-        },
-        uploadDetails(val) {
-            const db = this.$fire.firestore;
-            const start_timer = this.$dayjs(new Date()).format("YYYY/MM/DD HH:mm:ss");
-            let ID = uuid.v1();
-            console.log(uuid.v1());
-            db.collection("charge24_users")
-                .doc(val)
-                .set({
-                    user_id: val,
-                    start_time: start_timer,
-                    ref: ID,
-                    active: true,
-                })
-                .then(() => {
-                    console.log("User logged in");
-                    this.$router.push({
-                        path: "/timer",
-                    });
-                })
-                .catch(function (error) {
-                    console.log("Error adding document: ", error);
-                });
-        },
-        logout() {
-            this.$fire.auth.signOut();
-            window.location.reload(true);
-        },
-        checkUser() {
-            if (this.$fire.auth.currentUser != null) {
-                this.secretKey = this.$fire.auth.currentUser.uid;
-                this.uid = this.$fire.auth.currentUser.uid;
-                this.FetchUserPin(this.$fire.auth.currentUser.uid);
-                console.log(this.secretKey, "keys");
-            } else {
-                this.auth_state = false;
-                console.log("No user logged in");
-            }
-        },
-        generateRandomNumber() {
-            const digits = "DY*1234FA6789";
-            let randomNumber = "";
-            const length = 9;
-
-            for (let i = 0; i < length; i++) {
-                const randomIndex = Math.floor(Math.random() * digits.length);
-                randomNumber += digits[randomIndex];
-            }
-
-            this.randomNineDigitNumber = randomNumber;
-
-            return randomNumber;
-        },
-        checkPin(val) {
-            console.log(val);
-        },
-        setPin() {
-            if (this.password_status == false) {
-                this.snackbar2 = true;
-                this.snackbarText2 = "Password does not match";
-            } else {
-                this.progress_bar = true;
-                const db = this.$fire.firestore;
-                const docRef = db
-                    .collection("charge24_admin_user")
-                    .doc(this.$fire.auth.currentUser.uid);
-
-                const newData = {
-                    pin: this.encrypteData(this.verify_pin),
-                    Account_id: this.encrypteData(this.$fire.auth.currentUser.uid),
-                    user_uid: this.$fire.auth.currentUser.uid,
-                    // Add more fields as needed
-                };
-
-                db.runTransaction(async (transaction) => {
-                        transaction.set(docRef, newData);
-                    })
-                    .then((docRef) => {
-                        console.log("Pin set Successfully ");
-                        this.snackbar = true;
-                        this.snackbarText = "Pin set Successfully ";
-                        this.progress_bar = false;
-                        this.FetchUserPin();
-                    })
-                    .catch((error) => {
-                        this.snackbar2 = true;
-                        this.snackbarText2 = error;
-                        this.progress_bar = false;
-                        console.error("Error adding listing: ", error);
-                    });
-            }
-        },
-        resetPin2() {
-            const db = this.$fire.firestore;
-            console.log("Reset pin", uuid.v1());
-            db.collection("charge24_admin_user")
-                .doc(this.$fire.auth.currentUser.uid)
-                .update({
-                    payment: false,
-                })
-                .then(() => {
-                    that.show6 = false;
-                    this.timerCount2 = 2;
-                    this.timerCount3 = 2;
-                })
-                .catch(function (error) {
-                    console.log("Error adding document: ", error);
-                });
-        },
+  computed: {
+    items_dashboard() {
+      return [
+        { title: "Dashboard", view: "dashboard", icon: "mdi-view-dashboard-outline" },
+        { title: "Account", view: "account", icon: "mdi-account-box-outline" },
+        { title: "Billing", view: "billing", icon: "mdi-credit-card-outline" },
+        { title: "Officials", view: "officials", icon: "mdi-shield-account-outline", shortTitle: "Officials" },
+        { title: "Residents", view: "residents", icon: "mdi-home-group" },
+        { title: "Config", view: "config", icon: "mdi-store-cog-outline", shortTitle: "Config" },
+      ];
     },
 
-    created() {},
+    bottomNavItems() {
+      return this.items_dashboard.slice(0, 5);
+    },
+
+    currentTitle() {
+      const found = this.items_dashboard.find((i) => i.view === this.currentView);
+      return found ? found.title : "Dashboard";
+    },
+
+    initials() {
+      if (!this.estate_name) return "MK";
+      return this.estate_name.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
+    },
+
+    estateInitials() {
+      if (!this.estate_name) return "?";
+      return this.estate_name.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
+    },
+  },
+
+  mounted() {
+    this.onResize();
+    window.addEventListener("resize", this.onResize);
+
+    const id = parseInt(this.$route.params.id);
+    if (!isNaN(id)) {
+      this.estateId = id;
+      this.fetchEstate();
+      this.checkBilling();
+    } else {
+      this.showError("Invalid estate ID in URL");
+    }
+  },
+
+  beforeDestroy() {
+    window.removeEventListener("resize", this.onResize);
+  },
+
+  methods: {
+    onResize() {
+      this.isMobile = window.innerWidth < 960;
+    },
+
+    MoveNavigation(view) {
+      this.currentView = view;
+      if (view === "officials" || view === "residents") {
+        this.fetchEstateHouseholds();
+      }
+    },
+
+    async fetchEstate() {
+      if (!this.estateId) return;
+      try {
+        const { data } = await axios.get(`${API}/estates/estate/${this.estateId}`);
+        if (data && data.estate_id) {
+          this.estate_name = data.estate_name || "";
+          this.estate_urn = data.estate_urn || "";
+        } else {
+          const { data: list } = await axios.get(`${API}/estates/getall`);
+          const found = Array.isArray(list) ? list.find((e) => e.estate_id === this.estateId) : null;
+          if (found) {
+            this.estate_name = found.estate_name || "";
+            this.estate_urn = found.estate_urn || "";
+          }
+        }
+      } catch (err) {
+        console.warn("Estate fetch failed:", err.message);
+      }
+    },
+
+    async checkBilling() {
+      if (!this.estateId) return;
+      try {
+        const { data } = await axios.get(`${API}/estates/subscriptions/${this.estateId}/disable-if-due`);
+        const sub = data?.subscription || data;
+        this.estate_active = sub?.is_active === 1 || sub?.is_active === true;
+      } catch (err) {
+        console.warn("Billing check failed:", err.message);
+      }
+    },
+
+    async fetchEstateHouseholds() {
+      if (!this.estateId) return;
+      this.loadingHouseholds = true;
+      try {
+        const { data } = await axios.get(`${API}/households/getBHsHldEstId/${this.estateId}`);
+        this.estate_houseHolds = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn("Households fetch failed:", err.message);
+        this.estate_houseHolds = [];
+      } finally {
+        this.loadingHouseholds = false;
+      }
+    },
+
+    onSearchInput: (function () {
+      let t;
+      return function (val) {
+        clearTimeout(t);
+        t = setTimeout(() => this.searchHouseholdsEstate(val), 300);
+      };
+    })(),
+
+    async searchHouseholdsEstate(val) {
+      if (!this.estateId) return;
+      if (!val) return this.fetchEstateHouseholds();
+
+      this.loadingHouseholds = true;
+      try {
+        const { data } = await axios.get(
+          `${API}/households/search/${this.estateId}?query=${encodeURIComponent(val)}`
+        );
+        this.estate_houseHolds = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn("Search failed:", err.message);
+      } finally {
+        this.loadingHouseholds = false;
+      }
+    },
+
+    openAddOfficial() {
+      this.dialog = true;
+      this.role = null;
+      this.household_search = "";
+      this.fetchEstateHouseholds();
+    },
+
+    async assignOfficial(hs) {
+      if (!this.role) return this.showError("Select a role first");
+
+      try {
+        await axios.patch(`${API}/households/update_household/${hs.household_id}`, {
+          is_official: 1,
+          official_role: this.role,
+        });
+
+        await axios.post(`${API}/officials/addOfficial`, {
+          full_name: hs.primary_owner,
+          estate_id: this.estateId,
+          role: this.role,
+          contact_number: hs.contact_number,
+          estate_urn: this.estate_urn,
+          uid: hs.uid,
+        });
+
+        this.showSuccess(`${hs.primary_owner} is now ${this.role}`);
+        this.fetchEstateHouseholds();
+      } catch (err) {
+        console.error(err);
+        this.showError(err.response?.data?.error || "Could not assign official");
+      }
+    },
+
+    async revokeOfficial(hs) {
+      try {
+        await axios.patch(`${API}/households/update_household/${hs.household_id}`, {
+          is_official: 0,
+          official_role: "none",
+        });
+        await axios.put(`${API}/officials/delete_official/${hs.contact_number}`);
+        this.showSuccess("Official role removed");
+        this.fetchEstateHouseholds();
+      } catch (err) {
+        this.showError(err.response?.data?.error || "Could not revoke");
+      }
+    },
+
+    roleColor(hs) {
+      if (!hs.is_official) return "";
+      return "household-avatar-official";
+    },
+
+    notify() {
+      this.unreadCount = 0;
+      this.showSuccess("Notifications cleared");
+    },
+
+    logout() {
+      if (this.$fire?.auth) this.$fire.auth.signOut();
+      this.$router.push("/");
+    },
+
+    showSuccess(msg) {
+      this.snackbar = true;
+      this.snackbarText = msg;
+    },
+
+    showError(msg) {
+      this.snackbar2 = true;
+      this.snackbarText2 = msg;
+    },
+  },
 };
 </script>
 
+<style scoped>
+/* ============================================================
+   SHELL — fills the viewport, no page scroll
+   ============================================================ */
+.estate-shell {
+  display: flex;
+  height: 100vh;              /* ← fixed height */
+  width: 100vw;               /* ← fixed width */
+  overflow: hidden;           /* ← nothing overflows the shell */
+  background: #f7f7fb;
+  font-family: inherit;
+}
+
+/* ============================================================
+   SIDEBAR — full height, never scrolls with the page
+   ============================================================ */
+.estate-sidebar {
+  width: 268px;
+  flex-shrink: 0;
+  height: 100vh;              /* ← always full height */
+  background: linear-gradient(180deg, #16123a 0%, #1e1b4b 55%, #312e81 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 0;
+  overflow: hidden;           /* ← decorative orbs clip inside */
+  position: relative;
+}
+
+.estate-sidebar::before {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.35), transparent 70%);
+  top: -80px;
+  right: -80px;
+  pointer-events: none;
+}
+
+.estate-sidebar::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.2), transparent 70%);
+  bottom: -60px;
+  left: -60px;
+  pointer-events: none;
+}
+
+.brand-block {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px 22px;
+  flex-shrink: 0;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px -6px rgba(124, 58, 237, 0.7);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2), transparent 60%);
+}
+
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+}
+
+.brand-sub {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin-top: 2px;
+}
+
+.estate-chip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 16px 22px;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.estate-chip-avatar {
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  color: white !important;
+  font-size: 0.7rem !important;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.estate-chip-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.estate-chip-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.estate-chip-urn {
+  font-size: 0.66rem;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.nav-list {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.nav-list::-webkit-scrollbar { width: 4px; }
+.nav-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  text-align: left;
+  margin-bottom: 2px;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+  transform: translateX(2px);
+}
+
+.nav-item-active {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white !important;
+  box-shadow: 0 8px 22px -8px rgba(124, 58, 237, 0.75);
+}
+
+.nav-item-active .nav-icon-wrap {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.nav-icon-wrap {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.nav-item:hover .nav-icon-wrap {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-label { flex: 1; }
+
+.nav-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 8px;
+}
+
+.sidebar-footer {
+  position: relative;
+  z-index: 1;
+  padding: 14px 16px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 12px;
+  flex-shrink: 0;
+}
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-radius: 10px;
+  color: #fca5a5;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  font-family: inherit;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: white;
+}
+
+/* ============================================================
+   MAIN — flex column, fills remaining width and full height
+   ============================================================ */
+.estate-main {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;              /* ← full height */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;           /* ← nothing overflows main */
+}
+
+/* ============================================================
+   TOPBAR — fixed inside main, no sticky needed
+   ============================================================ */
+.estate-topbar {
+  flex-shrink: 0;             /* ← always stays at top */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 28px;
+  background: #f7f7fb;
+  border-bottom: 1px solid #e9e7f2;
+  z-index: 5;
+}
+
+.topbar-title { min-width: 0; }
+
+.topbar-heading {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  letter-spacing: -0.4px;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.topbar-sub {
+  font-size: 0.78rem;
+  color: #7c7a95;
+  margin: 3px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topbar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  transition: background 0.3s ease;
+}
+
+.topbar-dot-active {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.topbar-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: white;
+  border: 1px solid #e9e7f2;
+  color: #4b5563;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.topbar-icon-btn:hover {
+  border-color: #7c3aed;
+  color: #7c3aed;
+  box-shadow: 0 6px 16px -8px rgba(124, 58, 237, 0.5);
+  transform: translateY(-1px);
+}
+
+.notif-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
+}
+
+.topbar-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  font-weight: 800;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 6px 16px -6px rgba(124, 58, 237, 0.55);
+  transition: all 0.2s ease;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.topbar-avatar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px -6px rgba(124, 58, 237, 0.7);
+}
+
+/* ============================================================
+   CONTENT — the ONLY scrollable region
+   ============================================================ */
+.estate-content {
+  flex: 1;
+  min-height: 0;              /* ← important: allows flex child to shrink */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px 28px 40px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.estate-content::-webkit-scrollbar { width: 8px; }
+.estate-content::-webkit-scrollbar-thumb {
+  background: #e5e3f0;
+  border-radius: 4px;
+}
+.estate-content::-webkit-scrollbar-thumb:hover {
+  background: #c7b8ff;
+}
+
+/* Wrapper around the current view */
+.estate-view {
+  min-height: 100%;
+}
+
+/* Mobile padding adjustment for bottom nav */
+.estate-main-mobile .estate-content {
+  padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+}
+
+/* View transition */
+.view-fade-enter-active,
+.view-fade-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.view-fade-enter { opacity: 0; transform: translateY(8px); }
+.view-fade-leave-to { opacity: 0; transform: translateY(-4px); }
+
+/* ============================================================
+   MOBILE DRAWER
+   ============================================================ */
+.mobile-drawer {
+  background: linear-gradient(180deg, #16123a 0%, #1e1b4b 55%, #312e81 100%) !important;
+}
+
+.mobile-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 22px 0;
+}
+
+/* ============================================================
+   BOTTOM NAV
+   ============================================================ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid #e9e7f2;
+  padding: 6px 0;
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px -8px rgba(30, 27, 75, 0.08);
+}
+
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.bottom-nav-btn-active { color: #7c3aed; }
+
+.bottom-nav-btn-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+
+/* ============================================================
+   DIALOG
+   ============================================================ */
+::v-deep .official-dialog {
+  overflow: hidden !important;
+  border-radius: 22px !important;
+  margin: 16px auto !important;
+  max-width: 600px !important;
+  width: calc(100% - 32px) !important;
+  max-height: calc(100vh - 32px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 30px 60px -20px rgba(30, 27, 75, 0.35) !important;
+}
+
+.dialog-shell {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  min-height: 0;
+  background: white;
+  border-radius: 22px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.dialog-header {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  padding: 16px 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dialog-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.18), transparent 50%);
+  pointer-events: none;
+}
+
+.dialog-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.dialog-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.dialog-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dialog-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dialog-close:hover { background: rgba(255, 255, 255, 0.28); }
+
+.dialog-body {
+  padding: 22px 24px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 7px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.household-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.household-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid #e9e7f2;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.household-item:hover {
+  border-color: #c7b8ff;
+  background: #fbfaff;
+  transform: translateX(2px);
+}
+
+.household-item-official {
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border-color: #a7f3d0;
+}
+
+.household-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.household-avatar-official {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.household-info { flex: 1; min-width: 0; }
+
+.household-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e1b4b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+}
+
+.household-meta {
+  font-size: 0.72rem;
+  color: #7c7a95;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot-sep { color: #cbd5e1; }
+
+.official-role {
+  background: #d1fae5;
+  color: #065f46;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.action-btn { min-width: 82px !important; }
+.action-btn-revoke { color: #ef4444 !important; }
+.action-btn-revoke:hover { background: #fef2f2 !important; }
+
+.list-loader { padding: 4px 0; }
+
+.empty-state {
+  padding: 40px 16px;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.empty-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.empty-text {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+::v-deep .theme--light.v-text-field--outlined fieldset,
+::v-deep .theme--light.v-select.v-text-field--outlined fieldset {
+  border-radius: 12px !important;
+  border-color: #e9e7f2 !important;
+}
+
+::v-deep .theme--light.v-text-field--outlined:not(.v-input--is-focused):hover fieldset {
+  border-color: #c7b8ff !important;
+}
+
+::v-deep .theme--light.v-text-field--outlined.v-input--is-focused fieldset {
+  border-color: #7c3aed !important;
+  border-width: 2px !important;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 959px) {
+  .estate-topbar {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  .topbar-heading { font-size: 1.05rem; }
+  .topbar-sub { font-size: 0.72rem; }
+  .topbar-icon-btn,
+  .topbar-avatar {
+    width: 38px;
+    height: 38px;
+  }
+}
+</style>
+
+<!-- ============================================================
+     Global — prevent the body itself from scrolling
+     ============================================================ -->
 <style>
-#all_items {
-    --scrollbarBG: #00000000;
-    --thumbBG: #2f2c2c00;
-    scrollbar-width: thin;
-    scrollbar-color: var(--thumbBG) var(--scrollbarBG);
-    overflow-y: scroll;
-    width: 100%;
-    align-items: start;
-    bottom: 0;
-    padding: 3px;
-    height: 100vh;
-    justify-content: start;
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
-
-#all_items::-webkit-scrollbar {
-    width: 8px;
-}
-
-#all_items::-webkit-scrollbar-track {
-    background: var(--scrollbarBG);
-}
-
-#all_items::-webkit-scrollbar-thumb {
-    background-color: var(--thumbBG);
-    border-radius: 8px;
-    border: 3px solid var(--scrollbarBG);
-}
-
-.blur {
-    filter: blur(9px);
-    /* Adjust the value (5px) to increase or decrease the blur intensity */
-}
-
-#charter {
-    transition: 0.5s ease;
-    background-image: url("@/assets/bg.png");
-    background-attachment: fixed;
-    background-position: center;
-    background-size: contain;
-    background-color: black;
-    width: 100%;
-    height: 260px;
+#__nuxt,
+#__layout {
+  height: 100%;
+  overflow: hidden;
 }
 </style>

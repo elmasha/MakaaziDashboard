@@ -1,453 +1,828 @@
 <template>
-<div>
-    <v-card elevation="0">
-        <div class="">
-            <v-card-actions>
-                <v-card-title>
-                    <h3>Estate Address Configration</h3>
-                </v-card-title>
-                <v-spacer></v-spacer>
-                <!-- <v-btn icon>
-                                <v-icon>mdi-account</v-icon>
-                            </v-btn> -->
-                <v-btn icon>
-                    <v-icon>mdi-magnify</v-icon>
-                </v-btn>
-                <v-btn icon>
-                    <v-icon>mdi-cog-outline</v-icon>
-                </v-btn>
-            </v-card-actions>
+  <div class="config-page">
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Address configuration</h1>
+        <p class="page-sub">
+          Manage which address components residents use — sections, courts, and streets
+        </p>
+      </div>
+      <button class="quick-btn" @click="refreshAll" :disabled="loading">
+        <v-icon size="16" :class="{ spinning: loading }">mdi-refresh</v-icon>
+        <span>Refresh</span>
+      </button>
+    </div>
+
+    <!-- ============================================================
+         TOGGLE STRIP
+         ============================================================ -->
+    <div class="toggle-strip">
+      <div class="toggle-row" v-for="t in toggles" :key="t.key">
+        <div class="toggle-left">
+          <div class="toggle-icon" :class="`toggle-icon-${t.color}`">
+            <v-icon size="18" color="white">{{ t.icon }}</v-icon>
+          </div>
+          <div>
+            <div class="toggle-title">{{ t.label }}</div>
+            <div class="toggle-sub">{{ t.description }}</div>
+          </div>
         </div>
-    </v-card>
-    <v-card color="#f0f0f0" elevation="0" class="" style="padding: 1rem;">
-        <v-row >
+        <v-switch
+          v-model="config[t.key]"
+          color="#7c3aed"
+          hide-details
+          dense
+          class="toggle-switch"
+          @change="saveConfig"
+        ></v-switch>
+      </div>
+    </div>
 
-            <v-col cols="12" sm="12" md="12" lg="12">
-                <div>
-                    <div class="container">
-                        <v-card elevation="0">
-                            <v-subheader></v-subheader>
-                            <v-data-table :headers="headers" :items="houseHolds" :items-per-page="10" class="elevation-0">
-                                <!-- index column -->
-                                <template #item.index="{ item }">
-                                    {{ item.index }}
-                                </template>
+    <!-- ============================================================
+         THREE-COLUMN ADDRESS CARDS
+         ============================================================ -->
+    <div class="addr-grid">
+      <!-- Sections -->
+      <div v-if="config.show_section" class="addr-card">
+        <div class="addr-head">
+          <div class="addr-icon addr-icon-purple">
+            <v-icon size="18" color="white">mdi-map-marker-multiple</v-icon>
+          </div>
+          <div class="flex-grow-1">
+            <div class="addr-title">Sections</div>
+            <div class="addr-sub">{{ sections.length }} configured</div>
+          </div>
+        </div>
 
-                                <!-- overdue cell -->
-                                <template #item.overdue="{ item }">
-                                    <span :class="{ 'red--text': item.overdue < 0, 'green--text': item.overdue >= 0 }">
-                                        {{ formatCurrency(item.overdue) }}
-                                    </span>
-                                </template>
+        <div class="addr-add">
+          <v-text-field
+            v-model="newSection"
+            dense
+            outlined
+            rounded
+            hide-details
+            placeholder="Add a section"
+            @keyup.enter="addSection"
+          ></v-text-field>
+          <button
+            class="addr-add-btn"
+            :disabled="!newSection || addingSection"
+            @click="addSection"
+          >
+            <v-icon size="16" color="white">mdi-plus</v-icon>
+          </button>
+        </div>
 
-                                <!-- any month cell could use the default -->
-                            </v-data-table>
+        <div class="addr-list">
+          <div v-if="!sections.length" class="addr-empty">
+            <v-icon size="28" color="#cbd5e1">mdi-tag-off-outline</v-icon>
+            <span>No sections yet</span>
+          </div>
+          <div
+            v-for="s in sections"
+            :key="s.id"
+            class="addr-chip-row"
+          >
+            <span class="addr-chip-text">{{ s.section_name }}</span>
+            <v-icon size="14" color="#cbd5e1">mdi-drag-vertical</v-icon>
+          </div>
+        </div>
+      </div>
 
-                        </v-card>
+      <!-- Courts -->
+      <div v-if="config.show_court" class="addr-card">
+        <div class="addr-head">
+          <div class="addr-icon addr-icon-blue">
+            <v-icon size="18" color="white">mdi-home-city-outline</v-icon>
+          </div>
+          <div class="flex-grow-1">
+            <div class="addr-title">Courts</div>
+            <div class="addr-sub">{{ courts.length }} configured</div>
+          </div>
+        </div>
 
-                    </div>
+        <div class="addr-add">
+          <v-text-field
+            v-model="newCourt"
+            dense
+            outlined
+            rounded
+            hide-details
+            placeholder="Add a court"
+            @keyup.enter="addCourt"
+          ></v-text-field>
+          <button
+            class="addr-add-btn"
+            :disabled="!newCourt || addingCourt"
+            @click="addCourt"
+          >
+            <v-icon size="16" color="white">mdi-plus</v-icon>
+          </button>
+        </div>
 
-                </div>
-            </v-col>
+        <div class="addr-list">
+          <div v-if="!courts.length" class="addr-empty">
+            <v-icon size="28" color="#cbd5e1">mdi-tag-off-outline</v-icon>
+            <span>No courts yet</span>
+          </div>
+          <div
+            v-for="c in courts"
+            :key="c.id"
+            class="addr-chip-row"
+          >
+            <span class="addr-chip-text">{{ c.court_name }}</span>
+            <v-icon size="14" color="#cbd5e1">mdi-drag-vertical</v-icon>
+          </div>
+        </div>
+      </div>
 
-            <v-col cols="12" sm="12" md="12"> </v-col>
-        </v-row>
+      <!-- Streets -->
+      <div v-if="config.show_street" class="addr-card">
+        <div class="addr-head">
+          <div class="addr-icon addr-icon-green">
+            <v-icon size="18" color="white">mdi-road-variant</v-icon>
+          </div>
+          <div class="flex-grow-1">
+            <div class="addr-title">Streets</div>
+            <div class="addr-sub">{{ streets.length }} configured</div>
+          </div>
+        </div>
 
-        <v-snackbar color="primary accent-8" :timeout="6000" v-model="snackbar_s" centered bottom>
-            {{ snackbarText_s }}
-        </v-snackbar>
-        <v-snackbar color="success" :timeout="2000" v-model="snackbar" outlined center>
-            {{ snackbarText }}
-        </v-snackbar>
-        <v-snackbar color="error" :timeout="2500" v-model="snackbar2" outlined center>
-            {{ snackbarText2 }}
-        </v-snackbar>
-    </v-card>
-    <v-row justify="space-around">
-        <v-col cols="auto">
-            <v-dialog v-model="dialog" transition="dialog-top-transition" max-width="600">
-                <!-- <template v-slot:activator="{ on, attrs }">
-            <v-btn color="primary" v-bind="attrs" v-on="on">From the top</v-btn>
-          </template> -->
-                <template v-slot:default="dialog">
-                    <v-card>
-                        <v-toolbar color="#b6ff00" light>Add Official/Agent
-                            <br />
+        <div class="addr-add">
+          <v-text-field
+            v-model="newStreet"
+            dense
+            outlined
+            rounded
+            hide-details
+            placeholder="Add a street"
+            @keyup.enter="addStreet"
+          ></v-text-field>
+          <button
+            class="addr-add-btn"
+            :disabled="!newStreet || addingStreet"
+            @click="addStreet"
+          >
+            <v-icon size="16" color="white">mdi-plus</v-icon>
+          </button>
+        </div>
 
-                            <v-spacer></v-spacer>
-                            <v-card-actions class="justify-end">
-                                <v-btn text @click="dialog.value = false">Close</v-btn>
-                            </v-card-actions>
-                        </v-toolbar>
-                        <v-card-text>
-                            <div class="text-span pa-2">
-                                <h2>{{ estate_name }}</h2>
-                                <br />
-                                <h3>{{ estate_urn }}</h3>
-                            </div>
-                        </v-card-text>
+        <div class="addr-list">
+          <div v-if="!streets.length" class="addr-empty">
+            <v-icon size="28" color="#cbd5e1">mdi-tag-off-outline</v-icon>
+            <span>No streets yet</span>
+          </div>
+          <div
+            v-for="s in streets"
+            :key="s.id"
+            class="addr-chip-row"
+          >
+            <span class="addr-chip-text">{{ s.street_name }}</span>
+            <v-icon size="14" color="#cbd5e1">mdi-drag-vertical</v-icon>
+          </div>
+        </div>
+      </div>
+    </div>
 
-                        <div class="container">
-                            <div class="">
-                                <v-select v-model="role" :items="roles" label="Role" flat required></v-select>
+    <!-- ============================================================
+         INFO
+         ============================================================ -->
+    <div class="info-card">
+      <v-icon size="16" color="#7c3aed">mdi-information-outline</v-icon>
+      <span>
+        Turning a component off hides it from resident registration forms.
+        Existing households keep their address data.
+      </span>
+    </div>
 
-                                <div class="">
-                                    <v-text-field clearable v-model="household_search" @change="searchHouseholdsEstate(household_search)" placeholder="Search households" flat rounded style="background-color: beige; height: 50px" required></v-text-field>
-                                </div>
-                            </div>
-                            <div class="row text--center" id="all_items">
-                                <!-- <div v-for="tag in houseHolds" :key="tag.id" class="col-md-6"></div> -->
-
-                                <v-list subheader>
-                                    <v-subheader>Households</v-subheader>
-
-                                    <v-list-item v-for="hs in estate_houseHolds" :key="hs.title">
-                                        <v-list-item @click="
-                          (householdOwner = hs.primary_owner), getToken(hs.household_id)
-                        ">
-                                            <v-list-item-avatar>
-                                                <v-avatar color="#8051FF" size="48">
-                                                    <span style="color: black">{{
-                              hs.primary_owner.substring(0, 3)
-                            }}</span>
-                                                </v-avatar>
-                                            </v-list-item-avatar>
-
-                                            <v-list-item-content>
-                                                <v-list-item-title>{{ hs.primary_owner }}</v-list-item-title>
-                                            </v-list-item-content>
-                                            <v-list-item-icon>
-                                                <v-spacer></v-spacer>
-
-                                                <div>
-                                                    <v-card-actions>
-                                                        <v-icon color="green" v-show="hs.is_official ? false : true">mdi-account-badge</v-icon>
-                                                    </v-card-actions>
-                                                </div>
-                                            </v-list-item-icon>
-
-                                            <v-list-item-action>
-                                                <div v-show="hs.is_official ? true : false">
-                                                    <span style="font-size: 0.6rem">Assign official</span>
-
-                                                    <v-btn icon color="orange" v-show="hs.is_official ? true : false" @click="
-                                getToken(hs.household_id),
-                                  assignOfficials(hs.household_id, hs.uid),
-                                  (full_name = hs.primary_owner),
-                                  (householdOwner = hs.primary_owner),
-                                  (contact_number = hs.contact_number)
-                              ">
-                                                        <v-icon>mdi-account-network-outline</v-icon>
-                                                    </v-btn>
-                                                </div>
-                                                <div v-show="true">
-                                                    <v-btn style="margin: 4px" icon v-show="hs.is_official ? false : true" @click="
-                                assignOfficials2(hs.household_id),
-                                  DeleteOfficial(hs.contact_number)
-                              ">
-                                                        <v-icon>mdi-close</v-icon>
-                                                    </v-btn>
-                                                    <span style="font-size: 0.6rem"></span>
-                                                </div>
-                                            </v-list-item-action>
-                                            <v-icon style="margin: 4px" :color="hs.active ? 'grey' : 'blue'">
-                                                mdi-check-decagram
-                                            </v-icon>
-                                        </v-list-item>
-                                    </v-list-item>
-                                </v-list>
-                            </div>
-                        </div>
-                        <v-form v-show="false" @submit.prevent="AddOfficial">
-                            <v-text-field v-model="full_name" label="Full Name" outlined required></v-text-field>
-
-                            <v-select v-model="role" :items="roles" label="Role" outlined required></v-select>
-
-                            <v-text-field v-model="contact_number" label="Contact Number" outlined required></v-text-field>
-
-                            <v-text-field v-model="email" label="Email Address" outlined required></v-text-field>
-
-                            <v-btn color="#b6ff00" class="mt-4" type="submit" style="color: black">Submit</v-btn>
-                        </v-form>
-                    </v-card>
-                </template>
-            </v-dialog>
-        </v-col>
-    </v-row>
-</div>
+    <!-- Snackbars -->
+    <v-snackbar v-model="snackbar" color="success" :timeout="2500" top rounded="pill">
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">mdi-check-circle</v-icon>
+        <span>{{ snackbarText }}</span>
+      </div>
+    </v-snackbar>
+    <v-snackbar v-model="snackbar2" color="error" :timeout="3000" top rounded="pill">
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">mdi-alert-circle</v-icon>
+        <span>{{ snackbarText2 }}</span>
+      </div>
+    </v-snackbar>
+  </div>
 </template>
 
 <script>
-import MyBarChart from '@/components/charts/barChartPayment'
-import CryptoJS from "crypto-js";
 import axios from "axios";
-import dayjs from "@nuxtjs/dayjs";
-import moment from "moment";
-import numeral from 'numeral';
-import Map from "@/components/map.vue";
 
-import HouseholdBarChart from '~/components/charts/HouseholdBarChart.vue'
-import barChart from '@/components/charts/barChartTrends.vue'
-import paymentSummary from "@/components/paymentSummary.vue";
-
-import {
-    uuid
-} from "vue-uuid";
-
-const keyValue = "fd85b4945YF'i"; // your key value (eg: key)
-const ivKey = "smslt";
+const API = "https://makaaziserver22.up.railway.app/api";
 
 export default {
-    name: "households",
-    props: {
-        estateId: {
-            type: Number,
-            required: true,
+  name: "EstateAddressConfig",
+  props: {
+    estateId: { type: Number, required: true },
+  },
+  data() {
+    return {
+      loading: false,
+
+      // Config flags
+      config: {
+        show_section: true,
+        show_court: true,
+        show_street: true,
+      },
+
+      // Lists
+      sections: [],
+      courts: [],
+      streets: [],
+
+      // New item inputs
+      newSection: "",
+      newCourt: "",
+      newStreet: "",
+
+      // Action loading
+      addingSection: false,
+      addingCourt: false,
+      addingStreet: false,
+
+      // Snackbars
+      snackbar: false,
+      snackbarText: "",
+      snackbar2: false,
+      snackbarText2: "",
+    };
+  },
+  computed: {
+    toggles() {
+      return [
+        {
+          key: "show_section",
+          label: "Sections",
+          description: "Divides the estate into zones or phases",
+          icon: "mdi-map-marker-multiple",
+          color: "purple",
         },
-    },
-    mounted() {
-        console.log("Estate ID:", this.estateId);
-        this.Fetch_AddressSettings();
-        // this.Fetch_ActiveHouseholds();
-        // this.Fetch_PostAllEstates();
-        // this.Fetch_AllPayments();
-    },
-    components: {
-        Map,
-        paymentSummary,
-        HouseholdBarChart,
-        MyBarChart,
-        barChart
-    },
-    data() {
-        return {
-            numeral,
-       
-            headers: [
-              
-              
-                {
-                    text: "Street",
-                    value: "street",
-                    align: "right",
-                },
-                {
-                    text: "Court",
-                    value: "court",
-                    align: "right",
-                },
-
-                {
-                    text: "Section",
-                    value: "section",
-                    align: "right",
-                },
-
-            ],
-            paymentData: [{
-                    month: 'January',
-                    amount: 1200
-                },
-                {
-                    month: 'February',
-                    amount: 950
-                },
-                {
-                    month: 'March',
-                    amount: 1600
-                },
-                {
-                    month: 'April',
-                    amount: 1100
-                }
-            ],
-            roles: ["Chairman", "Secretary", "Treasurer"],
-            dialog: false,
-            totalEstate: 0,
-            totalResidence: 0,
-            totalActiveResidence: 0,
-            estate_name: null,
-            estate_urn: null,
-            show: true,
-            switch: false,
-            drawer: false,
-            group: null,
-            estates_search: "",
-            pay_search: "",
-            household_search: "",
-            search_estates: [],
-            payments: [],
-            houseHolds: [],
-            estate_houseHolds: [],
-            rules: [
-                (value) => !!value || "Required.",
-                (value) => (value || "").length <= 4 || "Max 4 characters",
-            ],
-            estates: [],
-            deposit: true,
-            depo_amount: "",
-            depo_number: "",
-            showB: false,
-            pin_input: "",
-            pin_input_deposit: "",
-            cash_deposit_dialog: false,
-            cash_refund_dialog: false,
-            pin_set_dialog: false,
-            pin_dialog: false,
-            pin_dialog2: false,
-            pin_view_bal_dialog: false,
-            pin: null,
-            pinbal: null,
-            pin_transfer: null,
-            pin_transact: null,
-            refund: false,
-            password_status: false,
-            stk_push: false,
-            verify_pin: null,
-            auth_state: false,
-            security_quiz: false,
-            security_key: false,
-            secretKey: null,
-            set_Pin: false,
-            pass_status: "",
-            pin: null,
-            verify_pin: null,
-            b2c: false,
-            bg: require("@/assets/bg.png"),
-            logo: require("@/assets/logo.svg"),
-            errorResponse: "",
-            successResponse: "",
-            Amount: "",
-            Phone: null,
-            UserName: "",
-            snackbar_s: false,
-            snackbarText_s: "",
-            snackbar: false,
-            snackbar2: false,
-            snackbarText: "",
-            snackbarText2: "",
-            status: false,
-            timerEnabled: false,
-            show: false,
-            show6: false,
-            timerCount: 25,
-            valid: true,
-            name: "",
-            nameRules: [
-                (v) => !!v || "Name is required",
-                (v) => (v && v.length <= 20) || "Name must be less than 10 characters",
-            ],
-            email: "",
-            emailRules: [
-                (v) => !!v || "E-mail is required",
-                (v) => /.+@.+\..+/.test(v) || "E-mail must be valid",
-            ],
-            select: null,
-            items: ["Item 1", "Item 2", "Item 3", "Item 4"],
-            checkbox: false,
-            CheckoutRequestID: "",
-            balance: "0",
-            transactions: [],
-            show6: false,
-            errorResponse: "",
-            successResponse: "",
-            timerEnabled3: false,
-            timerCount3: 2,
-            timerEnabled2: false,
-            timerCount2: 2,
-            uid: null,
-            payment: false,
-            full_name: null,
-            role: null,
-            contact_number: null,
-            email: null,
-            estate_urn: null,
-            estate_id: null,
-            payment_msg: "",
-            deviceToken: "",
-            title: "",
-            body: "",
-            householdOwner: "",
-            totalPayment: 0,
-            totalPendingPayment: 0,
-            estateConfig:[]
-        };
-    },
-    methods: {
-
-        async Fetch_AddressSettings() {
-            let that = this;
-            that.estateConfig.splice(that.estateConfig);
-            axios
-                .get(`https://makaaziserverapi-production-c036.up.railway.app/api/estates-config/get_estates/${this.estateId}`, {})
-                .then(function (response) {
-                    if (response.status == 200) {
-                        // that.snackbar = true;
-                        // that.snackbarText = response.data;
-                        that.estateConfig = response.data;
-                        console.log("Estate config", that.estateConfig);
-                    } else if (response.status == 400) {
-                        that.snackbar2 = true;
-                        that.snackbarText2 = response.data;
-                    }
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    that.snackbarText2 = error;
-                    that.snackbar2 = true;
-                });
+        {
+          key: "show_court",
+          label: "Courts",
+          description: "Numbered or named clusters of homes",
+          icon: "mdi-home-city-outline",
+          color: "blue",
         },
-       
-        
+        {
+          key: "show_street",
+          label: "Streets",
+          description: "Named roads or lanes",
+          icon: "mdi-road-variant",
+          color: "green",
+        },
+      ];
+    },
+  },
+  mounted() {
+    this.refreshAll();
+  },
+  methods: {
+    // =========================================================
+    // LOAD
+    // =========================================================
+    async refreshAll() {
+      this.loading = true;
+      await Promise.allSettled([
+        this.fetchConfig(),
+        this.fetchSections(),
+        this.fetchCourts(),
+        this.fetchStreets(),
+      ]);
+      this.loading = false;
     },
 
-    created() {},
+    async fetchConfig() {
+      try {
+        const { data } = await axios.get(
+          `${API}/address-config/estate/${this.estateId}`
+        );
+        if (data) {
+          this.config.show_section = data.show_section === 1 || data.show_section === true;
+          this.config.show_court = data.show_court === 1 || data.show_court === true;
+          this.config.show_street = data.show_street === 1 || data.show_street === true;
+        }
+      } catch (err) {
+        console.warn("Config fetch failed:", err.message);
+      }
+    },
+
+    async fetchSections() {
+      try {
+        const { data } = await axios.get(
+          `${API}/estates-config/sections/${this.estateId}`
+        );
+        this.sections = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn("Sections fetch failed:", err.message);
+        // Fallback: read from address summary
+        try {
+          const { data } = await axios.get(
+            `${API}/officials/address-summary?estate_id=${this.estateId}&type=section`
+          );
+          this.sections = Array.isArray(data)
+            ? data.map((s, i) => ({ id: i, section_name: s.name }))
+            : [];
+        } catch (e) {
+          this.sections = [];
+        }
+      }
+    },
+
+    async fetchCourts() {
+      try {
+        const { data } = await axios.get(
+          `${API}/estates-config/courts/${this.estateId}`
+        );
+        this.courts = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn("Courts fetch failed:", err.message);
+        try {
+          const { data } = await axios.get(
+            `${API}/officials/address-summary?estate_id=${this.estateId}&type=court`
+          );
+          this.courts = Array.isArray(data)
+            ? data.map((c, i) => ({ id: i, court_name: c.name }))
+            : [];
+        } catch (e) {
+          this.courts = [];
+        }
+      }
+    },
+
+    async fetchStreets() {
+      try {
+        const { data } = await axios.get(
+          `${API}/estates-config/streets/${this.estateId}`
+        );
+        this.streets = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn("Streets fetch failed:", err.message);
+        try {
+          const { data } = await axios.get(
+            `${API}/officials/address-summary?estate_id=${this.estateId}&type=street`
+          );
+          this.streets = Array.isArray(data)
+            ? data.map((s, i) => ({ id: i, street_name: s.name }))
+            : [];
+        } catch (e) {
+          this.streets = [];
+        }
+      }
+    },
+
+    // =========================================================
+    // SAVE CONFIG
+    // =========================================================
+    async saveConfig() {
+      try {
+        await axios.post(`${API}/address-config/save`, {
+          estate_id: this.estateId,
+          show_section: this.config.show_section ? 1 : 0,
+          show_court: this.config.show_court ? 1 : 0,
+          show_street: this.config.show_street ? 1 : 0,
+        });
+        this.showSuccess("Configuration updated");
+      } catch (err) {
+        this.showError("Could not save configuration");
+      }
+    },
+
+    // =========================================================
+    // ADD ITEMS
+    // =========================================================
+    async addSection() {
+      const name = (this.newSection || "").trim();
+      if (!name) return;
+      this.addingSection = true;
+      try {
+        await axios.post(`${API}/address-config/section/add`, {
+          estate_id: this.estateId,
+          section_name: name,
+        });
+        this.showSuccess(`Section "${name}" added`);
+        this.newSection = "";
+        await this.fetchSections();
+      } catch (err) {
+        this.showError(err.response?.data?.error || "Could not add section");
+      } finally {
+        this.addingSection = false;
+      }
+    },
+
+    async addCourt() {
+      const name = (this.newCourt || "").trim();
+      if (!name) return;
+      this.addingCourt = true;
+      try {
+        await axios.post(`${API}/address-config/court/add`, {
+          estate_id: this.estateId,
+          court_name: name,
+        });
+        this.showSuccess(`Court "${name}" added`);
+        this.newCourt = "";
+        await this.fetchCourts();
+      } catch (err) {
+        this.showError(err.response?.data?.error || "Could not add court");
+      } finally {
+        this.addingCourt = false;
+      }
+    },
+
+    async addStreet() {
+      const name = (this.newStreet || "").trim();
+      if (!name) return;
+      this.addingStreet = true;
+      try {
+        await axios.post(`${API}/address-config/street/add`, {
+          estate_id: this.estateId,
+          street_name: name,
+        });
+        this.showSuccess(`Street "${name}" added`);
+        this.newStreet = "";
+        await this.fetchStreets();
+      } catch (err) {
+        this.showError(err.response?.data?.error || "Could not add street");
+      } finally {
+        this.addingStreet = false;
+      }
+    },
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+    showSuccess(msg) {
+      this.snackbar = true;
+      this.snackbarText = msg;
+    },
+    showError(msg) {
+      this.snackbar2 = true;
+      this.snackbarText2 = msg;
+    },
+  },
 };
 </script>
 
-<style>
-#all_items {
-    --scrollbarBG: #00000000;
-    --scrollbarBG: #b7ff005b;
-    --thumbBG: #2f2c2c00;
-    scrollbar-width: thin;
-    scrollbar-color: var(--thumbBG) var(--scrollbarBG);
-    overflow-y: scroll;
-    width: 100%;
-    align-items: start;
-    bottom: 0;
-    padding: 3px;
-    height: 100vh;
-    justify-content: start;
+<style scoped>
+.config-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
 }
 
-#all_items::-webkit-scrollbar {
-    width: 8px;
+/* ============================================================
+   HEADER
+   ============================================================ */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-#all_items::-webkit-scrollbar-track {
-    background: var(--scrollbarBG);
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  letter-spacing: -0.4px;
+  margin: 0;
 }
 
-#all_items::-webkit-scrollbar-thumb {
-    background-color: var(--thumbBG);
-    border-radius: 8px;
-    border: 3px solid var(--scrollbarBG);
+.page-sub {
+  font-size: 0.82rem;
+  color: #7c7a95;
+  margin: 4px 0 0;
+  max-width: 560px;
 }
 
-.blur {
-    filter: blur(9px);
-    /* Adjust the value (5px) to increase or decrease the blur intensity */
+.quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 10px;
+  color: #4b5563;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
 }
 
-#charter {
-    transition: 0.5s ease;
-    background-image: url("@/assets/bg.png");
-    background-attachment: fixed;
-    background-position: center;
-    background-size: contain;
-    background-color: black;
-    width: 100%;
-    height: 260px;
+.quick-btn:hover:not(:disabled) {
+  border-color: #7c3aed;
+  color: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.quick-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   TOGGLE STRIP
+   ============================================================ */
+.toggle-strip {
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 18px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.toggle-row:hover {
+  background: #fafaff;
+}
+
+.toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.toggle-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toggle-icon-purple {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+.toggle-icon-blue {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+}
+.toggle-icon-green {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.toggle-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e1b4b;
+}
+
+.toggle-sub {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.toggle-switch {
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   ADDRESS GRID
+   ============================================================ */
+.addr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.addr-card {
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s ease;
+}
+
+.addr-card:hover {
+  box-shadow: 0 10px 28px -16px rgba(30, 27, 75, 0.15);
+}
+
+.addr-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.addr-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.addr-icon-purple {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+.addr-icon-blue {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+}
+.addr-icon-green {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.addr-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  letter-spacing: -0.2px;
+}
+
+.addr-sub {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+/* Add row */
+.addr-add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.addr-add > :first-child {
+  flex: 1;
+}
+
+.addr-add-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 14px -6px rgba(124, 58, 237, 0.55);
+  flex-shrink: 0;
+}
+
+.addr-add-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -6px rgba(124, 58, 237, 0.75);
+}
+
+.addr-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* List */
+.addr-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e3f0 transparent;
+  padding-right: 4px;
+}
+
+.addr-list::-webkit-scrollbar {
+  width: 4px;
+}
+.addr-list::-webkit-scrollbar-thumb {
+  background: #e5e3f0;
+  border-radius: 2px;
+}
+
+.addr-chip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fafaff;
+  border: 1px solid #f3f4f6;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e1b4b;
+  transition: all 0.15s ease;
+  cursor: grab;
+}
+
+.addr-chip-row:hover {
+  background: #f3eeff;
+  border-color: #e9e0ff;
+}
+
+.addr-chip-row:active {
+  cursor: grabbing;
+}
+
+.addr-chip-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addr-empty {
+  padding: 32px 12px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================================
+   FORM FIELDS
+   ============================================================ */
+::v-deep .theme--light.v-text-field--outlined fieldset {
+  border-radius: 12px !important;
+  border-color: #e9e7f2 !important;
+}
+
+::v-deep .theme--light.v-text-field--outlined:not(.v-input--is-focused):hover fieldset {
+  border-color: #c7b8ff !important;
+}
+
+::v-deep .theme--light.v-text-field--outlined.v-input--is-focused fieldset {
+  border-color: #7c3aed !important;
+  border-width: 2px !important;
+}
+
+/* ============================================================
+   INFO CARD
+   ============================================================ */
+.info-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #faf8ff;
+  border: 1px solid #e9e0ff;
+  border-radius: 12px;
+  font-size: 0.83rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 599px) {
+  .toggle-row {
+    padding: 12px;
+  }
+  .toggle-sub {
+    display: none;
+  }
+  .addr-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
