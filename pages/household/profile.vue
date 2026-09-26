@@ -51,7 +51,7 @@
             outlined
             color="#8051FF"
             class="rounded-xl text-capitalize mt-3 font-weight-medium"
-            @click="logout"
+            @click="signOut"
           >
             <v-icon left size="18" color="#8051FF">mdi-logout</v-icon>
             Sign Out
@@ -116,9 +116,74 @@
               >
                 <v-icon small>mdi-refresh</v-icon>
               </v-btn>
-              <v-avatar color="#8051FF" size="36">
-                <v-img :src="avatarUrl" />
-              </v-avatar>
+
+              <!-- Avatar with menu -->
+              <v-menu
+                bottom
+                left
+                offset-y
+                rounded="xl"
+                transition="slide-y-transition"
+                :nudge-bottom="8"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-avatar
+                    color="#8051FF"
+                    size="36"
+                    v-bind="attrs"
+                    v-on="on"
+                    style="cursor: pointer;"
+                  >
+                    <v-img :src="avatarUrl" />
+                  </v-avatar>
+                </template>
+
+                <v-list dense class="py-2 menu-rounded">
+                  <v-list-item class="px-3 py-2">
+                    <v-list-item-content>
+                      <v-list-item-title class="font-weight-bold text-body-2">
+                        {{ household.primary_owner || 'Resident' }}
+                      </v-list-item-title>
+                      <v-list-item-subtitle class="text-caption text--secondary">
+                        {{ household.uid || '—' }}
+                      </v-list-item-subtitle>
+                    </v-list-item-content>
+                  </v-list-item>
+
+                  <v-divider class="my-1"></v-divider>
+
+                  <v-list-item link @click="goTo('/household/profile')">
+                    <v-list-item-icon class="mr-3">
+                      <v-icon small color="#8051FF">mdi-account-outline</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                      <v-list-item-title class="text-body-2">Profile</v-list-item-title>
+                    </v-list-item-content>
+                  </v-list-item>
+
+                  <v-list-item link @click="goTo('/household/payment_summary')">
+                    <v-list-item-icon class="mr-3">
+                      <v-icon small color="#8051FF">mdi-currency-usd</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                      <v-list-item-title class="text-body-2">Payments</v-list-item-title>
+                    </v-list-item-content>
+                  </v-list-item>
+
+                  <v-divider class="my-1"></v-divider>
+
+                  <v-list-item link @click="signOut">
+                    <v-list-item-icon class="mr-3">
+                      <v-icon small color="red darken-2">mdi-logout</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                      <v-list-item-title class="text-body-2 red--text text--darken-2 font-weight-medium">
+                        Sign Out
+                      </v-list-item-title>
+                    </v-list-item-content>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </v-col>
           </v-row>
         </v-container>
@@ -245,6 +310,41 @@
             </v-card>
           </v-col>
         </v-row>
+
+        <!-- Sign Out card -->
+        <v-row class="mt-4 reveal-card" style="animation-delay: 150ms">
+          <v-col cols="12">
+            <v-card class="rounded-2xl" elevation="0" outlined>
+              <v-card-title class="px-4 px-sm-6 py-4 card-header-premium d-flex align-center">
+                <v-avatar color="red lighten-5" size="36" class="mr-3">
+                  <v-icon color="#c62828">mdi-logout</v-icon>
+                </v-avatar>
+                <div>
+                  <div class="text-h6 font-weight-bold text--primary">Sign out</div>
+                  <div class="text-caption text--secondary">
+                    You'll need to sign in again to access your account
+                  </div>
+                </div>
+              </v-card-title>
+              <v-divider></v-divider>
+              <div class="pa-4 pa-sm-6">
+                <v-btn
+                  block
+                  rounded
+                  large
+                  depressed
+                  color="#c62828"
+                  dark
+                  class="text-capitalize font-weight-bold signout-btn"
+                  @click="signOut"
+                >
+                  <v-icon left>mdi-logout</v-icon>
+                  Sign Out
+                </v-btn>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-container>
 
       <v-snackbar
@@ -257,8 +357,14 @@
         elevation="6"
       >
         <div class="d-flex align-center">
-          <v-avatar :color="snackbar.color === 'success' ? 'success darken-2' : 'error darken-2'" size="28" class="mr-3">
-            <v-icon color="white" small>{{ snackbar.color === 'success' ? 'mdi-check' : 'mdi-alert' }}</v-icon>
+          <v-avatar
+            :color="snackbar.color === 'success' ? 'success darken-2' : 'error darken-2'"
+            size="28"
+            class="mr-3"
+          >
+            <v-icon color="white" small>
+              {{ snackbar.color === 'success' ? 'mdi-check' : 'mdi-alert' }}
+            </v-icon>
           </v-avatar>
           <span class="font-weight-medium">{{ snackbar.text }}</span>
         </div>
@@ -297,10 +403,6 @@ export default {
     };
   },
   computed: {
-    /**
-     * ⚡ Dashboard URL matches /household/dashboard/:uid route
-     * (folder has _id.vue, so the URL needs the uid).
-     */
     dashboardRoute() {
       return this.uid
         ? `/household/dashboard/${this.uid}`
@@ -380,7 +482,30 @@ export default {
     },
 
     // =====================================================
-    // AUTH — reads UID from Firebase
+    // SIGN OUT
+    // =====================================================
+    async signOut() {
+      try {
+        if (this.$fire?.auth) {
+          await this.$fire.auth.signOut();
+        }
+      } catch (err) {
+        console.warn('signOut error:', err?.message);
+      }
+      // Redirect to login
+      try {
+        if (this.$router) {
+          this.$router.push('/login');
+        } else {
+          window.location.href = '/login';
+        }
+      } catch {
+        window.location.href = '/login';
+      }
+    },
+
+    // =====================================================
+    // AUTH
     // =====================================================
     waitForAuthAndLoad() {
       const that = this;
@@ -414,7 +539,6 @@ export default {
     async fetchHousehold() {
       const that = this;
       const url = `${API}/households/getHouseHoldId/${that.uid}`;
-      console.log('🔵 GET', url);
       try {
         const { data, status } = await axios.get(url);
         if (status === 200) {
@@ -430,20 +554,15 @@ export default {
             uid: data.uid || '',
             status: data.status || 'Approved',
           };
-          console.log('🔵 Household loaded:', that.household);
         }
       } catch (error) {
-        console.error('🔴 fetchHousehold error:', error.response?.data || error.message);
+        console.error('fetchHousehold error:', error.response?.data || error.message);
         that.showSnackbar(error.response?.data?.error || 'Could not load profile', 'error');
       }
     },
 
     showSnackbar(text, color = 'success') {
       this.snackbar = { show: true, text, color };
-    },
-    logout() {
-      if (this.$fire?.auth) this.$fire.auth.signOut();
-      this.$router.push('/login');
     },
   },
 };
@@ -494,6 +613,23 @@ export default {
 
 .card-header-premium {
   background: linear-gradient(to bottom, #ffffff, #f8fafc);
+}
+
+.signout-btn {
+  height: 48px !important;
+  font-size: 0.95rem !important;
+  letter-spacing: 0.3px;
+  box-shadow: 0 8px 20px -8px rgba(198, 40, 40, 0.5) !important;
+  transition: all 0.25s ease !important;
+}
+.signout-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px -8px rgba(198, 40, 40, 0.7) !important;
+}
+
+.menu-rounded {
+  border-radius: 14px !important;
+  min-width: 220px;
 }
 
 .snackbar-premium ::v-deep .v-snackbar__content { padding: 12px 20px; }
