@@ -574,11 +574,18 @@
             </p>
           </div>
 
-          <v-row justify="center">
+          <!-- Loading skeletons -->
+          <div v-if="plansLoading" class="pricing-grid">
+            <div v-for="n in 4" :key="n" class="pricing-card pricing-card-skeleton">
+              <v-skeleton-loader type="article, button" />
+            </div>
+          </div>
+
+          <!-- Loaded plans -->
+          <v-row v-else-if="pricing.length" justify="center">
             <v-col v-for="(p, i) in pricing" :key="p.name" cols="12" sm="6" md="3">
-              <div class="pricing-card reveal-card"
-                :class="{ 'pricing-card-featured': p.featured }"
-                :style="{ animationDelay: i * 80 + 'ms' }">
+              <div class="pricing-card"
+                :class="{ 'pricing-card-featured': p.featured }">
                 <div v-if="p.featured" class="pricing-badge">Most popular</div>
                 <div class="pricing-name">{{ p.name }}</div>
                 <div class="pricing-range">{{ p.range }}</div>
@@ -596,6 +603,15 @@
               </div>
             </v-col>
           </v-row>
+
+          <!-- Empty state -->
+          <div v-else class="pricing-empty">
+            <v-icon size="42" color="#8051FF">mdi-credit-card-off-outline</v-icon>
+            <div class="pricing-empty-title">No plans available</div>
+            <div class="pricing-empty-text">
+              Subscription plans haven't been configured yet.
+            </div>
+          </div>
 
           <div class="text-center mt-8">
             <v-btn text color="#8051FF" class="text-capitalize font-weight-bold"
@@ -666,64 +682,115 @@
       </section>
 
       <!-- ============================== FOOTER ============================== -->
-      <v-footer color="grey darken-4" dark class="py-10">
-        <v-container>
-          <v-row>
-            <v-col cols="12" md="4" class="mb-6 mb-md-0">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="#8051FF" size="32" class="mr-2">
-                  <v-icon color="white" size="16">mdi-home-city</v-icon>
-                </v-avatar>
-                <span class="text-h6 font-weight-bold">Makaazi</span>
+      <v-footer color="transparent" class="py-0 site-footer">
+        <v-container class="pa-0">
+          <!-- Top band: brand + links -->
+          <div class="footer-main">
+            <v-container>
+              <v-row class="py-10">
+                <!-- Brand column -->
+                <v-col cols="12" md="5" class="mb-8 mb-md-0">
+                  <div class="d-flex align-center mb-4">
+                    <v-avatar color="#8051FF" size="40" class="mr-3 footer-brand-avatar">
+                      <v-icon color="white" size="20">mdi-home-city</v-icon>
+                    </v-avatar>
+                    <span class="text-h5 font-weight-black footer-brand-text">
+                      <span style="color: #a78bfa;">Ma</span><span style="color: #a3e635;">kaazi</span>
+                    </span>
+                  </div>
+                  <p class="footer-brand-desc">
+                    The all-in-one platform for modern Kenyan estate management 
+                    service charges, M-Pesa payments, and household records in one clean console.
+                  </p>
+
+                  <!-- Contact chips -->
+                  <!-- <div class="footer-contact">
+                    <a href="mailto:support@makaazi.co.ke" class="footer-contact-chip">
+                      <v-icon size="14" color="#a78bfa">mdi-email-outline</v-icon>
+                      <span>support@makaazi.co.ke</span>
+                    </a>
+                    <div class="footer-contact-chip footer-contact-chip-static">
+                      <v-icon size="14" color="#a78bfa">mdi-map-marker-outline</v-icon>
+                      <span>Nairobi, Kenya</span>
+                    </div>
+                  </div> -->
+
+                  <!-- Social -->
+                  <div class="footer-social">
+                    <button class="footer-social-btn" aria-label="Twitter">
+                      <v-icon size="16">mdi-twitter</v-icon>
+                    </button>
+                    <button class="footer-social-btn" aria-label="LinkedIn">
+                      <v-icon size="16">mdi-linkedin</v-icon>
+                    </button>
+                    <button class="footer-social-btn" aria-label="WhatsApp">
+                      <v-icon size="16">mdi-whatsapp</v-icon>
+                    </button>
+                  </div>
+                </v-col>
+
+                <!-- Spacer on mobile -->
+                <v-col cols="12" md="1" class="d-none d-md-block"></v-col>
+
+                <!-- Product -->
+                <v-col cols="6" md="2" class="mb-6 mb-md-0">
+                  <div class="footer-head">Product</div>
+                  <a class="footer-link" @click="scrollToSection('how')">
+                    <span class="footer-link-arrow">→</span> How it works
+                  </a>
+                  <a class="footer-link" @click="scrollToSection('features')">
+                    <span class="footer-link-arrow">→</span> Features
+                  </a>
+                  <a class="footer-link" @click="scrollToSection('pricing')">
+                    <span class="footer-link-arrow">→</span> Pricing
+                  </a>
+                </v-col>
+
+                <!-- Support -->
+                <v-col cols="6" md="2" class="mb-6 mb-md-0">
+                  <div class="footer-head">Support</div>
+                  <a class="footer-link" @click="scrollToSection('faq')">
+                    <span class="footer-link-arrow">→</span> FAQ
+                  </a>
+                  <a class="footer-link" href="mailto:support@makaazi.co.ke">
+                    <span class="footer-link-arrow">→</span> Contact us
+                  </a>
+                </v-col>
+
+                <!-- Legal -->
+                <v-col cols="12" md="2" class="mt-6 mt-md-0">
+                  <div class="footer-head">Legal</div>
+                  <a class="footer-link" @click="_push('/privacy')">
+                    <span class="footer-link-arrow">→</span> Privacy Policy
+                  </a>
+                  
+                  <a class="footer-link" @click="_push('/terms')">
+                    
+                    <span class="footer-link-arrow">→</span> Terms of Service
+                  </a>
+                </v-col>
+              </v-row>
+            </v-container>
+          </div>
+
+          <!-- Bottom strip -->
+          <div class="footer-bottom-strip">
+            <v-container>
+              <div class="footer-bottom">
+                <div class="footer-bottom-left">
+                  <span class="footer-copy">
+                    © {{ new Date().getFullYear() }} Makaazi Technologies Ltd.
+                  </span>
+                  <span class="footer-sep">·</span>
+                  <span class="footer-copy footer-copy-muted">All rights reserved</span>
+                </div>
+                <div class="footer-bottom-right">
+                  <span class="footer-made-with">
+                    Made with <span class="footer-heart">♥</span> in Nairobi
+                  </span>
+                </div>
               </div>
-              <p class="text-body-2 grey--text text--lighten-1" style="line-height: 1.65; max-width: 320px;">
-                The all-in-one platform for modern Kenyan estate management.
-              </p>
-              <div class="d-flex mt-4 gap-2">
-                <v-btn icon small color="grey darken-3"><v-icon size="16">mdi-twitter</v-icon></v-btn>
-                <v-btn icon small color="grey darken-3"><v-icon size="16">mdi-linkedin</v-icon></v-btn>
-                <v-btn icon small color="grey darken-3"><v-icon size="16">mdi-whatsapp</v-icon></v-btn>
-              </div>
-            </v-col>
-
-            <v-col cols="6" md="2">
-              <div class="footer-head">Product</div>
-              <div class="footer-link" @click="scrollToSection('features')">Features</div>
-              <div class="footer-link" @click="scrollToSection('pricing')">Pricing</div>
-              <div class="footer-link" @click="scrollToSection('how')">How it works</div>
-            </v-col>
-
-            <v-col cols="6" md="2">
-              <div class="footer-head">Company</div>
-              <div class="footer-link">About</div>
-              <div class="footer-link">Blog</div>
-              <div class="footer-link">Careers</div>
-            </v-col>
-
-            <v-col cols="6" md="2">
-              <div class="footer-head">Support</div>
-              <div class="footer-link" @click="scrollToSection('faq')">FAQ</div>
-              <div class="footer-link">Help center</div>
-              <a class="footer-link" href="mailto:support@makaazi.co.ke">Contact</a>
-            </v-col>
-
-            <v-col cols="6" md="2">
-              <div class="footer-head">Legal</div>
-              <div class="footer-link">Privacy</div>
-              <div class="footer-link">Terms</div>
-              <div class="footer-link">Security</div>
-            </v-col>
-          </v-row>
-
-          <v-divider class="my-6" style="border-color: rgba(255,255,255,0.08);" />
-
-          <div class="footer-bottom">
-            <span class="text-caption grey--text text--lighten-1">
-              © {{ new Date().getFullYear() }} Makaazi. Built for modern Kenyan estates.
-            </span>
-            <span class="text-caption grey--text text--lighten-1">
-              Made with <span style="color: #ef4444;">♥</span> in Nairobi
-            </span>
+            </v-container>
           </div>
         </v-container>
       </v-footer>
@@ -895,36 +962,9 @@ export default {
         },
       ],
 
-      pricing: [
-        {
-          name: 'Band 1',
-          range: '1 – 100 households',
-          amount: '100',
-          featured: false,
-          features: ['Full estate console', 'M-Pesa payments', 'Email support', 'Monthly reports'],
-        },
-        {
-          name: 'Band 2',
-          range: '101 – 500 households',
-          amount: '200',
-          featured: true,
-          features: ['Everything in Band 1', 'Priority support', 'Advanced reports', 'Custom charges'],
-        },
-        {
-          name: 'Band 3',
-          range: '501 – 1000 households',
-          amount: '300',
-          featured: false,
-          features: ['Everything in Band 2', 'Dedicated manager', 'API access', 'Bulk imports'],
-        },
-        {
-          name: 'Band 4',
-          range: '1000+ households',
-          amount: '400',
-          featured: false,
-          features: ['Everything in Band 3', 'On-site training', 'SLA guarantee', 'White-label'],
-        },
-      ],
+      // ✅ Pricing fetched from backend
+      pricing: [],
+      plansLoading: false,
 
       roles: [
         {
@@ -1011,6 +1051,7 @@ export default {
   mounted() {
     window.addEventListener('scroll', this.handleScroll);
     this.checkAuth();
+    this.fetchPricing();
     this.$nextTick(() => {
       this.setupStatsObserver();
       this.setupRevealObserver();
@@ -1040,6 +1081,49 @@ export default {
 
     fmtCount(n) {
       return (Number(n) || 0).toLocaleString('en-US');
+    },
+
+    // =====================================================
+    // FETCH PRICING FROM BACKEND
+    // =====================================================
+    async fetchPricing() {
+      this.plansLoading = true;
+      try {
+        const { data } = await axios.get(`${API}/estates/subscription-plans`);
+        console.log('[pricing] raw response:', data);
+
+        if (!Array.isArray(data) || !data.length) {
+          this.pricing = [];
+          return;
+        }
+
+        const featuresByTier = [
+          ['Full estate console', 'M-Pesa payments', 'Email support', 'Monthly reports'],
+          ['Everything in Band 1', 'Priority support', 'Advanced reports', 'Custom charges'],
+          ['Everything in Band 2', 'Dedicated manager', 'API access', 'Bulk imports'],
+          ['Everything in Band 3', 'On-site training', 'SLA guarantee', 'White-label'],
+        ];
+
+        const featuredIndex = data.length > 1 ? 1 : 0;
+
+        this.pricing = data.map((p, i) => ({
+          name: p.plan_name,
+          range:
+            p.max_households == null
+              ? `${p.min_households}+ households`
+              : `${p.min_households} – ${p.max_households} households`,
+          amount: String(Number(p.monthly_rate).toFixed(0)),
+          featured: i === featuredIndex,
+          features: featuresByTier[i % featuresByTier.length],
+        }));
+
+        console.log('[pricing] mapped:', this.pricing);
+      } catch (err) {
+        console.error('[pricing] fetch failed:', err.response?.data || err.message);
+        this.pricing = [];
+      } finally {
+        this.plansLoading = false;
+      }
     },
 
     // =====================================================
@@ -1127,7 +1211,6 @@ export default {
           that.userName = '';
           that.userEmail = '';
           that.userPhone = '';
-          // Safety: ensure scroll is unlocked whenever auth clears
           that.$nextTick(() => that._unlockScroll());
         }
       });
@@ -1142,15 +1225,12 @@ export default {
     },
 
     // =====================================================
-    // SCROLL LOCK CLEANUP (Vuetify overlay fix)
+    // SCROLL LOCK CLEANUP
     // =====================================================
     _forceCloseMenus() {
-      // Close all Vuetify menus that might still be in the DOM
       document.querySelectorAll('.v-menu__content').forEach((el) => {
         el.style.display = 'none';
       });
-
-      // Remove lingering overlay classes
       document.querySelectorAll('.v-overlay--active').forEach((el) => {
         el.classList.remove('v-overlay--active');
         el.style.display = 'none';
@@ -1158,19 +1238,12 @@ export default {
     },
 
     _unlockScroll() {
-      // Clear inline styles Vuetify set on <body> / <html>
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
       document.documentElement.style.overflow = '';
-
-      // Remove overflow-lock classes
       document.body.classList.remove('overflow-hidden');
       document.documentElement.classList.remove('overflow-hidden');
-
-      // Belt-and-suspenders: some Vuetify versions apply this too
       document.body.classList.remove('v-overlay-container');
-
-      // Final fallback — if 300ms later body is still locked, force it
       setTimeout(() => {
         if (document.body.style.overflow === 'hidden') {
           document.body.style.overflow = '';
@@ -1180,7 +1253,7 @@ export default {
     },
 
     // =====================================================
-    // MENU HANDLERS (close menu → wait → act)
+    // MENU HANDLERS
     // =====================================================
     onMenuDashboard() {
       this.userMenu = false;
@@ -1191,7 +1264,6 @@ export default {
 
     onMenuSignOut() {
       this.userMenu = false;
-      // Give Vuetify a tick to finish the menu close transition
       this.$nextTick(() => {
         setTimeout(() => this.signOut(), 50);
       });
@@ -1325,26 +1397,19 @@ export default {
     },
 
     async signOut() {
-      // 1) Close any open menus / drawers FIRST
       this.userMenu = false;
       this.mobileMenu = false;
       this._forceCloseMenus();
-
-      // 2) Firebase sign-out
       try {
         if (this.$fire?.auth) await this.$fire.auth.signOut();
       } catch (err) {
         console.warn('Sign out error:', err.message);
       }
-
-      // 3) Reset auth state
       this.isAuthenticated = false;
       this.uid = null;
       this.userName = '';
       this.userEmail = '';
       this.userPhone = '';
-
-      // 4) Force-unlock scroll after DOM updates
       this.$nextTick(() => {
         this._unlockScroll();
       });
@@ -1657,7 +1722,6 @@ export default {
   box-shadow: 0 30px 60px -30px rgba(15, 13, 36, 0.35);
 }
 
-/* Household mock */
 .mock-row {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 0;
@@ -1682,10 +1746,7 @@ export default {
   letter-spacing: 0.3px; text-transform: uppercase;
 }
 
-/* Payment mock */
-.mock-payment {
-  text-align: center; padding: 8px 0;
-}
+.mock-payment { text-align: center; padding: 8px 0; }
 .mock-payment-label {
   font-size: 0.68rem; font-weight: 800; color: #94a3b8;
   text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;
@@ -1707,7 +1768,6 @@ export default {
   font-size: 0.7rem; color: #10b981; font-weight: 700;
 }
 
-/* Reports mock */
 .mock-report-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .mock-report-title { font-size: 0.82rem; font-weight: 800; color: #0f0d24; }
 .mock-report-pill {
@@ -1834,6 +1894,11 @@ export default {
   padding: 28px 24px;
   height: 100%;
   transition: all 0.25s ease;
+  animation: pricingFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes pricingFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .pricing-card:hover {
   transform: translateY(-4px);
@@ -1876,6 +1941,38 @@ export default {
   font-size: 0.8rem; color: #4b5563;
 }
 
+/* Pricing skeleton + empty */
+.pricing-card-skeleton {
+  min-height: 300px;
+  animation: none;
+}
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  justify-content: center;
+}
+.pricing-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+.pricing-empty-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  margin-top: 12px;
+}
+.pricing-empty-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 6px;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
 /* ============================================================
    CTA BAND
    ============================================================ */
@@ -1909,23 +2006,227 @@ export default {
 .cta-shape-2 { width: 250px; height: 250px; background: #7cb300; bottom: -80px; right: 30%; }
 
 /* ============================================================
-   FOOTER
+   FOOTER (redesigned)
    ============================================================ */
+.site-footer {
+  background: linear-gradient(180deg, #0a0a14 0%, #14102b 60%, #1a1533 100%) !important;
+  position: relative;
+  overflow: hidden;
+}
+.site-footer::before {
+  content: "";
+  position: absolute;
+  top: -120px;
+  right: -100px;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(128, 81, 255, 0.15), transparent 70%);
+  pointer-events: none;
+}
+.site-footer::after {
+  content: "";
+  position: absolute;
+  bottom: -150px;
+  left: -80px;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(163, 230, 53, 0.08), transparent 70%);
+  pointer-events: none;
+}
+
+.footer-main {
+  position: relative;
+  z-index: 2;
+}
+
+.footer-brand-avatar {
+  background: linear-gradient(135deg, #8051FF, #a855f7) !important;
+  box-shadow: 0 8px 18px -8px rgba(128, 81, 255, 0.8);
+}
+
+.footer-brand-text {
+  letter-spacing: -0.6px;
+}
+
+.footer-brand-desc {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 380px;
+  margin: 0 0 20px;
+}
+
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.footer-contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  width: fit-content;
+  max-width: 100%;
+}
+.footer-contact-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+a.footer-contact-chip:hover {
+  background: rgba(128, 81, 255, 0.12);
+  border-color: rgba(128, 81, 255, 0.4);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+.footer-contact-chip-static {
+  cursor: default;
+}
+
+.footer-social {
+  display: flex;
+  gap: 8px;
+}
+.footer-social-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.65);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.footer-social-btn:hover {
+  background: linear-gradient(135deg, #8051FF, #a855f7);
+  border-color: transparent;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(128, 81, 255, 0.7);
+}
+
 .footer-head {
-  font-size: 0.72rem; font-weight: 800;
-  color: #ffffff; text-transform: uppercase;
-  letter-spacing: 1px; margin-bottom: 14px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 16px;
+  position: relative;
+  padding-bottom: 10px;
 }
+.footer-head::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 24px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #8051FF, #a855f7);
+}
+
 .footer-link {
-  display: block; font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 10px; cursor: pointer;
-  text-decoration: none; transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+  width: fit-content;
 }
-.footer-link:hover { color: #ffffff; }
+.footer-link-arrow {
+  display: inline-block;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  color: #a78bfa;
+  font-weight: 700;
+}
+.footer-link:hover {
+  color: #ffffff;
+  transform: translateX(2px);
+}
+.footer-link:hover .footer-link-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.footer-bottom-strip {
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+}
 .footer-bottom {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 0;
+}
+.footer-bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.footer-copy {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+}
+.footer-copy-muted {
+  color: rgba(255, 255, 255, 0.35);
+}
+.footer-sep {
+  color: rgba(255, 255, 255, 0.2);
+}
+.footer-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.footer-made-with {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.footer-heart {
+  color: #ef4444;
+  display: inline-block;
+  animation: heartBeat 1.6s ease-in-out infinite;
+}
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  15%      { transform: scale(1.15); }
+  30%      { transform: scale(1); }
+  45%      { transform: scale(1.1); }
+  60%      { transform: scale(1); }
 }
 
 /* ============================================================
@@ -1980,6 +2281,14 @@ export default {
 
   .cta-band-inner { justify-content: center; text-align: center; }
   .cta-band-actions { justify-content: center; }
+
+  /* Footer responsive */
+  .footer-brand-desc { max-width: 100%; }
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 599px) {
@@ -2000,6 +2309,19 @@ export default {
   .pricing-card { padding: 22px 18px; }
   .showcase-visual { padding: 20px; min-height: 280px; }
   .showcase-mock { padding: 14px; }
+
+  /* Footer mobile tweaks */
+  .footer-brand-text { font-size: 1.15rem !important; }
+  .footer-social-btn { width: 34px; height: 34px; }
+  .footer-head {
+    font-size: 0.66rem;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .footer-link {
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+  }
 }
 
 @media (max-width: 400px) {

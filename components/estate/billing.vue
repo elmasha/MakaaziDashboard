@@ -53,7 +53,16 @@
     <!-- ============================================================
          PLAN GRID
          ============================================================ -->
-    <div class="plans-grid">
+    <div v-if="loadingPlans" class="plans-grid">
+      <v-skeleton-loader
+        v-for="n in 4"
+        :key="n"
+        type="image, article, button"
+        class="plan-skeleton"
+      />
+    </div>
+
+    <div v-else-if="plans.length" class="plans-grid">
       <div
         v-for="plan in plans"
         :key="plan.id"
@@ -102,6 +111,17 @@
           {{ plan.id === currentBand && active ? "Active plan" : "Choose plan" }}
           <v-icon size="16" class="ml-1">mdi-arrow-right</v-icon>
         </button>
+      </div>
+    </div>
+
+    <!-- Empty state (no plans returned from backend) -->
+    <div v-else class="empty-plans">
+      <div class="empty-icon">
+        <v-icon size="42" color="#7c3aed">mdi-credit-card-off-outline</v-icon>
+      </div>
+      <div class="empty-title">No plans available</div>
+      <div class="empty-text">
+        Subscription plans haven't been configured yet. Please contact your estate manager.
       </div>
     </div>
 
@@ -219,6 +239,52 @@ import numeral from "numeral";
 const API = "https://makaaziserver22.up.railway.app";
 const POLL_DURATION = 25; // seconds
 
+// Presentation metadata keyed by tier index (0-based).
+// The DB stores only plan_id, plan_name, min/max_households, monthly_rate.
+// Everything cosmetic (icon, color, features) lives here.
+const TIER_META = [
+  {
+    icon: "mdi-home-outline",
+    color: "purple",
+    features: [
+      "Full estate console",
+      "Unlimited households",
+      "M-Pesa payments",
+      "Email support",
+    ],
+  },
+  {
+    icon: "mdi-home-group",
+    color: "blue",
+    features: [
+      "Everything in Band 1",
+      "Priority support",
+      "Advanced reports",
+      "Custom charges",
+    ],
+  },
+  {
+    icon: "mdi-city-variant-outline",
+    color: "green",
+    features: [
+      "Everything in Band 2",
+      "Dedicated account manager",
+      "API access",
+      "Custom integrations",
+    ],
+  },
+  {
+    icon: "mdi-domain",
+    color: "amber",
+    features: [
+      "Everything in Band 3",
+      "On-site training",
+      "SLA guarantee",
+      "White-label option",
+    ],
+  },
+];
+
 export default {
   name: "EstateBilling",
   props: {
@@ -259,65 +325,9 @@ export default {
       snackbarError: false,
       snackbarTextError: "",
 
-      // Plans
-      plans: [
-        {
-          id: 1,
-          name: "Band 1",
-          range: "1 – 100 households",
-          amount: 100,
-          icon: "mdi-home-outline",
-          color: "purple",
-          features: [
-            "Full estate console",
-            "Unlimited households",
-            "M-Pesa payments",
-            "Email support",
-          ],
-        },
-        {
-          id: 2,
-          name: "Band 2",
-          range: "101 – 500 households",
-          amount: 200,
-          icon: "mdi-home-group",
-          color: "blue",
-          features: [
-            "Everything in Band 1",
-            "Priority support",
-            "Advanced reports",
-            "Custom charges",
-          ],
-        },
-        {
-          id: 3,
-          name: "Band 3",
-          range: "501 – 1000 households",
-          amount: 300,
-          icon: "mdi-city-variant-outline",
-          color: "green",
-          features: [
-            "Everything in Band 2",
-            "Dedicated account manager",
-            "API access",
-            "Custom integrations",
-          ],
-        },
-        {
-          id: 4,
-          name: "Band 4",
-          range: "1000+ households",
-          amount: 400,
-          icon: "mdi-domain",
-          color: "amber",
-          features: [
-            "Everything in Band 3",
-            "On-site training",
-            "SLA guarantee",
-            "White-label option",
-          ],
-        },
-      ],
+      // Plans (fetched from backend)
+      plans: [],
+      loadingPlans: false,
     };
   },
 
@@ -368,6 +378,7 @@ export default {
         this.fetchActiveSub(),
         this.fetchMessage(),
         this.computeBand(),
+        this.fetchPlans(),       // ← NEW
       ]);
     },
 
@@ -424,6 +435,46 @@ export default {
         }
       } catch (err) {
         console.warn("Band compute failed:", err.message);
+      }
+    },
+
+    // =========================================================
+    // FETCH PLANS (from backend)
+    // =========================================================
+    async fetchPlans() {
+      this.loadingPlans = true;
+      try {
+        const { data } = await axios.get(
+          `${API}/api/estates/subscription-plans`
+        );
+
+        if (!Array.isArray(data) || !data.length) {
+          this.plans = [];
+          return;
+        }
+
+        // Map backend plan rows → UI plan objects
+        this.plans = data.map((p, index) => {
+          const meta = TIER_META[index % TIER_META.length];
+          return {
+            id: p.plan_id,
+            name: p.plan_name,
+            range:
+              p.max_households == null
+                ? `${p.min_households}+ households`
+                : `${p.min_households} – ${p.max_households} households`,
+            amount: Number(p.monthly_rate) || 0,
+            icon: meta.icon,
+            color: meta.color,
+            features: meta.features,
+          };
+        });
+      } catch (err) {
+        console.warn("Plans fetch failed:", err.message);
+        // Fallback: minimal placeholder so the grid isn't empty
+        this.plans = [];
+      } finally {
+        this.loadingPlans = false;
       }
     },
 
@@ -758,6 +809,11 @@ export default {
   gap: 16px;
 }
 
+.plan-skeleton {
+  border-radius: 18px !important;
+  overflow: hidden;
+}
+
 .plan-card {
   position: relative;
   padding: 22px;
@@ -913,6 +969,45 @@ export default {
 .plan-cta:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* ============================================================
+   EMPTY STATE (no plans from backend)
+   ============================================================ */
+.empty-plans {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 24px;
+  background: white;
+  border: 1px solid #e9e7f2;
+  border-radius: 18px;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  background: rgba(124, 58, 237, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.empty-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e1b4b;
+}
+
+.empty-text {
+  font-size: 0.82rem;
+  color: #9ca3af;
+  margin-top: 6px;
+  max-width: 360px;
+  line-height: 1.55;
 }
 
 /* ============================================================
