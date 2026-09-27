@@ -1,15 +1,17 @@
 <template>
   <div class="d-flex bg-surface dashboard-root" style="min-height: 100vh;">
-    <!-- Desktop sidebar -->
+    <!-- ============================================================
+         DESKTOP SIDEBAR
+         ============================================================ -->
     <v-navigation-drawer
       v-if="!nav_bars"
       permanent
       width="260"
-      class="elevation-1 sidebar-glass"
+      class="elevation-0 sidebar-glass"
     >
       <div class="pa-6 pb-4">
         <div class="d-flex align-center cursor-pointer brand-hover" @click="goTo(dashboardRoute)">
-          <v-avatar color="#8051FF" size="46" class="elevation-2 mr-3">
+          <v-avatar color="#8051FF" size="46" class="elevation-3 mr-3 brand-avatar">
             <v-icon color="white" size="24">mdi-shield-account</v-icon>
           </v-avatar>
           <div>
@@ -28,7 +30,7 @@
           @click="goTo(item.route)"
           link
           class="mb-1 rounded-xl nav-item-premium"
-          :class="{ 'purple lighten-5 purple--text': isActive(item.route) }"
+          :class="{ 'nav-item-active': isActive(item.route) }"
           :style="{ 'animation-delay': idx * 50 + 'ms' }"
         >
           <v-list-item-icon class="mr-3">
@@ -37,7 +39,10 @@
             </v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title class="font-weight-semibold text-body-2">
+            <v-list-item-title
+              class="font-weight-semibold text-body-2"
+              :class="{ 'purple--text': isActive(item.route) }"
+            >
               {{ item.title }}
             </v-list-item-title>
           </v-list-item-content>
@@ -46,11 +51,14 @@
 
       <template v-slot:append>
         <div class="pa-4 pb-6">
+          <div class="help-card mb-4">
+            <v-icon color="#8051FF" size="22" class="mb-2">mdi-lifebuoy</v-icon>
+            <div class="help-title">Questions?</div>
+            <div class="help-sub">Contact your estate admin</div>
+          </div>
           <v-btn
-            block
-            outlined
-            color="#8051FF"
-            class="rounded-xl text-capitalize mt-3 font-weight-medium"
+            block outlined color="#8051FF"
+            class="rounded-xl text-capitalize font-weight-medium signout-btn"
             @click="logout"
           >
             <v-icon left size="18" color="#8051FF">mdi-logout</v-icon>
@@ -60,7 +68,9 @@
       </template>
     </v-navigation-drawer>
 
-    <!-- Mobile bottom nav -->
+    <!-- ============================================================
+         MOBILE BOTTOM NAV
+         ============================================================ -->
     <v-bottom-navigation
       v-if="nav_bars"
       v-model="activeTab"
@@ -83,19 +93,21 @@
       </v-btn>
     </v-bottom-navigation>
 
-    <!-- Main -->
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
     <v-main :class="nav_bars ? 'pb-16' : ''" class="main-premium">
-      <!-- Header -->
-      <div class="sticky-header-premium px-4 px-sm-6 py-3">
+      <!-- HEADER -->
+      <div class="sticky-header-premium px-4 px-sm-6 py-4">
         <v-container fluid class="pa-0">
           <v-row align="center" no-gutters>
             <v-col cols="8" sm="6">
               <div class="d-flex align-center">
-                <v-btn icon small class="mr-2" @click="goTo(dashboardRoute)">
-                  <v-icon>mdi-chevron-left</v-icon>
+                <v-btn icon small class="mr-2 back-btn" @click="goTo(dashboardRoute)">
+                  <v-icon size="20">mdi-arrow-left</v-icon>
                 </v-btn>
-                <div>
-                  <div class="d-flex align-center">
+                <div class="header-text">
+                  <div class="d-flex align-center flex-wrap">
                     <h1 class="text-h6 text-sm-h5 font-weight-bold text--primary page-title">
                       Service Charges
                     </h1>
@@ -109,6 +121,7 @@
                     </v-chip>
                   </div>
                   <div class="d-flex align-center mt-1">
+                    <v-icon x-small color="success" class="mr-1">mdi-circle</v-icon>
                     <span class="text-caption text--secondary">
                       What households in {{ estate.estate_name || 'your estate' }} pay
                     </span>
@@ -117,354 +130,280 @@
               </div>
             </v-col>
             <v-col cols="4" sm="6" class="d-flex justify-end align-center">
-              <v-btn
-                icon
-                outlined
-                small
-                color="grey darken-1"
-                class="mr-2 refresh-btn"
-                :loading="loading"
+              <button
+                class="icon-btn mr-2"
+                :disabled="loading"
                 @click="refreshAll"
               >
-                <v-icon small>mdi-refresh</v-icon>
-              </v-btn>
-              <v-btn
-                color="#8051FF"
-                dark
-                depressed
-                rounded
-                small
-                class="text-capitalize font-weight-bold mr-2 hidden-xs-only"
+                <v-icon size="16" :class="{ spin: loading }">
+                  {{ loading ? 'mdi-loading' : 'mdi-refresh' }}
+                </v-icon>
+              </button>
+              <button
+                class="add-btn mr-2 hidden-xs-only"
                 @click="openAddDialog"
               >
-                <v-icon left small>mdi-plus</v-icon>
+                <v-icon size="16" class="mr-1">mdi-plus</v-icon>
                 Add charge
-              </v-btn>
-              <v-avatar color="#8051FF" size="36">
-                <span style="color: white;" class="font-weight-bold text-caption">{{ officialInitials }}</span>
+              </button>
+              <v-avatar color="#8051FF" size="38" class="ml-1 avatar-glow">
+                <span class="white--text font-weight-bold text-caption">{{ officialInitials }}</span>
               </v-avatar>
             </v-col>
           </v-row>
         </v-container>
       </div>
 
-      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-2 pt-sm-4 pb-8">
-        <!-- Info banner -->
-        <v-row class="mb-4 reveal-card">
-          <v-col cols="12">
-            <v-card color="#ede9fe" class="rounded-2xl pa-4" elevation="0">
-              <div class="d-flex align-center">
-                <v-avatar color="#8051FF" size="40" class="mr-3">
-                  <v-icon color="white" small>mdi-information-outline</v-icon>
-                </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="font-weight-bold" style="color: #5b21b6;">
-                    How charges work
-                  </div>
-                  <div class="text-caption" style="color: #6d28d9;">
-                    All Monthly-frequency charges below are summed to compute each household's
-                    monthly rate. Non-monthly charges are recorded but not automatically applied yet.
-                  </div>
-                </div>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- Loading skeleton -->
-        <div v-if="loading && !charges.length" class="pa-4">
-          <v-skeleton-loader type="list-item-two-line, list-item-two-line, list-item-two-line" />
+      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-3 pt-sm-5 pb-8">
+        <!-- ============================================================
+             INFO BANNER
+             ============================================================ -->
+        <div class="info-banner reveal-card">
+          <div class="info-icon">
+            <v-icon size="20" color="white">mdi-information-outline</v-icon>
+          </div>
+          <div class="info-body">
+            <div class="info-title">How charges work</div>
+            <div class="info-sub">
+              All <strong>Monthly</strong> charges below are summed to compute each household's monthly rate.
+              Non-monthly charges are recorded but not applied automatically yet.
+            </div>
+          </div>
         </div>
 
-        <!-- Empty state -->
-        <v-row v-else-if="!charges.length" class="reveal-card">
-          <v-col cols="12">
-            <v-card class="rounded-2xl pa-12 text-center" elevation="0" outlined>
-              <v-avatar color="purple lighten-5" size="72" class="mb-3">
-                <v-icon size="44" color="#8051FF">mdi-tag-off-outline</v-icon>
-              </v-avatar>
-              <div class="text-h6 grey--text text--darken-2 mt-3">No charges yet</div>
-              <div class="text-body-2 grey--text mt-1">
-                Add your first service charge so residents can start paying.
+        <!-- ============================================================
+             LOADING
+             ============================================================ -->
+        <div v-if="loading && !charges.length" class="panel-card reveal-card">
+          <div class="pa-6">
+            <v-skeleton-loader type="list-item-two-line, list-item-two-line, list-item-two-line" />
+          </div>
+        </div>
+
+        <!-- ============================================================
+             EMPTY
+             ============================================================ -->
+        <div v-else-if="!charges.length" class="panel-card reveal-card">
+          <div class="empty-block">
+            <div class="empty-icon">
+              <v-icon size="40" color="#cbd5e1">mdi-tag-off-outline</v-icon>
+            </div>
+            <div class="empty-title">No charges yet</div>
+            <div class="empty-sub">
+              Add your first service charge so residents can start paying.
+            </div>
+            <button class="empty-add-btn" @click="openAddDialog">
+              <v-icon size="14" class="mr-1">mdi-plus</v-icon>
+              Add first charge
+            </button>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             CHARGES LIST
+             ============================================================ -->
+        <div v-else class="reveal-card">
+          <div class="list-head">
+            <div class="panel-icon panel-icon-purple panel-icon-sm">
+              <v-icon size="18" color="white">mdi-tag-multiple</v-icon>
+            </div>
+            <div class="panel-title-group">
+              <div class="panel-title">Active charges</div>
+              <div class="panel-sub">
+                Total monthly: <strong>KES {{ formatNum(totalMonthly) }}</strong>
               </div>
-              <v-btn
-                rounded
-                depressed
-                color="#8051FF"
-                dark
-                class="mt-4 text-capitalize font-weight-bold"
-                @click="openAddDialog"
-              >
-                <v-icon left>mdi-plus</v-icon>
-                Add first charge
-              </v-btn>
-            </v-card>
-          </v-col>
-        </v-row>
+            </div>
+            <div class="count-pill">{{ charges.length }}</div>
+          </div>
 
-        <!-- Charges list -->
-        <v-row v-else class="reveal-card">
-          <v-col cols="12">
-            <v-card class="rounded-2xl" elevation="0" outlined>
-              <v-card-title class="px-4 px-sm-6 py-4 card-header-premium d-flex align-center">
-                <v-avatar color="purple lighten-5" size="36" class="mr-3">
-                  <v-icon color="#8051FF">mdi-tag-multiple</v-icon>
-                </v-avatar>
-                <div>
-                  <div class="text-h6 font-weight-bold text--primary">Active charges</div>
-                  <div class="text-caption text--secondary">
-                    Total monthly: <strong>KES {{ formatNum(totalMonthly) }}</strong>
-                  </div>
-                </div>
-              </v-card-title>
-              <v-divider></v-divider>
+          <div class="charges-list">
+            <div
+              v-for="c in charges"
+              :key="c.charges_id"
+              class="charge-card"
+            >
+              <!-- Icon -->
+              <div class="charge-icon" :class="chargeIconClass(c)">
+                <v-icon size="20" color="white">{{ chargeIcon(c) }}</v-icon>
+              </div>
 
-              <v-list class="pa-0">
-                <template v-for="(c, i) in charges">
-                  <v-list-item
-                    :key="c.charges_id"
-                    class="py-4 px-4 px-sm-6"
+              <!-- Body -->
+              <div class="charge-body">
+                <div class="charge-title-row">
+                  <span class="charge-name">{{ c.charge_type }}</span>
+                  <span
+                    class="charge-freq"
+                    :class="c.frequency === 'Monthly' ? 'freq-monthly' : 'freq-other'"
                   >
-                    <v-list-item-avatar
-                      :color="chargeColor(c).bg"
-                      size="48"
-                    >
-                      <v-icon :color="chargeColor(c).fg" small>
-                        {{ chargeIcon(c) }}
-                      </v-icon>
-                    </v-list-item-avatar>
+                    {{ c.frequency }}
+                  </span>
+                </div>
 
-                    <v-list-item-content>
-                      <div class="d-flex align-center flex-wrap" style="gap: 8px;">
-                        <v-list-item-title class="font-weight-bold text--primary" style="font-size: 1rem;">
-                          {{ c.charge_type }}
-                        </v-list-item-title>
-                        <v-chip
-                          x-small
-                          label
-                          :color="c.frequency === 'Monthly' ? 'purple lighten-5 purple--text' : 'grey lighten-3'"
-                          class="font-weight-medium"
-                        >
-                          {{ c.frequency }}
-                        </v-chip>
-                      </div>
+                <div class="charge-amount-row">
+                  <span class="charge-amount-value">
+                    <span class="charge-currency">KES</span>
+                    {{ formatNum(c.amount) }}
+                  </span>
+                  <span class="charge-per">per {{ String(c.frequency || '').toLowerCase() }}</span>
+                </div>
 
-                      <div class="mt-1">
-                        <span class="text-h6 font-weight-bold" style="color: #8051FF;">
-                          KES {{ formatNum(c.amount) }}
-                        </span>
-                        <span class="text-caption grey--text ml-2">
-                          per {{ String(c.frequency || '').toLowerCase() }}
-                        </span>
-                      </div>
+                <div v-if="c.frequency !== 'Monthly'" class="charge-note">
+                  <v-icon size="12" color="#b45309">mdi-alert-circle-outline</v-icon>
+                  Not included in the monthly rate yet.
+                </div>
+              </div>
 
-                      <div
-                        v-if="c.frequency !== 'Monthly'"
-                        class="text-caption grey--text mt-1"
-                      >
-                        <v-icon x-small color="warning">mdi-alert-circle-outline</v-icon>
-                        Not included in the monthly rate yet.
-                      </div>
-                    </v-list-item-content>
-
-                    <v-list-item-action class="ml-2">
-                      <div class="d-flex flex-column align-center" style="gap: 4px;">
-                        <v-btn
-                          icon
-                          small
-                          class="action-btn-hover"
-                          title="Edit"
-                          @click.stop="openEditDialog(c)"
-                        >
-                          <v-icon small color="#8051FF">mdi-pencil</v-icon>
-                        </v-btn>
-                        <v-btn
-                          icon
-                          small
-                          class="action-btn-hover"
-                          title="Delete"
-                          @click.stop="openDeleteDialog(c)"
-                        >
-                          <v-icon small color="red">mdi-delete-outline</v-icon>
-                        </v-btn>
-                      </div>
-                    </v-list-item-action>
-                  </v-list-item>
-                  <v-divider v-if="i < charges.length - 1" :key="`d-${c.charges_id}`" inset></v-divider>
-                </template>
-              </v-list>
-            </v-card>
-          </v-col>
-        </v-row>
+              <!-- Actions -->
+              <div class="charge-actions">
+                <button
+                  class="charge-action"
+                  title="Edit"
+                  @click.stop="openEditDialog(c)"
+                >
+                  <v-icon size="16">mdi-pencil-outline</v-icon>
+                </button>
+                <button
+                  class="charge-action charge-action-danger"
+                  title="Delete"
+                  @click.stop="openDeleteDialog(c)"
+                >
+                  <v-icon size="16">mdi-trash-can-outline</v-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Mobile FAB -->
-        <v-btn
+        <button
           v-if="nav_bars"
-          fab
-          fixed
-          bottom
-          right
-          color="#8051FF"
-          dark
-          class="elevation-6"
-          style="bottom: 84px; right: 20px; z-index: 200;"
+          class="mobile-fab"
           @click="openAddDialog"
         >
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
+          <v-icon size="24" color="white">mdi-plus</v-icon>
+        </button>
       </v-container>
 
-      <!-- ============================================================ -->
-      <!-- Add/Edit dialog — SCROLLABLE, appealing                      -->
-      <!-- ============================================================ -->
+      <!-- ============================================================
+           ADD/EDIT DIALOG
+           ============================================================ -->
       <v-dialog v-model="formDialog" max-width="520" persistent scrollable>
-        <v-card class="dialog-card">
-          <!-- Sticky header -->
-          <v-card-title class="dialog-header">
-            <div class="d-flex align-center" style="width: 100%;">
-              <v-btn icon dark @click="closeFormDialog">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-              <div class="flex-grow-1 text-center">
-                <div class="text-h6 font-weight-bold" style="color: white;">
-                  {{ editing ? 'Edit charge' : 'Add service charge' }}
+        <div class="dialog-card">
+          <div class="dialog-header">
+            <div class="dialog-header-icon">
+              <v-icon size="20" color="white">
+                {{ editing ? 'mdi-pencil-outline' : 'mdi-tag-plus-outline' }}
+              </v-icon>
+            </div>
+            <div class="dialog-header-text">
+              <div class="dialog-title">{{ editing ? 'Edit charge' : 'Add service charge' }}</div>
+              <div class="dialog-sub">
+                {{ editing ? 'Update this charge\'s details' : 'Define a new charge for households' }}
+              </div>
+            </div>
+            <button class="dialog-close" @click="closeFormDialog">
+              <v-icon size="18" color="white">mdi-close</v-icon>
+            </button>
+          </div>
+
+          <div class="dialog-body">
+            <v-form ref="form" v-model="valid">
+              <div class="field-block">
+                <label class="field-label">Charge name <span class="required">*</span></label>
+                <input
+                  v-model="form.charge_type"
+                  class="field-input"
+                  type="text"
+                  placeholder="e.g. Security, Welfare, Garbage"
+                />
+              </div>
+
+              <div class="field-block">
+                <label class="field-label">Amount (KES) <span class="required">*</span></label>
+                <div class="field-input-wrap">
+                  <span class="field-prefix">KES</span>
+                  <input
+                    v-model.number="form.amount"
+                    class="field-input field-input-with-prefix"
+                    type="number"
+                    min="1"
+                    placeholder="0"
+                  />
                 </div>
               </div>
-              <div style="width: 40px;"></div>
-            </div>
-          </v-card-title>
 
-          <!-- Scrollable body -->
-          <v-card-text class="dialog-body">
-            <v-form ref="form" v-model="valid">
-              <label class="field-label">Charge name</label>
-              <v-text-field
-                v-model="form.charge_type"
-                placeholder="e.g. Security, Welfare, Garbage"
-                outlined
-                rounded
-                dense
-                hide-details="auto"
-                class="mb-4"
-                :rules="[(v) => !!v || 'Charge name is required']"
-                required
-              />
+              <div class="field-block">
+                <label class="field-label">Frequency <span class="required">*</span></label>
+                <select v-model="form.frequency" class="field-select">
+                  <option v-for="f in frequencies" :key="f" :value="f">{{ f }}</option>
+                </select>
+              </div>
 
-              <label class="field-label">Amount (KES)</label>
-              <v-text-field
-                v-model.number="form.amount"
-                type="number"
-                min="1"
-                prefix="KES"
-                placeholder="0"
-                outlined
-                rounded
-                dense
-                hide-details="auto"
-                class="mb-4"
-                :rules="[
-                  (v) => v !== '' || 'Amount is required',
-                  (v) => Number(v) > 0 || 'Amount must be greater than 0',
-                ]"
-                required
-              />
-
-              <label class="field-label">Frequency</label>
-              <v-select
-                v-model="form.frequency"
-                :items="frequencies"
-                placeholder="Select frequency"
-                outlined
-                rounded
-                dense
-                hide-details="auto"
-                class="mb-4"
-                :rules="[(v) => !!v || 'Frequency is required']"
-                required
-              />
-
-              <v-alert
-                v-if="form.frequency && form.frequency !== 'Monthly'"
-                type="warning"
-                dense
-                text
-                class="rounded-xl"
-              >
-                Only <strong>Monthly</strong> charges are summed into the household monthly rate
-                right now. Other frequencies are recorded but not yet applied automatically.
-              </v-alert>
+              <div v-if="form.frequency && form.frequency !== 'Monthly'" class="field-warning">
+                <v-icon size="14" color="#b45309">mdi-alert-circle-outline</v-icon>
+                <span>
+                  Only <strong>Monthly</strong> charges are summed into the household monthly rate right now.
+                  Other frequencies are recorded but not yet applied automatically.
+                </span>
+              </div>
             </v-form>
-          </v-card-text>
+          </div>
 
-          <!-- Sticky footer -->
-          <v-card-actions class="dialog-footer">
-            <v-btn
-              text
-              rounded
-              class="text-capitalize font-weight-medium flex-grow-1"
-              @click="closeFormDialog"
+          <div class="dialog-footer">
+            <button
+              class="dialog-btn dialog-btn-ghost"
               :disabled="submitting"
+              @click="closeFormDialog"
             >
               Cancel
-            </v-btn>
-            <v-btn
-              rounded
-              depressed
-              color="#8051FF"
-              dark
-              class="text-capitalize font-weight-bold flex-grow-1"
-              :loading="submitting"
-              :disabled="!valid"
+            </button>
+            <button
+              class="dialog-btn dialog-btn-primary"
+              :disabled="!canSubmitForm || submitting"
               @click="submitForm"
             >
-              <v-icon left>mdi-check</v-icon>
-              {{ editing ? 'Save changes' : 'Add charge' }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
+              <v-icon size="14" :class="['mr-1', { spin: submitting }]">
+                {{ submitting ? 'mdi-loading' : 'mdi-check' }}
+              </v-icon>
+              {{ submitting ? 'Saving…' : (editing ? 'Save changes' : 'Add charge') }}
+            </button>
+          </div>
+        </div>
       </v-dialog>
 
-      <!-- ============================================================ -->
-      <!-- Delete confirmation                                          -->
-      <!-- ============================================================ -->
+      <!-- ============================================================
+           DELETE CONFIRM DIALOG
+           ============================================================ -->
       <v-dialog v-model="deleteDialog" max-width="440" persistent>
-        <v-card class="rounded-2xl pa-2">
-          <v-card-text class="text-center pa-6">
-            <v-avatar color="red lighten-5" size="64" class="mb-3">
-              <v-icon color="red darken-2" size="32">mdi-delete-outline</v-icon>
-            </v-avatar>
-            <div class="text-h6 font-weight-bold text--primary">Delete this charge?</div>
-            <div class="text-body-2 text--secondary mt-2">
-              <strong>{{ deleteTarget?.charge_type }}</strong> — KES {{ formatNum(deleteTarget?.amount) }}.
-              This action can't be undone.
-            </div>
-
-            <div class="d-flex mt-5" style="gap: 8px;">
-              <v-btn
-                block
-                text
-                class="text-capitalize font-weight-medium"
-                @click="closeDeleteDialog"
-                :disabled="submitting"
-              >
-                Cancel
-              </v-btn>
-              <v-btn
-                block
-                rounded
-                depressed
-                color="red darken-2"
-                dark
-                class="text-capitalize font-weight-bold"
-                :loading="submitting"
-                @click="confirmDelete"
-              >
-                <v-icon left>mdi-delete</v-icon>
-                Delete
-              </v-btn>
-            </div>
-          </v-card-text>
-        </v-card>
+        <div class="confirm-card">
+          <div class="confirm-icon">
+            <v-icon size="24" color="#dc2626">mdi-trash-can-outline</v-icon>
+          </div>
+          <div class="confirm-title">Delete this charge?</div>
+          <div class="confirm-text">
+            <strong>{{ deleteTarget?.charge_type }}</strong> — KES {{ formatNum(deleteTarget?.amount) }}.
+            This action can't be undone.
+          </div>
+          <div class="confirm-actions">
+            <button
+              class="confirm-cancel"
+              :disabled="submitting"
+              @click="closeDeleteDialog"
+            >
+              Cancel
+            </button>
+            <button
+              class="confirm-proceed"
+              :disabled="submitting"
+              @click="confirmDelete"
+            >
+              <v-icon size="14" :class="['mr-1', { spin: submitting }]">
+                {{ submitting ? 'mdi-loading' : 'mdi-delete' }}
+              </v-icon>
+              {{ submitting ? 'Deleting…' : 'Delete' }}
+            </button>
+          </div>
+        </div>
       </v-dialog>
 
       <v-snackbar
@@ -564,6 +503,13 @@ export default {
         .filter((c) => c.frequency === 'Monthly')
         .reduce((sum, c) => sum + Number(c.amount || 0), 0);
     },
+    canSubmitForm() {
+      return (
+        !!String(this.form.charge_type || '').trim() &&
+        Number(this.form.amount) > 0 &&
+        !!this.form.frequency
+      );
+    },
   },
   mounted() {
     this.onResize();
@@ -630,51 +576,48 @@ export default {
       this.loading = true;
       await this.fetchOfficial();
       if (this.estateId) {
-        await Promise.all([this.fetchEstate(), this.fetchCharges()]);
+        await Promise.allSettled([this.fetchEstate(), this.fetchCharges()]);
       }
       this.loading = false;
     },
 
     async fetchOfficial() {
-      const that = this;
       try {
-        const { data, status } = await axios.get(`${API}/officials/getOfficialById/${that.uid}`);
+        const { data, status } = await axios.get(`${API}/officials/getOfficialById/${this.uid}`);
         if (status === 200) {
-          that.official = {
+          this.official = {
             full_name: data.full_name || '',
             role: data.role || '',
             estate_id: data.estate_id || null,
           };
-          that.estateId = data.estate_id;
+          this.estateId = data.estate_id;
         }
       } catch (error) {
-        console.error('🔴 Official fetch failed:', error.response?.data || error.message);
+        console.error('Official fetch failed:', error.response?.data || error.message);
       }
     },
 
     async fetchEstate() {
-      const that = this;
-      if (!that.estateId) return;
+      if (!this.estateId) return;
       try {
-        const { data, status } = await axios.get(`${API}/estates/estate/${that.estateId}`);
-        if (status === 200) that.estate = { estate_name: data.estate_name || '' };
+        const { data, status } = await axios.get(`${API}/estates/estate/${this.estateId}`);
+        if (status === 200) this.estate = { estate_name: data.estate_name || '' };
       } catch (error) {
         console.warn('Estate fetch failed:', error.response?.data || error.message);
       }
     },
 
     async fetchCharges() {
-      const that = this;
-      if (!that.estateId) return;
+      if (!this.estateId) return;
       try {
-        const url = `${API}/services/getEstateServiceCharges/${that.estateId}`;
+        const url = `${API}/services/getEstateServiceCharges/${this.estateId}`;
         const { data, status } = await axios.get(url);
         if (status === 200) {
-          that.charges = Array.isArray(data) ? data : [];
+          this.charges = Array.isArray(data) ? data : [];
         }
       } catch (error) {
-        console.error('🔴 Charges fetch failed:', error.response?.data || error.message);
-        that.charges = [];
+        console.error('Charges fetch failed:', error.response?.data || error.message);
+        this.charges = [];
       }
     },
 
@@ -706,45 +649,44 @@ export default {
     },
 
     async submitForm() {
-      const that = this;
-      if (!that.$refs.form.validate()) return;
-      that.submitting = true;
+      if (!this.canSubmitForm || this.submitting) return;
+      this.submitting = true;
 
       try {
-        if (that.editing) {
-          const url = `${API}/services/update/${that.form.charges_id}`;
+        if (this.editing) {
+          const url = `${API}/services/update/${this.form.charges_id}`;
           const { status } = await axios.put(url, {
-            charge_type: that.form.charge_type,
-            amount: Number(that.form.amount),
-            frequency: that.form.frequency,
+            charge_type: this.form.charge_type,
+            amount: Number(this.form.amount),
+            frequency: this.form.frequency,
           });
           if (status === 200) {
-            that.showSnackbar('Charge updated successfully', 'success');
-            that.formDialog = false;
-            await that.fetchCharges();
+            this.showSnackbar('Charge updated successfully', 'success');
+            this.formDialog = false;
+            await this.fetchCharges();
           }
         } else {
           const url = `${API}/services/addServiceCharge`;
           const { status } = await axios.post(url, {
-            estate_id: that.estateId,
-            charge_type: that.form.charge_type,
-            amount: Number(that.form.amount),
-            frequency: that.form.frequency,
+            estate_id: this.estateId,
+            charge_type: this.form.charge_type,
+            amount: Number(this.form.amount),
+            frequency: this.form.frequency,
           });
           if (status === 200) {
-            that.showSnackbar('Charge added successfully', 'success');
-            that.formDialog = false;
-            await that.fetchCharges();
+            this.showSnackbar('Charge added successfully', 'success');
+            this.formDialog = false;
+            await this.fetchCharges();
           }
         }
       } catch (error) {
-        console.error('🔴 Save failed:', error.response?.data || error.message);
-        that.showSnackbar(
+        console.error('Save failed:', error.response?.data || error.message);
+        this.showSnackbar(
           error.response?.data?.error || 'Could not save the charge',
           'error'
         );
       } finally {
-        that.submitting = false;
+        this.submitting = false;
       }
     },
 
@@ -759,38 +701,28 @@ export default {
     },
 
     async confirmDelete() {
-      const that = this;
-      if (!that.deleteTarget) return;
-      that.submitting = true;
+      if (!this.deleteTarget) return;
+      this.submitting = true;
 
       try {
-        const url = `${API}/services/delete/${that.deleteTarget.charges_id}`;
+        const url = `${API}/services/delete/${this.deleteTarget.charges_id}`;
         const { status } = await axios.delete(url);
         if (status === 200) {
-          that.showSnackbar('Charge deleted', 'success');
-          that.closeDeleteDialog();
-          await that.fetchCharges();
+          this.showSnackbar('Charge deleted', 'success');
+          this.closeDeleteDialog();
+          await this.fetchCharges();
         }
       } catch (error) {
-        console.error('🔴 Delete failed:', error.response?.data || error.message);
-        that.showSnackbar(
+        console.error('Delete failed:', error.response?.data || error.message);
+        this.showSnackbar(
           error.response?.data?.error || 'Could not delete the charge',
           'error'
         );
       } finally {
-        that.submitting = false;
+        this.submitting = false;
       }
     },
 
-    chargeColor(c) {
-      const t = String(c.charge_type || '').toLowerCase();
-      if (t.includes('security')) return { bg: 'blue lighten-5', fg: 'blue darken-2' };
-      if (t.includes('welfare')) return { bg: 'purple lighten-5', fg: '#8051FF' };
-      if (t.includes('garbage') || t.includes('waste')) return { bg: 'green lighten-5', fg: 'green darken-2' };
-      if (t.includes('water')) return { bg: 'cyan lighten-5', fg: 'cyan darken-2' };
-      if (t.includes('electric')) return { bg: 'amber lighten-5', fg: 'amber darken-2' };
-      return { bg: 'grey lighten-4', fg: 'grey darken-2' };
-    },
     chargeIcon(c) {
       const t = String(c.charge_type || '').toLowerCase();
       if (t.includes('security')) return 'mdi-shield-home';
@@ -798,7 +730,16 @@ export default {
       if (t.includes('garbage') || t.includes('waste')) return 'mdi-trash-can-outline';
       if (t.includes('water')) return 'mdi-water';
       if (t.includes('electric')) return 'mdi-lightning-bolt';
-      return 'mdi-tag';
+      return 'mdi-tag-outline';
+    },
+    chargeIconClass(c) {
+      const t = String(c.charge_type || '').toLowerCase();
+      if (t.includes('security')) return 'charge-icon-blue';
+      if (t.includes('welfare')) return 'charge-icon-purple';
+      if (t.includes('garbage') || t.includes('waste')) return 'charge-icon-green';
+      if (t.includes('water')) return 'charge-icon-cyan';
+      if (t.includes('electric')) return 'charge-icon-amber';
+      return 'charge-icon-slate';
     },
     formatNum(n) {
       return numeral(n || 0).format('0,0');
@@ -815,107 +756,764 @@ export default {
 </script>
 
 <style scoped>
+/* ============================================================
+   BASE
+   ============================================================ */
 .cursor-pointer { cursor: pointer; }
-.bg-surface { background-color: #f8fafc !important; }
-.rounded-2xl { border-radius: 20px !important; }
-.tracking-wide { letter-spacing: 0.08em; }
+.bg-surface { background-color: #f6f7fb !important; }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.reveal-card { animation: fadeInUp 0.6s ease-out both; }
+.reveal-card { animation: fadeInUp 0.5s ease-out both; }
 
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
 .sidebar-glass {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-right: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  border-right: 1px solid #eef1f6 !important;
 }
 .brand-text { letter-spacing: -0.5px; }
 .brand-hover { transition: opacity 0.2s; }
-.brand-hover:hover { opacity: 0.8; }
-
+.brand-hover:hover { opacity: 0.85; }
+.brand-avatar {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%) !important;
+  box-shadow: 0 12px 24px -12px rgba(128, 81, 255, 0.7);
+}
 .nav-item-premium {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 4px;
   border-radius: 12px !important;
 }
 .nav-item-premium:hover {
   background-color: rgba(128, 81, 255, 0.06);
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
+.nav-item-active { background: rgba(128, 81, 255, 0.09) !important; }
 
+.help-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(128, 81, 255, 0.08) 0%, rgba(155, 108, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.12);
+}
+.help-title { font-size: 0.82rem; font-weight: 800; color: #0f0d24; }
+.help-sub { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+.signout-btn:hover { background: rgba(128, 81, 255, 0.06); }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 .main-premium { scroll-behavior: smooth; }
 .sticky-header-premium {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: rgba(248, 250, 252, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid transparent;
+  background: rgba(246, 247, 251, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
-.page-title { letter-spacing: -0.5px; }
-.refresh-btn { transition: all 0.2s ease; }
-.refresh-btn:hover { border-color: #8051FF; color: #8051FF !important; }
+.page-title { letter-spacing: -0.6px; }
+.header-text { min-width: 0; }
 
-.card-header-premium {
-  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+.back-btn {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  transition: all 0.2s ease;
+}
+.back-btn:hover {
+  background: rgba(128, 81, 255, 0.06);
+  border-color: rgba(128, 81, 255, 0.3);
 }
 
-.action-btn-hover { transition: all 0.2s ease; }
-.action-btn-hover:hover { background: rgba(128, 81, 255, 0.1); }
-
-.snackbar-premium ::v-deep .v-snackbar__content { padding: 12px 20px; }
-
-.bottom-nav-premium {
-  border-top: 1px solid #e2e8f0 !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px);
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
-.mobile-nav-btn { min-width: 0 !important; }
-.mobile-nav-label { font-size: 10px; margin-top: 2px; }
+.icon-btn:hover:not(:disabled) {
+  border-color: #8051ff;
+  color: #8051ff;
+}
+.icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ============================================================ */
-/* Dialog — clean, scrollable layout                             */
-/* ============================================================ */
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 24px -12px rgba(128, 81, 255, 0.7);
+}
+.add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -12px rgba(128, 81, 255, 0.85);
+}
+
+.avatar-glow { box-shadow: 0 8px 18px -8px rgba(128, 81, 255, 0.6); }
+
+/* ============================================================
+   INFO BANNER
+   ============================================================ */
+.info-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(128, 81, 255, 0.08) 0%, rgba(155, 108, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.15);
+  margin-bottom: 16px;
+}
+.info-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.info-body { flex: 1; min-width: 0; }
+.info-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #5b21b6;
+  letter-spacing: -0.2px;
+}
+.info-sub {
+  font-size: 0.76rem;
+  color: #6d28d9;
+  margin-top: 3px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   PANEL
+   ============================================================ */
+.panel-card {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.panel-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.panel-icon-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+.panel-icon-purple {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.panel-title-group { flex: 1; min-width: 0; }
+.panel-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.panel-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.panel-sub strong { color: #8051ff; font-weight: 800; }
+.count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(128, 81, 255, 0.1);
+  color: #8051ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.list-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* ============================================================
+   CHARGE CARDS
+   ============================================================ */
+.charges-list {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 10px;
+}
+.charge-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.charge-card:hover {
+  border-color: rgba(128, 81, 255, 0.35);
+  box-shadow: 0 12px 26px -16px rgba(128, 81, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.charge-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.charge-icon-purple {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.65);
+}
+.charge-icon-blue {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  box-shadow: 0 10px 22px -10px rgba(59, 130, 246, 0.6);
+}
+.charge-icon-green {
+  background: linear-gradient(135deg, #d4ff4a 0%, #8fbc00 100%);
+  box-shadow: 0 10px 22px -10px rgba(122, 184, 0, 0.7);
+}
+.charge-icon-cyan {
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+  box-shadow: 0 10px 22px -10px rgba(6, 182, 212, 0.6);
+}
+.charge-icon-amber {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 10px 22px -10px rgba(245, 158, 11, 0.6);
+}
+.charge-icon-slate {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  box-shadow: 0 10px 22px -10px rgba(100, 116, 139, 0.5);
+}
+/* Lime/yellow icons need dark glyph */
+.charge-icon-green .v-icon { color: #0a0a14 !important; }
+
+.charge-body { flex: 1; min-width: 0; }
+.charge-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.charge-name {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.charge-freq {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.freq-monthly {
+  background: rgba(128, 81, 255, 0.12);
+  color: #6d28d9;
+}
+.freq-other {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.charge-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.charge-amount-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #8051ff;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.charge-currency {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-right: 3px;
+}
+.charge-per {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.charge-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 0.68rem;
+  color: #b45309;
+  font-weight: 600;
+}
+
+.charge-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.charge-action {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: none;
+  background: #f6f7fb;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.charge-action:hover {
+  background: rgba(128, 81, 255, 0.1);
+  color: #8051ff;
+}
+.charge-action-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+/* ============================================================
+   EMPTY
+   ============================================================ */
+.empty-block {
+  padding: 64px 24px;
+  text-align: center;
+}
+.empty-icon {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: #f6f7fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+.empty-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.empty-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 6px;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.55;
+}
+.empty-add-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 20px;
+  padding: 11px 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-shadow: 0 12px 24px -12px rgba(128, 81, 255, 0.7);
+}
+.empty-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px -12px rgba(128, 81, 255, 0.85);
+}
+
+/* ============================================================
+   MOBILE FAB
+   ============================================================ */
+.mobile-fab {
+  position: fixed;
+  bottom: 84px;
+  right: 20px;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 16px 32px -12px rgba(128, 81, 255, 0.75);
+  z-index: 200;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.mobile-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 38px -12px rgba(128, 81, 255, 0.9);
+}
+
+/* ============================================================
+   FORM DIALOG
+   ============================================================ */
 .dialog-card {
+  background: #ffffff;
+  border-radius: 22px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   max-height: 90vh;
-  overflow: hidden;
-  border-radius: 20px !important;
+  box-shadow: 0 24px 60px -20px rgba(15, 13, 36, 0.4);
 }
 
 .dialog-header {
-  background: #8051FF;
-  color: white;
-  padding: 12px 16px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  padding: 16px 20px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.dialog-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.18), transparent 50%);
+  pointer-events: none;
+}
+.dialog-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dialog-header-text { flex: 1; min-width: 0; }
+.dialog-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+.dialog-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 2px;
+  font-weight: 500;
+}
+.dialog-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.dialog-close:hover {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .dialog-body {
-  padding: 24px !important;
+  padding: 22px 24px;
   overflow-y: auto;
   flex: 1 1 auto;
+  min-height: 0;
+}
+
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.field-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+.required { color: #dc2626; font-weight: 800; }
+
+.field-input,
+.field-select {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #eef1f6;
+  background: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #0f0d24;
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+.field-input:focus,
+.field-select:focus {
+  border-color: #8051ff;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(128, 81, 255, 0.1);
+}
+.field-input::placeholder { color: #94a3b8; font-weight: 500; }
+
+.field-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.field-prefix {
+  position: absolute;
+  left: 14px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #8051ff;
+  letter-spacing: 0.4px;
+  pointer-events: none;
+}
+.field-input-with-prefix {
+  padding-left: 52px;
+}
+
+.field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+.field-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  font-size: 0.76rem;
+  color: #b45309;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .dialog-footer {
   padding: 16px 24px;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #f1f5f9;
   background: #ffffff;
 }
+.dialog-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.dialog-btn-ghost {
+  background: #f6f7fb;
+  color: #475569;
+  border: 1px solid #eef1f6;
+}
+.dialog-btn-ghost:hover:not(:disabled) { background: #eef1f6; }
+.dialog-btn-primary {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px -12px rgba(128, 81, 255, 0.7);
+}
+.dialog-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -12px rgba(128, 81, 255, 0.85);
+}
+.dialog-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
-.field-label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+/* ============================================================
+   DELETE CONFIRM
+   ============================================================ */
+.confirm-card {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 26px 24px;
+  box-shadow: 0 24px 60px -20px rgba(15, 13, 36, 0.4);
+  text-align: center;
+}
+.confirm-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: rgba(239, 68, 68, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.confirm-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.confirm-text {
+  font-size: 0.82rem;
   color: #64748b;
-  margin-bottom: 6px;
+  margin-top: 8px;
+  line-height: 1.55;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+.confirm-cancel,
+.confirm-proceed {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.confirm-cancel {
+  background: #f6f7fb;
+  color: #475569;
+  border: 1px solid #eef1f6;
+}
+.confirm-cancel:hover:not(:disabled) { background: #eef1f6; }
+.confirm-proceed {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 10px 24px -12px rgba(220, 38, 38, 0.7);
+}
+.confirm-proceed:hover:not(:disabled) { background: #b91c1c; }
+.confirm-cancel:disabled,
+.confirm-proceed:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   SNACKBAR + MOBILE NAV
+   ============================================================ */
+.snackbar-premium ::v-deep .v-snackbar__content { padding: 12px 20px; }
+
+.bottom-nav-premium {
+  border-top: 1px solid #eef1f6 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(14px);
+}
+.mobile-nav-btn { min-width: 0 !important; }
+.mobile-nav-label { font-size: 10px; margin-top: 2px; font-weight: 700; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 767px) {
+  .info-banner { padding: 12px 14px; gap: 12px; }
+  .info-icon { width: 38px; height: 38px; }
+  .info-title { font-size: 0.82rem; }
+  .info-sub { font-size: 0.72rem; }
+  .charge-card { padding: 12px 14px; gap: 12px; }
+  .charge-icon { width: 42px; height: 42px; }
+  .charge-name { font-size: 0.88rem; }
+  .list-head { padding: 14px 16px; }
+  .dialog-body { padding: 18px 20px; }
+  .dialog-footer { padding: 14px 20px; }
 }
 
 @media (max-width: 599px) {

@@ -1,15 +1,17 @@
 <template>
   <div class="d-flex bg-surface dashboard-root" style="min-height: 100vh;">
-    <!-- Desktop sidebar -->
+    <!-- ============================================================
+         DESKTOP SIDEBAR
+         ============================================================ -->
     <v-navigation-drawer
       v-if="!nav_bars"
       permanent
       width="260"
-      class="elevation-1 sidebar-glass"
+      class="elevation-0 sidebar-glass"
     >
       <div class="pa-6 pb-4">
         <div class="d-flex align-center cursor-pointer brand-hover" @click="goTo(dashboardRoute)">
-          <v-avatar color="#8051FF" size="46" class="elevation-2 mr-3">
+          <v-avatar color="#8051FF" size="46" class="elevation-3 mr-3 brand-avatar">
             <v-icon color="white" size="24">mdi-shield-account</v-icon>
           </v-avatar>
           <div>
@@ -28,7 +30,7 @@
           @click="goTo(item.route)"
           link
           class="mb-1 rounded-xl nav-item-premium"
-          :class="{ 'purple lighten-5 purple--text': isActive(item.route) }"
+          :class="{ 'nav-item-active': isActive(item.route) }"
           :style="{ 'animation-delay': idx * 50 + 'ms' }"
         >
           <v-list-item-icon class="mr-3">
@@ -37,7 +39,10 @@
             </v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title class="font-weight-semibold text-body-2">
+            <v-list-item-title
+              class="font-weight-semibold text-body-2"
+              :class="{ 'purple--text': isActive(item.route) }"
+            >
               {{ item.title }}
             </v-list-item-title>
           </v-list-item-content>
@@ -46,11 +51,14 @@
 
       <template v-slot:append>
         <div class="pa-4 pb-6">
+          <div class="help-card mb-4">
+            <v-icon color="#8051FF" size="22" class="mb-2">mdi-lifebuoy</v-icon>
+            <div class="help-title">Questions?</div>
+            <div class="help-sub">Contact your estate admin</div>
+          </div>
           <v-btn
-            block
-            outlined
-            color="#8051FF"
-            class="rounded-xl text-capitalize mt-3 font-weight-medium"
+            block outlined color="#8051FF"
+            class="rounded-xl text-capitalize font-weight-medium signout-btn"
             @click="logout"
           >
             <v-icon left size="18" color="#8051FF">mdi-logout</v-icon>
@@ -60,7 +68,9 @@
       </template>
     </v-navigation-drawer>
 
-    <!-- Mobile bottom nav -->
+    <!-- ============================================================
+         MOBILE BOTTOM NAV
+         ============================================================ -->
     <v-bottom-navigation
       v-if="nav_bars"
       v-model="activeTab"
@@ -83,19 +93,21 @@
       </v-btn>
     </v-bottom-navigation>
 
-    <!-- Main -->
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
     <v-main :class="nav_bars ? 'pb-16' : ''" class="main-premium">
-      <!-- Header -->
-      <div class="sticky-header-premium px-4 px-sm-6 py-3">
+      <!-- HEADER -->
+      <div class="sticky-header-premium px-4 px-sm-6 py-4">
         <v-container fluid class="pa-0">
           <v-row align="center" no-gutters>
             <v-col cols="8" sm="6">
               <div class="d-flex align-center">
-                <v-btn icon small class="mr-2" @click="goTo(dashboardRoute)">
-                  <v-icon>mdi-chevron-left</v-icon>
+                <v-btn icon small class="mr-2 back-btn" @click="goTo(dashboardRoute)">
+                  <v-icon size="20">mdi-arrow-left</v-icon>
                 </v-btn>
-                <div>
-                  <div class="d-flex align-center">
+                <div class="header-text">
+                  <div class="d-flex align-center flex-wrap">
                     <h1 class="text-h6 text-sm-h5 font-weight-bold text--primary page-title">
                       Payment Summary
                     </h1>
@@ -109,6 +121,7 @@
                     </v-chip>
                   </div>
                   <div class="d-flex align-center mt-1">
+                    <v-icon x-small color="success" class="mr-1">mdi-circle</v-icon>
                     <span class="text-caption text--secondary">
                       All households · {{ estate.estate_name || '' }}
                     </span>
@@ -117,323 +130,310 @@
               </div>
             </v-col>
             <v-col cols="4" sm="6" class="d-flex justify-end align-center">
-              <v-select
-                v-model="year"
-                :items="availableYears"
-                dense
-                outlined
-                rounded
-                hide-details
-                class="mr-2 year-select"
-                style="max-width: 100px;"
-                @change="fetchSummary"
-              />
-              <v-btn
-                icon
-                outlined
-                small
-                color="grey darken-1"
-                class="mr-2 refresh-btn"
-                :loading="loading"
+              <select v-model.number="year" class="year-picker" @change="fetchSummary">
+                <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
+              </select>
+
+              <button
+                class="icon-btn mr-2"
+                :disabled="loading"
                 @click="refreshAll"
               >
-                <v-icon small>mdi-refresh</v-icon>
-              </v-btn>
-              <v-btn
-                icon
-                outlined
-                small
-                color="grey darken-1"
-                class="mr-2 hidden-xs-only"
-                @click="exportCSV"
+                <v-icon size="16" :class="{ spin: loading }">
+                  {{ loading ? 'mdi-loading' : 'mdi-refresh' }}
+                </v-icon>
+              </button>
+
+              <button
+                class="icon-btn mr-2 hidden-xs-only"
                 title="Export CSV"
+                @click="exportCSV"
               >
-                <v-icon small>mdi-download</v-icon>
-              </v-btn>
-              <v-avatar color="#8051FF" size="36">
-                <span style="color: white;" class="font-weight-bold text-caption">{{ officialInitials }}</span>
+                <v-icon size="16">mdi-download</v-icon>
+              </button>
+
+              <v-avatar color="#8051FF" size="38" class="ml-1 avatar-glow">
+                <span class="white--text font-weight-bold text-caption">{{ officialInitials }}</span>
               </v-avatar>
             </v-col>
           </v-row>
         </v-container>
       </div>
 
-      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-2 pt-sm-4 pb-8">
-        <!-- KPI cards -->
-        <v-row dense class="mb-4 reveal-card">
-          <v-col cols="6" sm="3">
-            <v-card outlined elevation="0" class="pa-4 rounded-2xl kpi-card-premium h-100">
-              <div class="text-caption font-weight-bold text-uppercase tracking-wide text--secondary">
-                Households
+      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-3 pt-sm-5 pb-8">
+        <!-- ============================================================
+             KPI CARDS
+             ============================================================ -->
+        <div class="kpi-grid">
+          <!-- Households -->
+          <div class="kpi kpi-light reveal-card">
+            <div class="kpi-top">
+              <div class="kpi-icon kpi-icon-purple">
+                <v-icon size="20" color="white">mdi-home-group</v-icon>
               </div>
-              <div class="text-h4 font-weight-bold text--primary mt-1">
-                {{ formatNum(kpis.households) }}
-              </div>
-            </v-card>
-          </v-col>
+            </div>
+            <div class="kpi-label">Households</div>
+            <div class="kpi-value">{{ formatNum(kpis.households) }}</div>
+            <div class="kpi-foot kpi-foot-muted">In this view</div>
+          </div>
 
-          <v-col cols="6" sm="3">
-            <v-card color="#8051FF" dark elevation="0" class="pa-4 rounded-2xl h-100">
-              <div class="text-caption font-weight-bold text-uppercase tracking-wide" style="opacity: 0.85;">
-                Total Paid
+          <!-- Total Paid -->
+          <div class="kpi kpi-dark reveal-card" style="animation-delay: 50ms">
+            <div class="kpi-top">
+              <div class="kpi-icon kpi-icon-white">
+                <v-icon size="20" color="#0A0A14">mdi-cash-multiple</v-icon>
               </div>
-              <div class="text-h4 font-weight-bold mt-1">
-                {{ formatNum(kpis.totalPaid) }}
-              </div>
-              <div class="text-caption" style="opacity: 0.8;">KES</div>
-            </v-card>
-          </v-col>
+            </div>
+            <div class="kpi-label kpi-label-dark">Total Paid</div>
+            <div class="kpi-value kpi-value-dark">{{ formatNum(kpis.totalPaid) }}</div>
+            <div class="kpi-foot kpi-foot-light">KES collected</div>
+          </div>
 
-          <v-col cols="6" sm="3">
-            <v-card outlined elevation="0" class="pa-4 rounded-2xl kpi-card-premium h-100">
-              <div class="text-caption font-weight-bold text-uppercase tracking-wide text--secondary">
-                Expected YTD
+          <!-- Expected YTD -->
+          <div class="kpi kpi-light reveal-card" style="animation-delay: 100ms">
+            <div class="kpi-top">
+              <div class="kpi-icon kpi-icon-blue">
+                <v-icon size="20" color="white">mdi-chart-timeline-variant</v-icon>
               </div>
-              <div class="text-h4 font-weight-bold text--primary mt-1">
-                {{ formatNum(kpis.expectedYTD) }}
-              </div>
-              <div class="text-caption text--secondary">KES</div>
-            </v-card>
-          </v-col>
+            </div>
+            <div class="kpi-label">Expected YTD</div>
+            <div class="kpi-value">{{ formatNum(kpis.expectedYTD) }}</div>
+            <div class="kpi-foot kpi-foot-muted">KES billed</div>
+          </div>
 
-          <v-col cols="6" sm="3">
-            <v-card
-              :color="kpis.arrears > 0 ? '#ffebee' : '#e8f5e9'"
-              elevation="0"
-              class="pa-4 rounded-2xl h-100"
+          <!-- Arrears -->
+          <div
+            class="kpi reveal-card"
+            :class="kpis.arrears > 0 ? 'kpi-alert' : 'kpi-light'"
+            style="animation-delay: 150ms"
+          >
+            <div class="kpi-top">
+              <div
+                class="kpi-icon"
+                :class="kpis.arrears > 0 ? 'kpi-icon-white' : 'kpi-icon-lime'"
+              >
+                <v-icon
+                  size="20"
+                  :color="kpis.arrears > 0 ? '#0A0A14' : '#0A0A14'"
+                >
+                  {{ kpis.arrears > 0 ? 'mdi-alert-outline' : 'mdi-check-circle-outline' }}
+                </v-icon>
+              </div>
+            </div>
+            <div class="kpi-label" :class="{ 'kpi-label-dark': kpis.arrears > 0 }">Arrears</div>
+            <div class="kpi-value" :class="{ 'kpi-value-dark': kpis.arrears > 0 }">
+              {{ formatNum(kpis.arrears) }}
+            </div>
+            <div
+              class="kpi-foot"
+              :class="kpis.arrears > 0 ? 'kpi-foot-light' : 'kpi-foot-muted'"
             >
-              <div
-                class="text-caption font-weight-bold text-uppercase tracking-wide"
-                :style="kpis.arrears > 0 ? 'color: #c62828;' : 'color: #2e7d32;'"
-              >
-                Arrears
-              </div>
-              <div
-                class="text-h4 font-weight-bold mt-1"
-                :style="kpis.arrears > 0 ? 'color: #c62828;' : 'color: #2e7d32;'"
-              >
-                {{ formatNum(kpis.arrears) }}
-              </div>
-              <div
-                class="text-caption"
-                :style="kpis.arrears > 0 ? 'color: #c62828; opacity: 0.8;' : 'color: #2e7d32; opacity: 0.8;'"
-              >
-                KES outstanding
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- Filters -->
-        <v-row class="mb-4 reveal-card" style="animation-delay: 50ms">
-          <v-col cols="12">
-            <v-card class="rounded-2xl pa-3 pa-sm-4" elevation="0" outlined>
-              <v-row dense>
-                <v-col cols="12" sm="4">
-                  <v-text-field
-                    v-model="search"
-                    placeholder="Search by name, phone, or house no."
-                    dense
-                    outlined
-                    rounded
-                    hide-details
-                    prepend-inner-icon="mdi-magnify"
-                    clearable
-                  />
-                </v-col>
-                <v-col cols="6" sm="2">
-                  <v-select
-                    v-model="filterSection"
-                    :items="sectionOptions"
-                    label="Section"
-                    dense
-                    outlined
-                    rounded
-                    hide-details
-                    clearable
-                  />
-                </v-col>
-                <v-col cols="6" sm="2">
-                  <v-select
-                    v-model="filterCourt"
-                    :items="courtOptions"
-                    label="Court"
-                    dense
-                    outlined
-                    rounded
-                    hide-details
-                    clearable
-                  />
-                </v-col>
-                <v-col cols="6" sm="2">
-                  <v-select
-                    v-model="filterStreet"
-                    :items="streetOptions"
-                    label="Street"
-                    dense
-                    outlined
-                    rounded
-                    hide-details
-                    clearable
-                  />
-                </v-col>
-                <v-col cols="6" sm="2">
-                  <v-select
-                    v-model="filterStatus"
-                    :items="statusOptions"
-                    label="Status"
-                    dense
-                    outlined
-                    rounded
-                    hide-details
-                    clearable
-                  />
-                </v-col>
-              </v-row>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- Loading -->
-        <div v-if="loading && !rows.length" class="pa-4">
-          <v-skeleton-loader type="list-item-two-line, list-item-two-line, list-item-two-line" />
+              {{ kpis.arrears > 0 ? 'KES outstanding' : 'All caught up' }}
+            </div>
+          </div>
         </div>
 
-        <!-- Empty -->
-        <v-row v-else-if="!filteredRows.length" class="reveal-card">
-          <v-col cols="12">
-            <v-card class="rounded-2xl pa-12 text-center" elevation="0" outlined>
-              <v-avatar color="purple lighten-5" size="72" class="mb-3">
-                <v-icon size="44" color="#8051FF">mdi-table-off</v-icon>
-              </v-avatar>
-              <div class="text-h6 grey--text text--darken-2 mt-3">No data to display</div>
-              <div class="text-body-2 grey--text mt-1">
-                {{ hasActiveFilters ? 'Try clearing filters.' : 'No households in this estate yet.' }}
+        <!-- ============================================================
+             FILTERS
+             ============================================================ -->
+        <div class="panel-card filters-card reveal-card" style="animation-delay: 200ms">
+          <div class="filters-grid">
+            <div class="search-wrap">
+              <v-icon size="18" class="search-icon">mdi-magnify</v-icon>
+              <input
+                v-model="search"
+                class="search-input"
+                type="text"
+                placeholder="Search by name, phone, or house no."
+              />
+              <button v-if="search" class="search-clear" @click="search = ''">
+                <v-icon size="16">mdi-close-circle</v-icon>
+              </button>
+            </div>
+
+            <select v-model="filterSection" class="filter-select">
+              <option :value="null">All sections</option>
+              <option v-for="s in sectionOptions" :key="s" :value="s">{{ s }}</option>
+            </select>
+
+            <select v-model="filterCourt" class="filter-select">
+              <option :value="null">All courts</option>
+              <option v-for="c in courtOptions" :key="c" :value="c">{{ c }}</option>
+            </select>
+
+            <select v-model="filterStreet" class="filter-select">
+              <option :value="null">All streets</option>
+              <option v-for="s in streetOptions" :key="s" :value="s">{{ s }}</option>
+            </select>
+
+            <select v-model="filterStatus" class="filter-select">
+              <option :value="null">Any status</option>
+              <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
+            </select>
+
+            <button
+              v-if="hasActiveFilters"
+              class="clear-filters-btn"
+              @click="clearFilters"
+            >
+              <v-icon size="14" class="mr-1">mdi-close</v-icon>
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             LOADING
+             ============================================================ -->
+        <div v-if="loading && !rows.length" class="panel-card reveal-card">
+          <div class="pa-6">
+            <v-skeleton-loader type="list-item-two-line, list-item-two-line, list-item-two-line" />
+          </div>
+        </div>
+
+        <!-- ============================================================
+             EMPTY
+             ============================================================ -->
+        <div v-else-if="!filteredRows.length" class="panel-card reveal-card">
+          <div class="empty-block">
+            <div class="empty-icon">
+              <v-icon size="40" color="#cbd5e1">mdi-table-off</v-icon>
+            </div>
+            <div class="empty-title">No data to display</div>
+            <div class="empty-sub">
+              {{ hasActiveFilters ? 'Try clearing filters.' : 'No households in this estate yet.' }}
+            </div>
+            <button
+              v-if="hasActiveFilters"
+              class="empty-clear-btn"
+              @click="clearFilters"
+            >
+              <v-icon size="14" class="mr-1">mdi-close</v-icon>
+              Clear filters
+            </button>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             DESKTOP TABLE — horizontal scroll
+             ============================================================ -->
+        <div v-else class="reveal-card" style="animation-delay: 250ms">
+          <div class="table-panel">
+            <div class="list-head">
+              <div class="panel-icon panel-icon-purple panel-icon-sm">
+                <v-icon size="18" color="white">mdi-table-large</v-icon>
               </div>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- Desktop table -->
-        <v-row v-else class="reveal-card" style="animation-delay: 100ms">
-          <v-col cols="12">
-            <v-card class="rounded-2xl" elevation="0" outlined>
-              <v-card-title class="px-4 px-sm-6 py-4 card-header-premium d-flex align-center">
-                <v-avatar color="purple lighten-5" size="36" class="mr-3">
-                  <v-icon color="#8051FF">mdi-table-large</v-icon>
-                </v-avatar>
-                <div>
-                  <div class="text-h6 font-weight-bold text--primary">
-                    Monthly breakdown
-                  </div>
-                  <div class="text-caption text--secondary">
-                    {{ filteredRows.length }} household{{ filteredRows.length === 1 ? '' : 's' }} · {{ year }}
-                  </div>
+              <div class="panel-title-group">
+                <div class="panel-title">Monthly breakdown</div>
+                <div class="panel-sub">
+                  {{ filteredRows.length }} household{{ filteredRows.length === 1 ? '' : 's' }} · {{ year }}
                 </div>
-              </v-card-title>
-              <v-divider></v-divider>
+              </div>
+              <div class="scroll-hint">
+                <v-icon size="14" class="scroll-hint-icon">mdi-gesture-swipe-left</v-icon>
+                <span>Scroll to see all months</span>
+              </div>
+            </div>
 
-              <!-- Wide table — scroll horizontally on mobile -->
-              <div class="table-wrap">
-                <table class="payments-table">
-                  <thead>
-                    <tr>
-                      <th class="sticky-col">Household</th>
-                      <th class="num-col">B/F</th>
-                      <th v-for="m in months" :key="m.key" class="num-col">
-                        {{ m.short }}
-                      </th>
-                      <th class="num-col strong-col">Total</th>
-                      <th class="num-col">Due YTD</th>
-                      <th class="num-col status-col">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="r in filteredRows"
-                      :key="r.household_id"
-                      class="data-row"
-                      @click="openHousehold(r)"
-                    >
-                      <td class="sticky-col">
-                        <div class="d-flex align-center">
-                          <v-avatar size="32" color="#8051FF" class="mr-2">
-                            <span style="color: white; font-size: 0.7rem;" class="font-weight-bold">
-                              {{ initialsOf(r.primary_owner) }}
-                            </span>
-                          </v-avatar>
-                          <div>
-                            <div class="font-weight-medium" style="font-size: 0.85rem;">
-                              {{ r.primary_owner }}
-                            </div>
-                            <div class="text-caption grey--text" style="font-size: 0.7rem;">
-                              {{ r.section }} · {{ r.court }} · {{ r.street }}
-                            </div>
+            <!-- Wide table (horizontal scroll preserved) -->
+            <div class="table-wrap hidden-xs-only">
+              <table class="payments-table">
+                <thead>
+                  <tr>
+                    <th class="sticky-col">Household</th>
+                    <th class="num-col">B/F</th>
+                    <th v-for="m in months" :key="m.key" class="num-col">
+                      {{ m.short }}
+                    </th>
+                    <th class="num-col strong-col">Total</th>
+                    <th class="num-col">Due YTD</th>
+                    <th class="num-col status-col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="r in filteredRows"
+                    :key="r.household_id"
+                    class="data-row"
+                    @click="openHousehold(r)"
+                  >
+                    <td class="sticky-col">
+                      <div class="household-cell">
+                        <div class="household-cell-avatar">
+                          {{ initialsOf(r.primary_owner) }}
+                        </div>
+                        <div class="household-cell-info">
+                          <div class="household-cell-name">{{ r.primary_owner }}</div>
+                          <div class="household-cell-addr">
+                            {{ [r.section, r.court, r.street].filter(Boolean).join(' · ') }}
                           </div>
                         </div>
-                      </td>
-                      <td class="num-col">{{ formatNum(r.balance_bf) }}</td>
-                      <td v-for="m in months" :key="m.key" class="num-col">
-                        <span :class="Number(r[m.key]) > 0 ? 'paid-cell' : 'zero-cell'">
-                          {{ formatNum(r[m.key]) }}
-                        </span>
-                      </td>
-                      <td class="num-col strong-col">{{ formatNum(r.total_paid) }}</td>
-                      <td class="num-col">{{ formatNum(r.due_to_date) }}</td>
-                      <td class="num-col status-col">
-                        <v-chip
-                          x-small
-                          label
-                          :color="statusColor(r.status)"
-                          :text-color="statusTextColor(r.status)"
-                          class="font-weight-bold"
-                          style="font-size: 10px;"
-                        >
-                          {{ r.status }}
-                        </v-chip>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Mobile card list -->
-              <div class="d-flex d-md-none flex-column pa-3" style="gap: 12px;">
-                <v-card
-                  v-for="r in filteredRows"
-                  :key="`mob-${r.household_id}`"
-                  outlined elevation="0"
-                  class="rounded-xl pa-3"
-                  @click="openHousehold(r)"
-                  style="cursor: pointer;"
-                >
-                  <div class="d-flex align-center mb-2">
-                    <v-avatar size="32" color="#8051FF" class="mr-2">
-                      <span style="color: white; font-size: 0.7rem;" class="font-weight-bold">
-                        {{ initialsOf(r.primary_owner) }}
+                      </div>
+                    </td>
+                    <td class="num-col">{{ formatNum(r.balance_bf) }}</td>
+                    <td v-for="m in months" :key="m.key" class="num-col">
+                      <span :class="Number(r[m.key]) > 0 ? 'paid-cell' : 'zero-cell'">
+                        {{ Number(r[m.key]) > 0 ? formatNum(r[m.key]) : '—' }}
                       </span>
-                    </v-avatar>
-                    <div class="flex-grow-1">
-                      <div class="font-weight-bold">{{ r.primary_owner }}</div>
-                      <div class="text-caption grey--text">{{ r.section }} · {{ r.court }}</div>
+                    </td>
+                    <td class="num-col strong-col">{{ formatNum(r.total_paid) }}</td>
+                    <td class="num-col">{{ formatNum(r.due_to_date) }}</td>
+                    <td class="num-col status-col">
+                      <span class="status-chip" :class="statusClass(r.status)">
+                        {{ r.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Mobile card list -->
+            <div class="mobile-list">
+              <div
+                v-for="r in filteredRows"
+                :key="`mob-${r.household_id}`"
+                class="mobile-row"
+                @click="openHousehold(r)"
+              >
+                <div class="mobile-row-head">
+                  <div class="household-cell-avatar">
+                    {{ initialsOf(r.primary_owner) }}
+                  </div>
+                  <div class="mobile-row-info">
+                    <div class="mobile-row-name">{{ r.primary_owner }}</div>
+                    <div class="mobile-row-addr">
+                      {{ [r.section, r.court, r.street].filter(Boolean).join(' · ') }}
                     </div>
-                    <v-chip x-small label :color="statusColor(r.status)" :text-color="statusTextColor(r.status)" class="font-weight-bold">
-                      {{ r.status }}
-                    </v-chip>
                   </div>
-                  <div class="d-flex justify-space-between text-caption mt-2">
-                    <span class="grey--text">Total Paid</span>
-                    <span class="font-weight-bold">{{ formatNum(r.total_paid) }}</span>
+                  <span class="status-chip" :class="statusClass(r.status)">
+                    {{ r.status }}
+                  </span>
+                </div>
+
+                <div class="mobile-row-stats">
+                  <div class="m-stat">
+                    <div class="m-stat-label">Total Paid</div>
+                    <div class="m-stat-value">{{ formatNum(r.total_paid) }}</div>
                   </div>
-                  <div class="d-flex justify-space-between text-caption">
-                    <span class="grey--text">Due YTD</span>
-                    <span class="font-weight-bold">{{ formatNum(r.due_to_date) }}</span>
+                  <div class="m-stat">
+                    <div class="m-stat-label">Due YTD</div>
+                    <div class="m-stat-value">{{ formatNum(r.due_to_date) }}</div>
                   </div>
-                </v-card>
+                  <div class="m-stat">
+                    <div class="m-stat-label">{{ Number(r.overdue) > 0 ? 'Overdue' : 'Prepaid' }}</div>
+                    <div
+                      class="m-stat-value"
+                      :class="Number(r.overdue) > 0 ? 'm-red' : 'm-green'"
+                    >
+                      {{ formatNum(Math.abs(Number(r.overdue || 0))) }}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </v-card>
-          </v-col>
-        </v-row>
+            </div>
+          </div>
+        </div>
       </v-container>
 
       <v-snackbar
@@ -481,9 +481,8 @@ export default {
       estate: { estate_name: '', urn: '' },
 
       year: new Date().getFullYear(),
-      rows: [],   // household payment rows
+      rows: [],
 
-      // Filters
       search: '',
       filterSection: null,
       filterCourt: null,
@@ -621,9 +620,6 @@ export default {
       }
     },
 
-    // =====================================================
-    // AUTH + LOAD
-    // =====================================================
     waitForAuthAndLoad() {
       const that = this;
       const current = that.$fire?.auth?.currentUser;
@@ -651,35 +647,33 @@ export default {
       this.loading = true;
       await this.fetchOfficial();
       if (this.estateId) {
-        await Promise.all([this.fetchEstate(), this.fetchSummary()]);
+        await Promise.allSettled([this.fetchEstate(), this.fetchSummary()]);
       }
       this.loading = false;
     },
 
     async fetchOfficial() {
-      const that = this;
       try {
-        const { data, status } = await axios.get(`${API}/officials/getOfficialById/${that.uid}`);
+        const { data, status } = await axios.get(`${API}/officials/getOfficialById/${this.uid}`);
         if (status === 200) {
-          that.official = {
+          this.official = {
             full_name: data.full_name || '',
             role: data.role || '',
             estate_id: data.estate_id || null,
           };
-          that.estateId = data.estate_id;
+          this.estateId = data.estate_id;
         }
       } catch (error) {
-        console.error('🔴 Official fetch failed:', error.response?.data || error.message);
+        console.error('Official fetch failed:', error.response?.data || error.message);
       }
     },
 
     async fetchEstate() {
-      const that = this;
-      if (!that.estateId) return;
+      if (!this.estateId) return;
       try {
-        const { data, status } = await axios.get(`${API}/estates/estate/${that.estateId}`);
+        const { data, status } = await axios.get(`${API}/estates/estate/${this.estateId}`);
         if (status === 200) {
-          that.estate = {
+          this.estate = {
             estate_name: data.estate_name || '',
             urn: data.estate_urn || '',
           };
@@ -689,23 +683,15 @@ export default {
       }
     },
 
-    // =====================================================
-    // FETCH SUMMARY
-    // GET /api/households/estate/:id/households/list?year=YYYY
-    // Returns every approved household with monthly totals,
-    // dashboard numbers, and address info.
-    // =====================================================
     async fetchSummary() {
-      const that = this;
-      if (!that.estateId) return;
+      if (!this.estateId) return;
 
-      const url = `${API}/households/estate/${that.estateId}/households/list?year=${that.year}`;
-      console.log('🔵 GET', url);
+      const url = `${API}/households/estate/${this.estateId}/households/list?year=${this.year}`;
 
       try {
         const { data, status } = await axios.get(url);
         if (status === 200 && Array.isArray(data)) {
-          that.rows = data.map((r) => ({
+          this.rows = data.map((r) => ({
             household_id: r.household_id,
             primary_owner: r.primary_owner || '',
             contact_number: r.contact_number || '',
@@ -732,43 +718,40 @@ export default {
             prepaid: Number(r.prepaid || 0),
             status: r.status || 'Paid',
           }));
-          console.log('🔵 Summary rows loaded:', that.rows.length);
         } else {
-          that.rows = [];
+          this.rows = [];
         }
       } catch (error) {
-        console.error('🔴 Summary fetch failed:', {
-          url,
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
-        that.rows = [];
-        // Fallback: try the /payment-summary per-household approach if the bulk endpoint fails
+        console.error('Summary fetch failed:', error.response?.status || error.message);
+        this.rows = [];
         if (error.response?.status === 404) {
-          that.showSnackbar('Payment summary endpoint not available yet', 'warning');
+          this.showSnackbar('Payment summary endpoint not available yet', 'warning');
         }
       }
     },
 
-    // =====================================================
-    // EXPORT
-    // =====================================================
+    clearFilters() {
+      this.search = '';
+      this.filterSection = null;
+      this.filterCourt = null;
+      this.filterStreet = null;
+      this.filterStatus = null;
+    },
+
     exportCSV() {
-      const that = this;
       const header = ['Household', 'Phone', 'Address', 'B/F',
-        ...that.months.map((m) => m.short),
+        ...this.months.map((m) => m.short),
         'Total Paid', 'Due YTD', 'Overdue', 'Status'];
 
       const lines = [header.join(',')];
 
-      for (const r of that.filteredRows) {
+      for (const r of this.filteredRows) {
         const row = [
           r.primary_owner,
           r.contact_number,
           `"${r.section} ${r.court} ${r.street}"`,
           r.balance_bf,
-          ...that.months.map((m) => r[m.key]),
+          ...this.months.map((m) => r[m.key]),
           r.total_paid,
           r.due_to_date,
           r.overdue,
@@ -782,22 +765,15 @@ export default {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `payments-${that.estate.estate_name || 'estate'}-${that.year}.csv`;
+      a.download = `payments-${this.estate.estate_name || 'estate'}-${this.year}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
     },
 
-    // =====================================================
-    // ROW ACTIONS
-    // =====================================================
     openHousehold(r) {
-      // Navigate to that household's official dashboard view
       this.goTo(`/officials/residence/${r.household_id}`);
     },
 
-    // =====================================================
-    // FORMATTERS
-    // =====================================================
     initialsOf(name) {
       if (!name) return '?';
       return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
@@ -805,15 +781,10 @@ export default {
     formatNum(n) {
       return numeral(n || 0).format('0,0');
     },
-    statusColor(status) {
-      if (status === 'Overdue') return 'red lighten-5';
-      if (status === 'Prepaid') return 'green lighten-5';
-      return 'purple lighten-5';
-    },
-    statusTextColor(status) {
-      if (status === 'Overdue') return 'red darken-2';
-      if (status === 'Prepaid') return 'green darken-2';
-      return 'purple darken-2';
+    statusClass(status) {
+      if (status === 'Overdue') return 'status-red';
+      if (status === 'Prepaid') return 'status-green';
+      return 'status-purple';
     },
     showSnackbar(text, color = 'success') {
       this.snackbar = { show: true, text, color };
@@ -827,142 +798,702 @@ export default {
 </script>
 
 <style scoped>
+/* ============================================================
+   BASE
+   ============================================================ */
 .cursor-pointer { cursor: pointer; }
-.bg-surface { background-color: #f8fafc !important; }
-.rounded-2xl { border-radius: 20px !important; }
-.tracking-wide { letter-spacing: 0.08em; }
+.bg-surface { background-color: #f6f7fb !important; }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.reveal-card { animation: fadeInUp 0.6s ease-out both; }
+.reveal-card { animation: fadeInUp 0.5s ease-out both; }
 
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
+
+@keyframes scrollHintSlide {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-4px); }
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
 .sidebar-glass {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-right: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  border-right: 1px solid #eef1f6 !important;
 }
 .brand-text { letter-spacing: -0.5px; }
 .brand-hover { transition: opacity 0.2s; }
-.brand-hover:hover { opacity: 0.8; }
-
+.brand-hover:hover { opacity: 0.85; }
+.brand-avatar {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%) !important;
+  box-shadow: 0 12px 24px -12px rgba(128, 81, 255, 0.7);
+}
 .nav-item-premium {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 4px;
   border-radius: 12px !important;
 }
 .nav-item-premium:hover {
   background-color: rgba(128, 81, 255, 0.06);
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
+.nav-item-active { background: rgba(128, 81, 255, 0.09) !important; }
 
+.help-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(128, 81, 255, 0.08) 0%, rgba(155, 108, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.12);
+}
+.help-title { font-size: 0.82rem; font-weight: 800; color: #0f0d24; }
+.help-sub { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+.signout-btn:hover { background: rgba(128, 81, 255, 0.06); }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 .main-premium { scroll-behavior: smooth; }
 .sticky-header-premium {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: rgba(248, 250, 252, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid transparent;
+  background: rgba(246, 247, 251, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
-.page-title { letter-spacing: -0.5px; }
-.refresh-btn { transition: all 0.2s ease; }
-.refresh-btn:hover { border-color: #8051FF; color: #8051FF !important; }
-.year-select ::v-deep .v-input__slot { background: white !important; }
+.page-title { letter-spacing: -0.6px; }
+.header-text { min-width: 0; }
 
-.kpi-card-premium {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #e2e8f0;
-  background: white;
+.back-btn {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  transition: all 0.2s ease;
 }
-.kpi-card-premium:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.06) !important;
-  border-color: #cbd5e1;
+.back-btn:hover {
+  background: rgba(128, 81, 255, 0.06);
+  border-color: rgba(128, 81, 255, 0.3);
 }
 
-.card-header-premium {
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.icon-btn:hover:not(:disabled) {
+  border-color: #8051ff;
+  color: #8051ff;
+}
+.icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.year-picker {
+  padding: 9px 30px 9px 14px;
+  border-radius: 12px;
+  border: 1px solid #eef1f6;
+  background: #ffffff;
+  color: #0f0d24;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  font-family: inherit;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: all 0.2s ease;
+}
+.year-picker:hover { border-color: rgba(128, 81, 255, 0.35); }
+.year-picker:focus { border-color: #8051ff; }
+
+.avatar-glow { box-shadow: 0 8px 18px -8px rgba(128, 81, 255, 0.6); }
+
+/* ============================================================
+   KPI CARDS
+   ============================================================ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.kpi {
+  position: relative;
+  padding: 18px 20px;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s ease;
+}
+.kpi:hover { transform: translateY(-3px); }
+
+.kpi-light {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.kpi-light:hover { box-shadow: 0 22px 40px -20px rgba(15, 13, 36, 0.15); }
+
+.kpi-dark {
+  background: linear-gradient(140deg, #0a0a14 0%, #221047 55%, #2b1256 100%);
+  border: none;
+  box-shadow: 0 22px 44px -22px rgba(34, 16, 71, 0.55);
+}
+.kpi-dark:hover { box-shadow: 0 26px 50px -22px rgba(34, 16, 71, 0.7); }
+
+.kpi-alert {
+  background: linear-gradient(140deg, #dc2626 0%, #b91c1c 100%);
+  border: none;
+  box-shadow: 0 22px 44px -22px rgba(220, 38, 38, 0.6);
+}
+.kpi-alert:hover { box-shadow: 0 26px 50px -22px rgba(220, 38, 38, 0.75); }
+
+.kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-icon-purple {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.kpi-icon-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  box-shadow: 0 10px 22px -10px rgba(59, 130, 246, 0.6);
+}
+.kpi-icon-lime {
+  background: linear-gradient(135deg, #d4ff4a 0%, #b6ff00 100%);
+  box-shadow: 0 10px 22px -10px rgba(182, 255, 0, 0.6);
+}
+.kpi-icon-white {
+  background: #ffffff;
+  box-shadow: 0 10px 22px -10px rgba(255, 255, 255, 0.5);
+}
+.kpi-label {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 4px;
+}
+.kpi-label-dark { color: rgba(255, 255, 255, 0.65); }
+.kpi-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.9px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-value-dark { color: #ffffff; }
+.kpi-foot {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.kpi-foot-muted { color: #94a3b8; }
+.kpi-foot-light { color: rgba(255, 255, 255, 0.85); }
+
+/* ============================================================
+   FILTERS
+   ============================================================ */
+.panel-card {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.filters-card { padding: 14px 16px; margin-bottom: 16px; }
+.filters-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+@media (max-width: 1023px) {
+  .filters-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .search-wrap { grid-column: 1 / -1; }
+  .clear-filters-btn { grid-column: 1 / -1; justify-content: center; }
+}
+@media (max-width: 599px) {
+  .filters-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 10px 36px 10px 38px;
+  border-radius: 12px;
+  border: 1.5px solid #eef1f6;
+  background: #f8fafc;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f0d24;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.search-input:focus {
+  border-color: #8051ff;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(128, 81, 255, 0.08);
+}
+.search-input::placeholder { color: #94a3b8; font-weight: 500; }
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+.search-clear:hover { color: #0f0d24; }
+
+.filter-select {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #eef1f6;
+  background: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f0d24;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+}
+.filter-select:focus {
+  border-color: #8051ff;
+  background-color: #ffffff;
+}
+
+.clear-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.clear-filters-btn:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* ============================================================
+   TABLE PANEL
+   ============================================================ */
+.table-panel {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.list-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
   background: linear-gradient(to bottom, #ffffff, #f8fafc);
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+.panel-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.panel-icon-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+.panel-icon-purple {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.panel-title-group { flex: 1; min-width: 0; }
+.panel-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.panel-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(128, 81, 255, 0.08);
+  border: 1px solid rgba(128, 81, 255, 0.15);
+  color: #8051ff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.scroll-hint-icon {
+  color: #8051ff !important;
+  animation: scrollHintSlide 2s ease-in-out infinite;
 }
 
-/* Horizontal scroll table */
+/* ============================================================
+   DESKTOP TABLE (horizontal scroll preserved)
+   ============================================================ */
 .table-wrap {
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
 }
+.table-wrap::-webkit-scrollbar { height: 10px; }
+.table-wrap::-webkit-scrollbar-track { background: #f8fafc; }
+.table-wrap::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 5px;
+}
+.table-wrap::-webkit-scrollbar-thumb:hover { background: #c7b8ff; }
+
 .payments-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   min-width: 1100px;
+  font-size: 0.82rem;
 }
 .payments-table th,
 .payments-table td {
-  padding: 10px 12px;
-  font-size: 0.82rem;
+  padding: 12px 14px;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #f1f5f9;
   white-space: nowrap;
 }
 .payments-table thead th {
   background: #f8fafc;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
+  font-size: 0.66rem;
+  letter-spacing: 0.6px;
   color: #64748b;
   position: sticky;
   top: 0;
   z-index: 1;
+  border-bottom: 1px solid #e2e8f0;
 }
 .payments-table .sticky-col {
   position: sticky;
   left: 0;
   background: #ffffff;
   z-index: 2;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.03);
+  box-shadow: 2px 0 6px rgba(15, 13, 36, 0.04);
+  min-width: 240px;
 }
 .payments-table thead .sticky-col {
   background: #f8fafc;
+  z-index: 3;
 }
 .num-col {
   text-align: right;
   font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, monospace;
 }
 .status-col {
   text-align: center;
 }
 .strong-col {
-  font-weight: 700;
-  color: #1e293b;
+  font-weight: 800;
+  color: #0f0d24;
+  background: #faf5ff;
 }
 .data-row {
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.15s ease;
 }
-.data-row:hover {
-  background-color: #f8fafc;
-}
+.data-row:hover { background-color: #fafbff; }
+.data-row:hover .sticky-col { background-color: #fafbff; }
+
 .paid-cell {
-  color: #2e7d32;
-  font-weight: 600;
+  color: #166534;
+  font-weight: 700;
 }
 .zero-cell {
   color: #cbd5e1;
 }
 
+/* Household cell */
+.household-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.household-cell-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.household-cell-info { min-width: 0; }
+.household-cell-name {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.household-cell-addr {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status chips */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.status-red    { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+.status-green  { background: rgba(122, 184, 0, 0.16); color: #3f6b00; }
+.status-purple { background: rgba(128, 81, 255, 0.12); color: #5b21b6; }
+
+/* ============================================================
+   MOBILE CARD LIST
+   ============================================================ */
+.mobile-list {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+.mobile-row {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mobile-row:hover {
+  border-color: rgba(128, 81, 255, 0.35);
+  box-shadow: 0 12px 26px -16px rgba(128, 81, 255, 0.35);
+}
+
+.mobile-row-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.mobile-row-info { flex: 1; min-width: 0; }
+.mobile-row-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mobile-row-addr {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-row-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+.m-stat { min-width: 0; }
+.m-stat-label {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 3px;
+}
+.m-stat-value {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #0f0d24;
+  font-variant-numeric: tabular-nums;
+}
+.m-red { color: #dc2626; }
+.m-green { color: #3f6b00; }
+
+/* Show mobile list, hide table on small screens */
+@media (max-width: 599px) {
+  .table-wrap.hidden-xs-only { display: none; }
+  .mobile-list { display: flex; }
+}
+
+/* ============================================================
+   EMPTY
+   ============================================================ */
+.empty-block {
+  padding: 64px 24px;
+  text-align: center;
+}
+.empty-icon {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: #f6f7fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+.empty-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.empty-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 6px;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.55;
+}
+.empty-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 20px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(128, 81, 255, 0.08);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  color: #8051ff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.empty-clear-btn:hover {
+  background: rgba(128, 81, 255, 0.14);
+  border-color: rgba(128, 81, 255, 0.35);
+}
+
+/* ============================================================
+   SNACKBAR + MOBILE NAV
+   ============================================================ */
 .snackbar-premium ::v-deep .v-snackbar__content { padding: 12px 20px; }
 
 .bottom-nav-premium {
-  border-top: 1px solid #e2e8f0 !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px);
+  border-top: 1px solid #eef1f6 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(14px);
 }
 .mobile-nav-btn { min-width: 0 !important; }
-.mobile-nav-label { font-size: 10px; margin-top: 2px; }
+.mobile-nav-label { font-size: 10px; margin-top: 2px; font-weight: 700; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 767px) {
+  .kpi-value { font-size: 1.5rem; }
+  .kpi { padding: 16px; }
+  .list-head { padding: 14px 16px; }
+  .scroll-hint { display: none; }
+}
 
 @media (max-width: 599px) {
   .sticky-header-premium { padding-left: 12px; padding-right: 12px; }
   .reveal-card { animation-duration: 0.4s; }
+  .year-picker { padding: 8px 26px 8px 12px; font-size: 0.74rem; }
 }
 </style>

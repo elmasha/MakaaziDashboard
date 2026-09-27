@@ -1,15 +1,17 @@
 <template>
   <div class="d-flex bg-surface dashboard-root" style="min-height: 100vh;">
-    <!-- Desktop sidebar -->
+    <!-- ============================================================
+         DESKTOP SIDEBAR
+         ============================================================ -->
     <v-navigation-drawer
       v-if="!nav_bars"
       permanent
       width="260"
-      class="elevation-1 sidebar-glass"
+      class="elevation-0 sidebar-glass"
     >
       <div class="pa-6 pb-4">
         <div class="d-flex align-center cursor-pointer brand-hover" @click="goTo(dashboardRoute)">
-          <v-avatar color="#8051FF" size="46" class="elevation-2 mr-3">
+          <v-avatar color="#8051FF" size="46" class="elevation-3 mr-3 brand-avatar">
             <v-icon color="white" size="24">mdi-shield-account</v-icon>
           </v-avatar>
           <div>
@@ -28,7 +30,7 @@
           @click="goTo(item.route)"
           link
           class="mb-1 rounded-xl nav-item-premium"
-          :class="{ 'purple lighten-5 purple--text': isActive(item.route) }"
+          :class="{ 'nav-item-active': isActive(item.route) }"
           :style="{ 'animation-delay': idx * 50 + 'ms' }"
         >
           <v-list-item-icon class="mr-3">
@@ -37,25 +39,29 @@
             </v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title class="font-weight-semibold text-body-2">
+            <v-list-item-title
+              class="font-weight-semibold text-body-2"
+              :class="{ 'purple--text': isActive(item.route) }"
+            >
               {{ item.title }}
             </v-list-item-title>
           </v-list-item-content>
           <v-list-item-action v-if="item.badge && item.badge > 0">
-            <v-chip x-small color="red" text-color="white" class="font-weight-bold" style="font-size: 10px;">
-              {{ item.badge }}
-            </v-chip>
+            <div class="nav-badge">{{ item.badge > 99 ? '99+' : item.badge }}</div>
           </v-list-item-action>
         </v-list-item>
       </v-list>
 
       <template v-slot:append>
         <div class="pa-4 pb-6">
+          <div class="help-card mb-4">
+            <v-icon color="#8051FF" size="22" class="mb-2">mdi-lifebuoy</v-icon>
+            <div class="help-title">Questions?</div>
+            <div class="help-sub">Contact your estate admin</div>
+          </div>
           <v-btn
-            block
-            outlined
-            color="#8051FF"
-            class="rounded-xl text-capitalize mt-3 font-weight-medium"
+            block outlined color="#8051FF"
+            class="rounded-xl text-capitalize font-weight-medium signout-btn"
             @click="logout"
           >
             <v-icon left size="18" color="#8051FF">mdi-logout</v-icon>
@@ -65,7 +71,9 @@
       </template>
     </v-navigation-drawer>
 
-    <!-- Mobile bottom nav -->
+    <!-- ============================================================
+         MOBILE BOTTOM NAV
+         ============================================================ -->
     <v-bottom-navigation
       v-if="nav_bars"
       v-model="activeTab"
@@ -85,30 +93,28 @@
       >
         <v-icon size="22">{{ item.icon }}</v-icon>
         <span class="mobile-nav-label">{{ item.title }}</span>
-        <v-badge
+        <span
           v-if="item.badge && item.badge > 0"
-          color="red"
-          dot
-          overlap
-          offset-x="8"
-          offset-y="4"
-        ></v-badge>
+          class="mobile-badge"
+        >{{ item.badge > 9 ? '9+' : item.badge }}</span>
       </v-btn>
     </v-bottom-navigation>
 
-    <!-- Main -->
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
     <v-main :class="nav_bars ? 'pb-16' : ''" class="main-premium">
-      <!-- Header -->
-      <div class="sticky-header-premium px-4 px-sm-6 py-3">
+      <!-- HEADER -->
+      <div class="sticky-header-premium px-4 px-sm-6 py-4">
         <v-container fluid class="pa-0">
           <v-row align="center" no-gutters>
             <v-col cols="8" sm="6">
               <div class="d-flex align-center">
-                <v-btn icon small class="mr-2" @click="goTo(dashboardRoute)">
-                  <v-icon>mdi-chevron-left</v-icon>
+                <v-btn icon small class="mr-2 back-btn" @click="goTo(dashboardRoute)">
+                  <v-icon size="20">mdi-arrow-left</v-icon>
                 </v-btn>
-                <div>
-                  <div class="d-flex align-center">
+                <div class="header-text">
+                  <div class="d-flex align-center flex-wrap">
                     <h1 class="text-h6 text-sm-h5 font-weight-bold text--primary page-title">
                       Pending Approvals
                     </h1>
@@ -123,26 +129,29 @@
                     </v-chip>
                   </div>
                   <div class="d-flex align-center mt-1">
+                    <v-icon
+                      x-small
+                      :color="pending.length > 0 ? 'amber darken-2' : 'success'"
+                      class="mr-1"
+                    >mdi-circle</v-icon>
                     <span class="text-caption text--secondary">
-                      Review new household registrations
+                      {{ pending.length > 0 ? 'Registrations awaiting review' : 'All caught up' }}
                     </span>
                   </div>
                 </div>
               </div>
             </v-col>
             <v-col cols="4" sm="6" class="d-flex justify-end align-center">
-              <v-btn
-                icon
-                outlined
-                small
-                color="grey darken-1"
-                class="mr-2 refresh-btn"
-                :loading="loading"
+              <button
+                class="icon-btn mr-2"
+                :disabled="loading"
                 @click="refreshAll"
               >
-                <v-icon small>mdi-refresh</v-icon>
-              </v-btn>
-              <v-avatar color="#8051FF" size="36">
+                <v-icon size="16" :class="{ spin: loading }">
+                  {{ loading ? 'mdi-loading' : 'mdi-refresh' }}
+                </v-icon>
+              </button>
+              <v-avatar color="#8051FF" size="38" class="ml-1 avatar-glow">
                 <span class="white--text font-weight-bold text-caption">{{ officialInitials }}</span>
               </v-avatar>
             </v-col>
@@ -150,270 +159,226 @@
         </v-container>
       </div>
 
-      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-2 pt-sm-4 pb-8">
-        <!-- Info banner -->
-        <v-row class="mb-4 reveal-card" v-if="pending.length > 0">
-          <v-col cols="12">
-            <v-card color="#fff3e0" class="rounded-2xl pa-4" elevation="0">
-              <div class="d-flex align-center">
-                <v-avatar color="#ef6c00" size="40" class="mr-3">
-                  <v-icon color="white" small>mdi-account-clock</v-icon>
-                </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="font-weight-bold" style="color: #e65100;">
-                    {{ pending.length }} registration{{ pending.length === 1 ? '' : 's' }} awaiting review
-                  </div>
-                  <div class="text-caption" style="color: #bf360c;">
-                    Approve to activate the household, or reject with a reason.
-                  </div>
-                </div>
+      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-3 pt-sm-5 pb-8">
+        <!-- ============================================================
+             INFO BANNER
+             ============================================================ -->
+        <transition name="hint-fade">
+          <div v-if="pending.length > 0" class="info-banner reveal-card">
+            <div class="info-icon">
+              <v-icon size="20" color="white">mdi-account-clock</v-icon>
+            </div>
+            <div class="info-body">
+              <div class="info-title">
+                {{ pending.length }} registration{{ pending.length === 1 ? '' : 's' }} awaiting review
               </div>
-            </v-card>
-          </v-col>
-        </v-row>
+              <div class="info-sub">
+                Approve to activate the household, or reject with a reason.
+              </div>
+            </div>
+          </div>
+        </transition>
 
-        <!-- Loading skeleton -->
-        <div v-if="loading && !pending.length" class="pa-4">
-          <v-skeleton-loader
-            type="list-item-avatar-three-line, list-item-avatar-three-line, list-item-avatar-three-line"
-          />
+        <!-- ============================================================
+             LOADING
+             ============================================================ -->
+        <div v-if="loading && !pending.length" class="panel-card reveal-card">
+          <div class="pa-6">
+            <v-skeleton-loader
+              type="list-item-avatar-three-line, list-item-avatar-three-line, list-item-avatar-three-line"
+            />
+          </div>
         </div>
 
-        <!-- Empty state -->
-        <v-row v-else-if="!pending.length" class="reveal-card">
-          <v-col cols="12">
-            <v-card class="rounded-2xl pa-12 text-center" elevation="0" outlined>
-              <v-avatar color="green lighten-5" size="72" class="mb-3">
-                <v-icon size="44" color="green darken-2">mdi-check-all</v-icon>
-              </v-avatar>
-              <div class="text-h6 grey--text text--darken-2 mt-3">
-                All caught up!
-              </div>
-              <div class="text-body-2 grey--text mt-1">
-                No pending household registrations for your estate.
-              </div>
-              <v-btn
-                text
-                small
-                color="#8051FF"
-                class="mt-4 text-capitalize font-weight-medium"
-                @click="refreshAll"
-              >
-                <v-icon left small>mdi-refresh</v-icon>
-                Check again
-              </v-btn>
-            </v-card>
-          </v-col>
-        </v-row>
+        <!-- ============================================================
+             EMPTY STATE
+             ============================================================ -->
+        <div v-else-if="!pending.length" class="panel-card reveal-card">
+          <div class="empty-block">
+            <div class="empty-icon empty-icon-green">
+              <v-icon size="40" color="#10b981">mdi-check-all</v-icon>
+            </div>
+            <div class="empty-title">All caught up!</div>
+            <div class="empty-sub">
+              No pending household registrations for your estate.
+            </div>
+            <button class="empty-refresh-btn" @click="refreshAll">
+              <v-icon size="14" class="mr-1">mdi-refresh</v-icon>
+              Check again
+            </button>
+          </div>
+        </div>
 
-        <!-- Pending list -->
-        <v-row v-else class="reveal-card">
-          <v-col cols="12">
-            <v-card class="rounded-2xl" elevation="0" outlined>
-              <v-card-title class="px-4 px-sm-6 py-4 card-header-premium d-flex align-center">
-                <v-avatar color="purple lighten-5" size="36" class="mr-3">
-                  <v-icon color="#8051FF">mdi-account-clock</v-icon>
-                </v-avatar>
-                <div>
-                  <div class="text-h6 font-weight-bold text--primary">Awaiting your review</div>
-                  <div class="text-caption text--secondary">Newest first</div>
+        <!-- ============================================================
+             PENDING LIST
+             ============================================================ -->
+        <div v-else class="reveal-card">
+          <div class="list-head">
+            <div class="panel-icon panel-icon-purple panel-icon-sm">
+              <v-icon size="18" color="white">mdi-account-clock</v-icon>
+            </div>
+            <div class="panel-title-group">
+              <div class="panel-title">Awaiting your review</div>
+              <div class="panel-sub">Newest first</div>
+            </div>
+            <div class="count-pill">{{ pending.length }}</div>
+          </div>
+
+          <div class="pending-list">
+            <div
+              v-for="h in pending"
+              :key="h.household_id"
+              class="pending-card"
+            >
+              <!-- Header -->
+              <div class="pending-head">
+                <div class="pending-avatar">
+                  {{ initialsOf(h.primary_owner) }}
                 </div>
-              </v-card-title>
-              <v-divider></v-divider>
+                <div class="pending-info">
+                  <div class="pending-name">{{ h.primary_owner }}</div>
+                  <div class="pending-addr">
+                    <span class="addr-chip addr-chip-house">
+                      <v-icon size="11">mdi-home</v-icon>
+                      {{ h.house_number || 'No #' }}
+                    </span>
+                    <span v-if="h.section" class="addr-chip addr-chip-purple">{{ h.section }}</span>
+                    <span v-if="h.court" class="addr-chip addr-chip-blue">{{ h.court }}</span>
+                    <span v-if="h.street" class="addr-chip addr-chip-green">{{ h.street }}</span>
+                  </div>
+                </div>
+                <div class="pending-age">
+                  <v-icon size="12" color="#94a3b8">mdi-clock-outline</v-icon>
+                  {{ formatRelative(h.created_at) }}
+                </div>
+              </div>
 
-              <v-list class="pa-0">
-                <template v-for="(h, i) in pending">
-                  <v-list-item
-                    :key="h.household_id"
-                    class="py-4 px-4 px-sm-6"
-                    style="align-items: flex-start;"
+              <!-- Meta row -->
+              <div class="pending-meta">
+                <div class="meta-item">
+                  <v-icon size="14" color="#94a3b8">mdi-phone-outline</v-icon>
+                  <span>{{ h.contact_number || '—' }}</span>
+                </div>
+                <div v-if="h.residence_status" class="meta-item">
+                  <v-icon size="14" color="#94a3b8">mdi-account-switch-outline</v-icon>
+                  <span>{{ h.residence_status }}</span>
+                </div>
+                <div v-if="h.take_on_balance > 0" class="meta-item meta-item-amber">
+                  <v-icon size="14" color="#b45309">mdi-cash</v-icon>
+                  <span>B/F KES {{ formatNum(h.take_on_balance) }}</span>
+                </div>
+                <div v-if="h.caretaker_name" class="meta-item">
+                  <v-icon size="14" color="#94a3b8">mdi-account-tie-outline</v-icon>
+                  <span>
+                    Caretaker: <strong>{{ h.caretaker_name }}</strong>
+                    <span v-if="h.caretaker_contact"> · {{ h.caretaker_contact }}</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="pending-actions">
+                <button
+                  class="pending-action pending-action-approve"
+                  :disabled="!!approvingId || !!rejectingId"
+                  @click="approve(h)"
+                >
+                  <v-icon
+                    size="16"
+                    :class="{ spin: approvingId === h.household_id }"
                   >
-                    <v-list-item-avatar color="#8051FF" size="48" class="mt-1">
-                      <span class="white--text font-weight-bold">
-                        {{ initialsOf(h.primary_owner) }}
-                      </span>
-                    </v-list-item-avatar>
-
-                    <v-list-item-content>
-                      <v-list-item-title class="font-weight-bold text--primary" style="font-size: 1rem;">
-                        {{ h.primary_owner }}
-                      </v-list-item-title>
-
-                      <div class="d-flex flex-wrap align-center mt-1" style="gap: 8px;">
-                        <v-chip x-small label color="grey lighten-3" class="font-weight-medium">
-                          <v-icon x-small left>mdi-home</v-icon>
-                          {{ h.house_number || 'No #' }}
-                        </v-chip>
-                        <v-chip x-small label color="purple lighten-5 purple--text" class="font-weight-medium">
-                          {{ h.section }}
-                        </v-chip>
-                        <v-chip x-small label color="blue lighten-5 blue--text" class="font-weight-medium">
-                          {{ h.court }}
-                        </v-chip>
-                        <v-chip x-small label color="green lighten-5 green--text" class="font-weight-medium">
-                          {{ h.street }}
-                        </v-chip>
-                      </div>
-
-                      <div class="d-flex flex-wrap mt-2" style="gap: 12px;">
-                        <div class="d-flex align-center">
-                          <v-icon x-small color="grey" class="mr-1">mdi-phone</v-icon>
-                          <span class="text-caption grey--text text--darken-1">
-                            {{ h.contact_number }}
-                          </span>
-                        </div>
-                        <div class="d-flex align-center" v-if="h.residence_status">
-                          <v-icon x-small color="grey" class="mr-1">mdi-account-switch</v-icon>
-                          <span class="text-caption grey--text text--darken-1">
-                            {{ h.residence_status }}
-                          </span>
-                        </div>
-                        <div class="d-flex align-center" v-if="h.take_on_balance > 0">
-                          <v-icon x-small color="grey" class="mr-1">mdi-cash</v-icon>
-                          <span class="text-caption grey--text text--darken-1">
-                            B/F KES {{ formatNum(h.take_on_balance) }}
-                          </span>
-                        </div>
-                        <div class="d-flex align-center" v-if="h.created_at">
-                          <v-icon x-small color="grey" class="mr-1">mdi-clock-outline</v-icon>
-                          <span class="text-caption grey--text text--darken-1">
-                            {{ formatRelative(h.created_at) }}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div v-if="h.caretaker_name" class="mt-2">
-                        <span class="text-caption grey--text">
-                          Caretaker: <strong>{{ h.caretaker_name }}</strong>
-                          <span v-if="h.caretaker_contact"> · {{ h.caretaker_contact }}</span>
-                        </span>
-                      </div>
-
-                      <div class="d-flex mt-3" style="gap: 8px;">
-                        <v-btn
-                          small
-                          rounded
-                          depressed
-                          color="green darken-2"
-                          dark
-                          class="text-capitalize font-weight-bold"
-                          :loading="approvingId === h.household_id"
-                          :disabled="!!approvingId || !!rejectingId"
-                          @click="approve(h)"
-                        >
-                          <v-icon left small>mdi-check</v-icon>
-                          Approve
-                        </v-btn>
-                        <v-btn
-                          small
-                          rounded
-                          outlined
-                          color="red darken-2"
-                          class="text-capitalize font-weight-medium"
-                          :disabled="!!approvingId || !!rejectingId"
-                          @click="openReject(h)"
-                        >
-                          <v-icon left small>mdi-close</v-icon>
-                          Reject
-                        </v-btn>
-                      </div>
-                    </v-list-item-content>
-                  </v-list-item>
-                  <v-divider v-if="i < pending.length - 1" :key="`d-${h.household_id}`" inset></v-divider>
-                </template>
-              </v-list>
-            </v-card>
-          </v-col>
-        </v-row>
+                    {{ approvingId === h.household_id ? 'mdi-loading' : 'mdi-check' }}
+                  </v-icon>
+                  {{ approvingId === h.household_id ? 'Approving…' : 'Approve' }}
+                </button>
+                <button
+                  class="pending-action pending-action-reject"
+                  :disabled="!!approvingId || !!rejectingId"
+                  @click="openReject(h)"
+                >
+                  <v-icon size="16">mdi-close</v-icon>
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </v-container>
 
-      <!-- Reject dialog -->
-      <v-dialog v-model="rejectDialog" max-width="460" persistent>
-        <v-card class="rounded-2xl pa-2">
-          <v-card-text class="pa-6">
-            <div class="text-center mb-4">
-              <v-avatar color="red lighten-5" size="64" class="mb-3">
-                <v-icon color="red darken-2" size="32">mdi-close-circle-outline</v-icon>
-              </v-avatar>
-              <div class="text-h6 font-weight-bold grey--text text--darken-3">
-                Reject this registration?
-              </div>
-              <div class="text-caption grey--text mt-1">
-                {{ rejectTarget?.primary_owner }}
-              </div>
+      <!-- ============================================================
+           REJECT DIALOG
+           ============================================================ -->
+      <v-dialog v-model="rejectDialog" max-width="480" persistent>
+        <div class="dialog-card">
+          <div class="dialog-header dialog-header-reject">
+            <div class="dialog-header-icon">
+              <v-icon color="white" size="20">mdi-close-circle-outline</v-icon>
             </div>
+            <div class="flex-grow-1">
+              <div class="dialog-title">Reject this registration?</div>
+              <div class="dialog-sub">{{ rejectTarget?.primary_owner }}</div>
+            </div>
+            <button class="dialog-close" @click="closeReject">
+              <v-icon size="18" color="white">mdi-close</v-icon>
+            </button>
+          </div>
 
-            <v-textarea
+          <div class="dialog-body">
+            <label class="field-label">
+              Reason for rejection
+              <span class="required">*</span>
+            </label>
+            <textarea
               v-model="rejectionReason"
-              label="Reason for rejection *"
-              placeholder="e.g. This unit is not registered at this estate"
-              outlined
-              rounded
+              class="field-textarea"
               rows="3"
-              hide-details
-              class="mb-3"
-              :rules="[v => !!v || 'Reason is required']"
-              counter="255"
+              placeholder="e.g. This unit is not registered at this estate"
               maxlength="255"
-              auto-grow
-            />
-
-            <div class="d-flex" style="gap: 8px;">
-              <v-btn
-                block
-                text
-                class="text-capitalize font-weight-medium"
-                @click="closeReject"
-                :disabled="!!rejectingId"
-              >
-                Cancel
-              </v-btn>
-              <v-btn
-                block
-                rounded
-                depressed
-                color="red darken-2"
-                dark
-                class="text-capitalize font-weight-bold"
-                :loading="!!rejectingId"
-                :disabled="!rejectionReason.trim()"
-                @click="confirmReject"
-              >
-                <v-icon left small>mdi-close</v-icon>
-                Reject
-              </v-btn>
+            ></textarea>
+            <div class="field-hint">
+              {{ rejectionReason.length }}/255 · Required
             </div>
-          </v-card-text>
-        </v-card>
+          </div>
+
+          <div class="dialog-actions">
+            <button
+              class="dialog-cancel"
+              :disabled="!!rejectingId"
+              @click="closeReject"
+            >
+              Cancel
+            </button>
+            <button
+              class="dialog-proceed dialog-proceed-danger"
+              :disabled="!rejectionReason.trim() || !!rejectingId"
+              @click="confirmReject"
+            >
+              <v-icon
+                size="14"
+                :class="['mr-1', { spin: !!rejectingId }]"
+              >
+                {{ rejectingId ? 'mdi-loading' : 'mdi-close' }}
+              </v-icon>
+              {{ rejectingId ? 'Rejecting…' : 'Reject' }}
+            </button>
+          </div>
+        </div>
       </v-dialog>
 
-      <!-- Approve success dialog -->
+      <!-- ============================================================
+           SUCCESS DIALOG
+           ============================================================ -->
       <v-dialog v-model="successDialog" max-width="420" persistent>
-        <v-card class="rounded-2xl pa-2">
-          <v-card-text class="text-center pa-6">
-            <v-avatar color="success lighten-5" size="72" class="mb-3">
-              <v-icon color="success" size="40">mdi-check-circle</v-icon>
-            </v-avatar>
-            <div class="text-h6 font-weight-bold text--primary">
-              Household approved
-            </div>
-            <div class="text-body-2 text--secondary mt-2">
-              {{ successMessage }}
-            </div>
-            <v-btn
-              block
-              rounded
-              large
-              color="#8051FF"
-              dark
-              elevation="0"
-              class="mt-5 text-capitalize"
-              @click="successDialog = false"
-            >
-              Done
-            </v-btn>
-          </v-card-text>
-        </v-card>
+        <div class="dialog-card dialog-card-success">
+          <div class="success-icon-wrap">
+            <v-icon size="40" color="#22c55e">mdi-check-circle</v-icon>
+          </div>
+          <div class="success-title">Household approved</div>
+          <div class="success-msg">{{ successMessage }}</div>
+          <button class="success-btn" @click="successDialog = false">
+            Done
+          </button>
+        </div>
       </v-dialog>
 
       <v-snackbar
@@ -574,50 +539,38 @@ export default {
       this.loading = false;
     },
 
-    // =====================================================
-    // FETCH OFFICIAL
-    // =====================================================
     async fetchOfficial() {
-      const that = this;
       try {
-        const url = `${API}/officials/getOfficialById/${that.uid}`;
+        const url = `${API}/officials/getOfficialById/${this.uid}`;
         const { data, status } = await axios.get(url);
         if (status === 200) {
-          that.official = {
+          this.official = {
             full_name: data.full_name || '',
             role: data.role || '',
             estate_id: data.estate_id || null,
           };
-          that.estateId = data.estate_id;
-          console.log('🔵 Official loaded, estate:', that.estateId);
+          this.estateId = data.estate_id;
         }
       } catch (error) {
-        console.error('🔴 Official fetch failed:', error.response?.data || error.message);
-        that.showSnackbar('Could not load your official profile', 'error');
+        console.error('Official fetch failed:', error.response?.data || error.message);
+        this.showSnackbar('Could not load your official profile', 'error');
       }
     },
 
-    // =====================================================
-    // FETCH PENDING
-    // =====================================================
     async fetchPending() {
-      const that = this;
-      if (!that.estateId) return;
+      if (!this.estateId) return;
       try {
-        const url = `${API}/households/estate/${that.estateId}/pending`;
-        console.log('🔵 GET', url);
+        const url = `${API}/households/estate/${this.estateId}/pending`;
         const { data, status } = await axios.get(url);
         if (status === 200) {
           const list = Array.isArray(data) ? data : [];
-          // Sort newest first
-          that.pending = list.sort(
+          this.pending = list.sort(
             (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
           );
-          console.log('🔵 Pending loaded:', that.pending.length);
         }
       } catch (error) {
-        console.error('🔴 Pending fetch failed:', error.response?.data || error.message);
-        that.pending = [];
+        console.error('Pending fetch failed:', error.response?.data || error.message);
+        this.pending = [];
       }
     },
 
@@ -625,35 +578,29 @@ export default {
     // APPROVE
     // =====================================================
     async approve(h) {
-      const that = this;
-      that.approvingId = h.household_id;
+      this.approvingId = h.household_id;
 
       try {
         const url = `${API}/households/${h.household_id}/approve`;
-        console.log('🔵 POST', url);
-
-        const { data, status } = await axios.post(url, {
-          official_uid: that.uid,
+        const { status } = await axios.post(url, {
+          official_uid: this.uid,
         });
 
         if (status === 200) {
-          // Remove from local list
-          that.pending = that.pending.filter(
+          this.pending = this.pending.filter(
             (p) => p.household_id !== h.household_id
           );
-
-          that.successMessage = `${h.primary_owner} has been approved and can now access their dashboard.`;
-          that.successDialog = true;
-          console.log('✅ Approved:', h.household_id);
+          this.successMessage = `${h.primary_owner} has been approved and can now access their dashboard.`;
+          this.successDialog = true;
         }
       } catch (error) {
-        console.error('🔴 Approve failed:', error.response?.data || error.message);
-        that.showSnackbar(
+        console.error('Approve failed:', error.response?.data || error.message);
+        this.showSnackbar(
           error.response?.data?.error || 'Could not approve this household',
           'error'
         );
       } finally {
-        that.approvingId = null;
+        this.approvingId = null;
       }
     },
 
@@ -673,40 +620,37 @@ export default {
     },
 
     async confirmReject() {
-      const that = this;
-      if (!that.rejectTarget) return;
-      if (!that.rejectionReason.trim()) {
-        that.showSnackbar('Please provide a reason', 'warning');
+      if (!this.rejectTarget) return;
+      if (!this.rejectionReason.trim()) {
+        this.showSnackbar('Please provide a reason', 'warning');
         return;
       }
 
-      const h = that.rejectTarget;
-      that.rejectingId = h.household_id;
+      const h = this.rejectTarget;
+      this.rejectingId = h.household_id;
 
       try {
         const url = `${API}/households/${h.household_id}/reject`;
-        console.log('🔵 POST', url);
-
         const { status } = await axios.post(url, {
-          official_uid: that.uid,
-          reason: that.rejectionReason.trim(),
+          official_uid: this.uid,
+          reason: this.rejectionReason.trim(),
         });
 
         if (status === 200) {
-          that.pending = that.pending.filter(
+          this.pending = this.pending.filter(
             (p) => p.household_id !== h.household_id
           );
-          that.showSnackbar(`${h.primary_owner}'s registration was rejected`, 'warning');
-          that.closeReject();
+          this.showSnackbar(`${h.primary_owner}'s registration was rejected`, 'warning');
+          this.closeReject();
         }
       } catch (error) {
-        console.error('🔴 Reject failed:', error.response?.data || error.message);
-        that.showSnackbar(
+        console.error('Reject failed:', error.response?.data || error.message);
+        this.showSnackbar(
           error.response?.data?.error || 'Could not reject this household',
           'error'
         );
       } finally {
-        that.rejectingId = null;
+        this.rejectingId = null;
       }
     },
 
@@ -740,62 +684,685 @@ export default {
 </script>
 
 <style scoped>
+/* ============================================================
+   BASE
+   ============================================================ */
 .cursor-pointer { cursor: pointer; }
-.bg-surface { background-color: #f8fafc !important; }
-.rounded-2xl { border-radius: 20px !important; }
-.tracking-wide { letter-spacing: 0.08em; }
+.bg-surface { background-color: #f6f7fb !important; }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.reveal-card { animation: fadeInUp 0.6s ease-out both; }
+.reveal-card { animation: fadeInUp 0.5s ease-out both; }
 
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
 .sidebar-glass {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-right: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  border-right: 1px solid #eef1f6 !important;
 }
 .brand-text { letter-spacing: -0.5px; }
 .brand-hover { transition: opacity 0.2s; }
-.brand-hover:hover { opacity: 0.8; }
-
+.brand-hover:hover { opacity: 0.85; }
+.brand-avatar {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%) !important;
+  box-shadow: 0 12px 24px -12px rgba(128, 81, 255, 0.7);
+}
 .nav-item-premium {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 4px;
   border-radius: 12px !important;
 }
 .nav-item-premium:hover {
   background-color: rgba(128, 81, 255, 0.06);
-  transform: translateX(4px);
+  transform: translateX(3px);
+}
+.nav-item-active { background: rgba(128, 81, 255, 0.09) !important; }
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 10px -4px rgba(220, 38, 38, 0.6);
 }
 
+.help-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(128, 81, 255, 0.08) 0%, rgba(155, 108, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.12);
+}
+.help-title { font-size: 0.82rem; font-weight: 800; color: #0f0d24; }
+.help-sub { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+.signout-btn:hover { background: rgba(128, 81, 255, 0.06); }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 .main-premium { scroll-behavior: smooth; }
 .sticky-header-premium {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: rgba(248, 250, 252, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid transparent;
+  background: rgba(246, 247, 251, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
-.page-title { letter-spacing: -0.5px; }
-.refresh-btn { transition: all 0.2s ease; }
-.refresh-btn:hover { border-color: #8051FF; color: #8051FF !important; }
+.page-title { letter-spacing: -0.6px; }
+.header-text { min-width: 0; }
 
-.card-header-premium {
-  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+.back-btn {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  transition: all 0.2s ease;
+}
+.back-btn:hover {
+  background: rgba(128, 81, 255, 0.06);
+  border-color: rgba(128, 81, 255, 0.3);
 }
 
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.icon-btn:hover:not(:disabled) {
+  border-color: #8051ff;
+  color: #8051ff;
+}
+.icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.avatar-glow { box-shadow: 0 8px 18px -8px rgba(128, 81, 255, 0.6); }
+
+/* ============================================================
+   INFO BANNER
+   ============================================================ */
+.info-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  margin-bottom: 16px;
+}
+.info-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 10px 22px -10px rgba(245, 158, 11, 0.7);
+}
+.info-body { flex: 1; min-width: 0; }
+.info-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #7c2d12;
+  letter-spacing: -0.2px;
+}
+.info-sub {
+  font-size: 0.76rem;
+  color: #92400e;
+  margin-top: 3px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.hint-fade-enter-active,
+.hint-fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.hint-fade-enter,
+.hint-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* ============================================================
+   PANEL / LIST HEAD
+   ============================================================ */
+.panel-card {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.panel-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.panel-icon-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+.panel-icon-purple {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.panel-title-group { flex: 1; min-width: 0; }
+.panel-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.panel-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(128, 81, 255, 0.1);
+  color: #8051ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.list-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* ============================================================
+   PENDING CARDS
+   ============================================================ */
+.pending-list {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 10px;
+}
+.pending-card {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 18px;
+  padding: 16px 18px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.pending-card:hover {
+  border-color: rgba(128, 81, 255, 0.3);
+  box-shadow: 0 12px 26px -16px rgba(128, 81, 255, 0.35);
+}
+
+.pending-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.pending-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.65);
+}
+.pending-info { flex: 1; min-width: 0; }
+.pending-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pending-addr {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.addr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.addr-chip-house  { background: #f1f5f9; color: #475569; }
+.addr-chip-purple { background: rgba(128, 81, 255, 0.12); color: #6d28d9; }
+.addr-chip-blue   { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
+.addr-chip-green  { background: rgba(122, 184, 0, 0.14); color: #3f6b00; }
+
+.pending-age {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+}
+
+.pending-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.meta-item-amber { color: #b45309; }
+
+.pending-actions {
+  display: flex;
+  gap: 8px;
+}
+.pending-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.pending-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pending-action-approve {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 22px -12px rgba(34, 197, 94, 0.7);
+}
+.pending-action-approve:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -12px rgba(34, 197, 94, 0.85);
+}
+
+.pending-action-reject {
+  background: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+.pending-action-reject:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: #ef4444;
+}
+
+/* ============================================================
+   EMPTY
+   ============================================================ */
+.empty-block {
+  padding: 64px 24px;
+  text-align: center;
+}
+.empty-icon {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: #f6f7fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+.empty-icon-green { background: rgba(34, 197, 94, 0.1); }
+.empty-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.empty-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 6px;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.55;
+}
+.empty-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 20px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(128, 81, 255, 0.08);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  color: #8051ff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.empty-refresh-btn:hover {
+  background: rgba(128, 81, 255, 0.14);
+  border-color: rgba(128, 81, 255, 0.35);
+}
+
+/* ============================================================
+   DIALOG
+   ============================================================ */
+.dialog-card {
+  background: #ffffff;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -20px rgba(15, 13, 36, 0.4);
+}
+.dialog-card-success {
+  padding: 28px 24px;
+  text-align: center;
+}
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+.dialog-header-reject {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+.dialog-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.18), transparent 50%);
+  pointer-events: none;
+}
+.dialog-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dialog-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+.dialog-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 2px;
+  font-weight: 500;
+}
+.dialog-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.dialog-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.dialog-body {
+  padding: 20px 22px 6px;
+}
+.field-label {
+  display: inline-flex;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 8px;
+}
+.required { color: #dc2626; font-weight: 800; }
+.field-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #eef1f6;
+  background: #f8fafc;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #0f0d24;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 88px;
+  transition: all 0.2s ease;
+}
+.field-textarea:focus {
+  border-color: #dc2626;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+.field-textarea::placeholder { color: #94a3b8; }
+.field-hint {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 22px 20px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 14px;
+}
+.dialog-cancel {
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+}
+.dialog-cancel:hover:not(:disabled) { background: #f8fafc; }
+.dialog-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.dialog-proceed {
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: none;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+.dialog-proceed-danger {
+  background: #dc2626;
+  box-shadow: 0 10px 24px -12px rgba(220, 38, 38, 0.7);
+}
+.dialog-proceed-danger:hover:not(:disabled) { background: #b91c1c; }
+.dialog-proceed:disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Success dialog */
+.success-icon-wrap {
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  background: rgba(34, 197, 94, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+.success-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.4px;
+}
+.success-msg {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 8px;
+  line-height: 1.55;
+}
+.success-btn {
+  width: 100%;
+  margin-top: 22px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-shadow: 0 12px 24px -12px rgba(128, 81, 255, 0.7);
+}
+.success-btn:hover { transform: translateY(-1px); }
+
+/* ============================================================
+   SNACKBAR + MOBILE NAV
+   ============================================================ */
 .snackbar-premium ::v-deep .v-snackbar__content { padding: 12px 20px; }
 
 .bottom-nav-premium {
-  border-top: 1px solid #e2e8f0 !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px);
+  border-top: 1px solid #eef1f6 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(14px);
 }
-.mobile-nav-btn { min-width: 0 !important; }
-.mobile-nav-label { font-size: 10px; margin-top: 2px; }
+.mobile-nav-btn { min-width: 0 !important; position: relative; }
+.mobile-nav-label { font-size: 10px; margin-top: 2px; font-weight: 700; }
+.mobile-badge {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 22px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 767px) {
+  .pending-head {
+    flex-wrap: wrap;
+  }
+  .pending-age {
+    flex: 1 0 100%;
+    margin-top: 4px;
+  }
+  .pending-card { padding: 14px; }
+  .pending-avatar { width: 42px; height: 42px; }
+  .pending-actions { flex-wrap: wrap; }
+  .pending-action { flex: 1; justify-content: center; }
+  .info-banner { padding: 12px 14px; gap: 12px; }
+  .info-icon { width: 38px; height: 38px; }
+  .info-title { font-size: 0.82rem; }
+  .info-sub { font-size: 0.72rem; }
+  .dialog-body { padding: 16px 18px 4px; }
+  .dialog-actions { padding: 14px 18px 16px; }
+}
 
 @media (max-width: 599px) {
   .sticky-header-premium { padding-left: 12px; padding-right: 12px; }
