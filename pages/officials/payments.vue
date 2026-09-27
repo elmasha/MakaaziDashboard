@@ -130,7 +130,12 @@
               </div>
             </v-col>
             <v-col cols="4" sm="6" class="d-flex justify-end align-center">
-              <select v-model.number="year" class="year-picker" @change="fetchSummary">
+              <select
+                v-model.number="year"
+                class="year-picker"
+                :disabled="loading"
+                @change="onYearChange"
+              >
                 <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
               </select>
 
@@ -162,10 +167,9 @@
 
       <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-3 pt-sm-5 pb-8">
         <!-- ============================================================
-             KPI CARDS
+             KPI GRID — 4 across desktop, 2×2 mobile
              ============================================================ -->
         <div class="kpi-grid">
-          <!-- Households -->
           <div class="kpi kpi-light reveal-card">
             <div class="kpi-top">
               <div class="kpi-icon kpi-icon-purple">
@@ -177,7 +181,6 @@
             <div class="kpi-foot kpi-foot-muted">In this view</div>
           </div>
 
-          <!-- Total Paid -->
           <div class="kpi kpi-dark reveal-card" style="animation-delay: 50ms">
             <div class="kpi-top">
               <div class="kpi-icon kpi-icon-white">
@@ -189,7 +192,6 @@
             <div class="kpi-foot kpi-foot-light">KES collected</div>
           </div>
 
-          <!-- Expected YTD -->
           <div class="kpi kpi-light reveal-card" style="animation-delay: 100ms">
             <div class="kpi-top">
               <div class="kpi-icon kpi-icon-blue">
@@ -201,7 +203,6 @@
             <div class="kpi-foot kpi-foot-muted">KES billed</div>
           </div>
 
-          <!-- Arrears -->
           <div
             class="kpi reveal-card"
             :class="kpis.arrears > 0 ? 'kpi-alert' : 'kpi-light'"
@@ -233,9 +234,7 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             FILTERS
-             ============================================================ -->
+        <!-- FILTERS -->
         <div class="panel-card filters-card reveal-card" style="animation-delay: 200ms">
           <div class="filters-grid">
             <div class="search-wrap">
@@ -282,26 +281,22 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             LOADING
-             ============================================================ -->
+        <!-- LOADING -->
         <div v-if="loading && !rows.length" class="panel-card reveal-card">
           <div class="pa-6">
             <v-skeleton-loader type="list-item-two-line, list-item-two-line, list-item-two-line" />
           </div>
         </div>
 
-        <!-- ============================================================
-             EMPTY
-             ============================================================ -->
+        <!-- EMPTY -->
         <div v-else-if="!filteredRows.length" class="panel-card reveal-card">
           <div class="empty-block">
             <div class="empty-icon">
               <v-icon size="40" color="#cbd5e1">mdi-table-off</v-icon>
             </div>
-            <div class="empty-title">No data to display</div>
+            <div class="empty-title">No data for {{ year }}</div>
             <div class="empty-sub">
-              {{ hasActiveFilters ? 'Try clearing filters.' : 'No households in this estate yet.' }}
+              {{ hasActiveFilters ? 'Try clearing filters.' : 'No households have payment records for this year.' }}
             </div>
             <button
               v-if="hasActiveFilters"
@@ -314,9 +309,7 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             DESKTOP TABLE — horizontal scroll
-             ============================================================ -->
+        <!-- TABLE -->
         <div v-else class="reveal-card" style="animation-delay: 250ms">
           <div class="table-panel">
             <div class="list-head">
@@ -324,19 +317,26 @@
                 <v-icon size="18" color="white">mdi-table-large</v-icon>
               </div>
               <div class="panel-title-group">
-                <div class="panel-title">Monthly breakdown</div>
+                <div class="panel-title">Monthly breakdown · {{ year }}</div>
                 <div class="panel-sub">
-                  {{ filteredRows.length }} household{{ filteredRows.length === 1 ? '' : 's' }} · {{ year }}
+                  {{ filteredRows.length }} household{{ filteredRows.length === 1 ? '' : 's' }}
                 </div>
               </div>
-              <div class="scroll-hint">
-                <v-icon size="14" class="scroll-hint-icon">mdi-gesture-swipe-left</v-icon>
-                <span>Scroll to see all months</span>
-              </div>
+
+              <transition name="hint-fade">
+                <div v-if="!tableScrolled" class="scroll-hint">
+                  <div class="scroll-hint-icon-wrap">
+                    <v-icon size="18" class="scroll-hint-icon">mdi-gesture-swipe-left</v-icon>
+                  </div>
+                  <div class="scroll-hint-body">
+                    <div class="scroll-hint-title">SCROLL SIDEWAYS</div>
+                    <div class="scroll-hint-sub">See Jan – Dec · more months →</div>
+                  </div>
+                </div>
+              </transition>
             </div>
 
-            <!-- Wide table (horizontal scroll preserved) -->
-            <div class="table-wrap hidden-xs-only">
+            <div class="table-wrap" @scroll="onTableScroll">
               <table class="payments-table">
                 <thead>
                   <tr>
@@ -386,51 +386,6 @@
                   </tr>
                 </tbody>
               </table>
-            </div>
-
-            <!-- Mobile card list -->
-            <div class="mobile-list">
-              <div
-                v-for="r in filteredRows"
-                :key="`mob-${r.household_id}`"
-                class="mobile-row"
-                @click="openHousehold(r)"
-              >
-                <div class="mobile-row-head">
-                  <div class="household-cell-avatar">
-                    {{ initialsOf(r.primary_owner) }}
-                  </div>
-                  <div class="mobile-row-info">
-                    <div class="mobile-row-name">{{ r.primary_owner }}</div>
-                    <div class="mobile-row-addr">
-                      {{ [r.section, r.court, r.street].filter(Boolean).join(' · ') }}
-                    </div>
-                  </div>
-                  <span class="status-chip" :class="statusClass(r.status)">
-                    {{ r.status }}
-                  </span>
-                </div>
-
-                <div class="mobile-row-stats">
-                  <div class="m-stat">
-                    <div class="m-stat-label">Total Paid</div>
-                    <div class="m-stat-value">{{ formatNum(r.total_paid) }}</div>
-                  </div>
-                  <div class="m-stat">
-                    <div class="m-stat-label">Due YTD</div>
-                    <div class="m-stat-value">{{ formatNum(r.due_to_date) }}</div>
-                  </div>
-                  <div class="m-stat">
-                    <div class="m-stat-label">{{ Number(r.overdue) > 0 ? 'Overdue' : 'Prepaid' }}</div>
-                    <div
-                      class="m-stat-value"
-                      :class="Number(r.overdue) > 0 ? 'm-red' : 'm-green'"
-                    >
-                      {{ formatNum(Math.abs(Number(r.overdue || 0))) }}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -488,6 +443,8 @@ export default {
       filterCourt: null,
       filterStreet: null,
       filterStatus: null,
+
+      tableScrolled: false,
 
       snackbar: { show: false, text: '', color: 'success' },
     };
@@ -620,6 +577,12 @@ export default {
       }
     },
 
+    onTableScroll(e) {
+      if (!this.tableScrolled && e.target.scrollLeft > 10) {
+        this.tableScrolled = true;
+      }
+    },
+
     waitForAuthAndLoad() {
       const that = this;
       const current = that.$fire?.auth?.currentUser;
@@ -649,7 +612,20 @@ export default {
       if (this.estateId) {
         await Promise.allSettled([this.fetchEstate(), this.fetchSummary()]);
       }
+      this.tableScrolled = false;
       this.loading = false;
+    },
+
+    async onYearChange() {
+      if (!this.estateId) return;
+      this.loading = true;
+      this.tableScrolled = false;
+      this.rows = [];
+      try {
+        await this.fetchSummary();
+      } finally {
+        this.loading = false;
+      }
     },
 
     async fetchOfficial() {
@@ -726,6 +702,8 @@ export default {
         this.rows = [];
         if (error.response?.status === 404) {
           this.showSnackbar('Payment summary endpoint not available yet', 'warning');
+        } else {
+          this.showSnackbar(`Could not load ${this.year} data`, 'error');
         }
       }
     },
@@ -816,6 +794,15 @@ export default {
 @keyframes scrollHintSlide {
   0%, 100% { transform: translateX(0); }
   50%      { transform: translateX(-4px); }
+}
+@keyframes scrollHintBounce {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-3px); }
+}
+@keyframes scrollHintShine {
+  0%   { left: -30%; }
+  60%  { left: 130%; }
+  100% { left: 130%; }
 }
 
 /* ============================================================
@@ -915,20 +902,22 @@ export default {
   background-position: right 10px center;
   transition: all 0.2s ease;
 }
-.year-picker:hover { border-color: rgba(128, 81, 255, 0.35); }
+.year-picker:hover:not(:disabled) { border-color: rgba(128, 81, 255, 0.35); }
 .year-picker:focus { border-color: #8051ff; }
+.year-picker:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .avatar-glow { box-shadow: 0 8px 18px -8px rgba(128, 81, 255, 0.6); }
 
 /* ============================================================
-   KPI CARDS
+   KPI GRID — 4 across desktop · 2×2 mobile (grid preserved)
    ============================================================ */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-bottom: 16px;
 }
+
 .kpi {
   position: relative;
   padding: 18px 20px;
@@ -1015,6 +1004,44 @@ export default {
 }
 .kpi-foot-muted { color: #94a3b8; }
 .kpi-foot-light { color: rgba(255, 255, 255, 0.85); }
+
+/* Tablet — 2 columns */
+@media (max-width: 900px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+/* Mobile — keep 2×2 (grid preserved), tighten spacing */
+@media (max-width: 599px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .kpi {
+    padding: 14px;
+    border-radius: 16px;
+  }
+  .kpi-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  .kpi-icon .v-icon { font-size: 18px !important; }
+  .kpi-value {
+    font-size: 1.3rem;
+    letter-spacing: -0.5px;
+  }
+  .kpi-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.7px;
+  }
+  .kpi-foot {
+    font-size: 0.66rem;
+    margin-top: 8px;
+  }
+}
 
 /* ============================================================
    FILTERS
@@ -1179,26 +1206,76 @@ export default {
   margin-top: 2px;
   font-weight: 500;
 }
+
+/* ============================================================
+   SCROLL HINT
+   ============================================================ */
 .scroll-hint {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(128, 81, 255, 0.08);
-  border: 1px solid rgba(128, 81, 255, 0.15);
-  color: #8051ff;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.3px;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #8051ff 0%, #9b6cff 100%);
+  box-shadow: 0 12px 26px -12px rgba(128, 81, 255, 0.7);
+  color: #ffffff;
+  flex-shrink: 0;
+  animation: scrollHintBounce 2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+.scroll-hint::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: scrollHintShine 2.6s ease-in-out infinite;
+}
+.scroll-hint-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .scroll-hint-icon {
-  color: #8051ff !important;
-  animation: scrollHintSlide 2s ease-in-out infinite;
+  color: #ffffff !important;
+  animation: scrollHintSlide 1.8s ease-in-out infinite;
+}
+.scroll-hint-body { display: flex; flex-direction: column; gap: 2px; }
+.scroll-hint-title {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.scroll-hint-sub {
+  font-size: 0.66rem;
+  font-weight: 600;
+  opacity: 0.85;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.hint-fade-enter-active,
+.hint-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.hint-fade-enter,
+.hint-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 /* ============================================================
-   DESKTOP TABLE (horizontal scroll preserved)
+   TABLE WRAP — always scrollable
    ============================================================ */
 .table-wrap {
   overflow-x: auto;
@@ -1206,6 +1283,7 @@ export default {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #e2e8f0 transparent;
+  touch-action: pan-x;
 }
 .table-wrap::-webkit-scrollbar { height: 10px; }
 .table-wrap::-webkit-scrollbar-track { background: #f8fafc; }
@@ -1258,9 +1336,7 @@ export default {
   font-variant-numeric: tabular-nums;
   font-family: ui-monospace, SFMono-Regular, monospace;
 }
-.status-col {
-  text-align: center;
-}
+.status-col { text-align: center; }
 .strong-col {
   font-weight: 800;
   color: #0f0d24;
@@ -1273,15 +1349,9 @@ export default {
 .data-row:hover { background-color: #fafbff; }
 .data-row:hover .sticky-col { background-color: #fafbff; }
 
-.paid-cell {
-  color: #166534;
-  font-weight: 700;
-}
-.zero-cell {
-  color: #cbd5e1;
-}
+.paid-cell { color: #166534; font-weight: 700; }
+.zero-cell { color: #cbd5e1; }
 
-/* Household cell */
 .household-cell {
   display: flex;
   align-items: center;
@@ -1321,7 +1391,6 @@ export default {
   text-overflow: ellipsis;
 }
 
-/* Status chips */
 .status-chip {
   display: inline-flex;
   align-items: center;
@@ -1335,85 +1404,6 @@ export default {
 .status-red    { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
 .status-green  { background: rgba(122, 184, 0, 0.16); color: #3f6b00; }
 .status-purple { background: rgba(128, 81, 255, 0.12); color: #5b21b6; }
-
-/* ============================================================
-   MOBILE CARD LIST
-   ============================================================ */
-.mobile-list {
-  display: none;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-}
-.mobile-row {
-  background: #ffffff;
-  border: 1px solid #eef1f6;
-  border-radius: 16px;
-  padding: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.mobile-row:hover {
-  border-color: rgba(128, 81, 255, 0.35);
-  box-shadow: 0 12px 26px -16px rgba(128, 81, 255, 0.35);
-}
-
-.mobile-row-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.mobile-row-info { flex: 1; min-width: 0; }
-.mobile-row-name {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: #0f0d24;
-  letter-spacing: -0.2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.mobile-row-addr {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  margin-top: 2px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobile-row-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid #f1f5f9;
-}
-.m-stat { min-width: 0; }
-.m-stat-label {
-  font-size: 0.58rem;
-  font-weight: 800;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
-  margin-bottom: 3px;
-}
-.m-stat-value {
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #0f0d24;
-  font-variant-numeric: tabular-nums;
-}
-.m-red { color: #dc2626; }
-.m-green { color: #3f6b00; }
-
-/* Show mobile list, hide table on small screens */
-@media (max-width: 599px) {
-  .table-wrap.hidden-xs-only { display: none; }
-  .mobile-list { display: flex; }
-}
 
 /* ============================================================
    EMPTY
@@ -1482,18 +1472,32 @@ export default {
 .mobile-nav-label { font-size: 10px; margin-top: 2px; font-weight: 700; }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE (non-KPI)
    ============================================================ */
 @media (max-width: 767px) {
-  .kpi-value { font-size: 1.5rem; }
-  .kpi { padding: 16px; }
   .list-head { padding: 14px 16px; }
-  .scroll-hint { display: none; }
 }
 
 @media (max-width: 599px) {
   .sticky-header-premium { padding-left: 12px; padding-right: 12px; }
   .reveal-card { animation-duration: 0.4s; }
   .year-picker { padding: 8px 26px 8px 12px; font-size: 0.74rem; }
+
+  .scroll-hint {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 12px;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .scroll-hint-title { font-size: 0.78rem; letter-spacing: 1px; }
+  .scroll-hint-sub { font-size: 0.68rem; white-space: normal; }
+  .scroll-hint-icon-wrap { width: 38px; height: 38px; }
+
+  .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  .payments-table { min-width: 1100px; }
+  .payments-table th, .payments-table td { padding: 10px 12px; }
+  .household-cell-name { max-width: 180px; }
 }
 </style>

@@ -68,7 +68,9 @@
       </template>
     </v-navigation-drawer>
 
-    <!-- Mobile bottom nav -->
+    <!-- ============================================================
+         MOBILE BOTTOM NAV — with sign out
+         ============================================================ -->
     <v-bottom-navigation
       v-if="nav_bars"
       v-model="activeTab"
@@ -89,11 +91,23 @@
         <v-icon size="22">{{ item.icon }}</v-icon>
         <span class="mobile-nav-label">{{ item.title }}</span>
       </v-btn>
+
+      <!-- Sign out button in mobile bottom nav -->
+      <v-btn
+        @click="logout"
+        value="logout"
+        class="mobile-nav-btn"
+      >
+        <v-icon size="22">mdi-logout</v-icon>
+        <span class="mobile-nav-label">Sign out</span>
+      </v-btn>
     </v-bottom-navigation>
 
-    <!-- Main -->
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
     <v-main :class="nav_bars ? 'pb-16' : ''" class="main-premium">
-      <!-- Header -->
+      <!-- HEADER -->
       <div class="sticky-header-premium px-4 px-sm-6 py-4">
         <v-container fluid class="pa-0">
           <v-row align="center" no-gutters>
@@ -126,6 +140,15 @@
               </div>
             </v-col>
             <v-col cols="4" sm="6" class="d-flex justify-end align-center">
+              <!-- Sign out icon button (mobile only) -->
+              <button
+                class="icon-btn mr-2 hidden-sm-and-up"
+                title="Sign out"
+                @click="logout"
+              >
+                <v-icon size="16">mdi-logout</v-icon>
+              </button>
+
               <button
                 v-if="!editing"
                 class="edit-btn"
@@ -143,9 +166,7 @@
       </div>
 
       <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-3 pt-sm-5 pb-8">
-        <!-- ============================================================
-             IDENTITY HERO
-             ============================================================ -->
+        <!-- IDENTITY HERO -->
         <div class="hero-card reveal-card">
           <div class="hero-head">
             <div class="hero-avatar">{{ ownerInitials }}</div>
@@ -181,9 +202,7 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             PERSONAL DETAILS
-             ============================================================ -->
+        <!-- PERSONAL DETAILS -->
         <div class="panel-card mt-4 reveal-card" style="animation-delay: 80ms">
           <div class="panel-head">
             <div class="panel-icon panel-icon-purple">
@@ -255,9 +274,7 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             CONTACT
-             ============================================================ -->
+        <!-- CONTACT -->
         <div class="panel-card mt-4 reveal-card" style="animation-delay: 120ms">
           <div class="panel-head">
             <div class="panel-icon panel-icon-lime">
@@ -295,9 +312,7 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             ADDRESS  — dropdowns from estate config
-             ============================================================ -->
+        <!-- ADDRESS -->
         <div class="panel-card mt-4 reveal-card" style="animation-delay: 160ms">
           <div class="panel-head">
             <div class="panel-icon panel-icon-amber">
@@ -321,7 +336,6 @@
             </div>
 
             <div v-else class="field-grid">
-              <!-- House number — free text (not in estate config) -->
               <div class="field">
                 <label class="field-label">House number</label>
                 <input
@@ -334,7 +348,6 @@
                 />
               </div>
 
-              <!-- Section -->
               <div v-if="addressConfig.show_section" class="field">
                 <label class="field-label">Section</label>
                 <select
@@ -357,7 +370,6 @@
                 </div>
               </div>
 
-              <!-- Court -->
               <div v-if="addressConfig.show_court" class="field">
                 <label class="field-label">Court</label>
                 <select
@@ -380,7 +392,6 @@
                 </div>
               </div>
 
-              <!-- Street -->
               <div v-if="addressConfig.show_street" class="field">
                 <label class="field-label">Street</label>
                 <select
@@ -411,9 +422,7 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             OFFICIAL STATUS (read-only)
-             ============================================================ -->
+        <!-- OFFICIAL STATUS -->
         <div v-if="household.is_official" class="panel-card mt-4 reveal-card" style="animation-delay: 200ms">
           <div class="panel-head">
             <div class="panel-icon panel-icon-purple">
@@ -438,9 +447,38 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             SAVE BAR
-             ============================================================ -->
+        <!-- ACCOUNT / SIGN OUT -->
+        <div class="panel-card mt-4 reveal-card" style="animation-delay: 240ms">
+          <div class="panel-head">
+            <div class="panel-icon panel-icon-purple">
+              <v-icon size="20" color="white">mdi-account-circle-outline</v-icon>
+            </div>
+            <div class="panel-title-group">
+              <div class="panel-title">Account</div>
+              <div class="panel-sub">Session and sign out</div>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <div class="info-strip">
+              <v-icon size="16" color="#8051FF" class="mr-2">mdi-information-outline</v-icon>
+              Signing out will end this session on this device. You can sign back in anytime with your email and password.
+            </div>
+
+            <div class="panel-actions">
+              <button class="panel-action-btn panel-action-ghost" @click="goTo(dashboardRoute)">
+                <v-icon size="14" class="mr-1">mdi-view-dashboard</v-icon>
+                Go to dashboard
+              </button>
+              <button class="panel-action-btn panel-action-danger" @click="confirmLogout = true">
+                <v-icon size="14" class="mr-1">mdi-logout</v-icon>
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SAVE BAR -->
         <transition name="save-bar">
           <div v-if="editing" class="save-bar">
             <div class="save-bar-inner">
@@ -468,6 +506,23 @@
           </div>
         </transition>
       </v-container>
+
+      <!-- CONFIRM LOGOUT DIALOG -->
+      <v-dialog v-model="confirmLogout" max-width="420" persistent>
+        <div class="confirm-card">
+          <div class="confirm-icon confirm-icon-red">
+            <v-icon size="26" color="#dc2626">mdi-logout</v-icon>
+          </div>
+          <div class="confirm-title">Sign out?</div>
+          <div class="confirm-text">
+            You'll need to sign in again to view your payments and account.
+          </div>
+          <div class="confirm-actions">
+            <button class="confirm-cancel" @click="confirmLogout = false">Cancel</button>
+            <button class="confirm-proceed" @click="logout">Sign out</button>
+          </div>
+        </div>
+      </v-dialog>
 
       <v-snackbar
         v-model="snackbar.show"
@@ -550,11 +605,12 @@ export default {
       form: EMPTY_FORM(),
       original: EMPTY_FORM(),
 
-      // Address config + options from the estate
       addressConfig: DEFAULT_ADDRESS_CONFIG(),
       addressOptions: EMPTY_ADDRESS_OPTIONS(),
       loadingAddressConfig: false,
       addressConfigLoaded: false,
+
+      confirmLogout: false,
 
       snackbar: { show: false, text: "", color: "success" },
     };
@@ -675,9 +731,6 @@ export default {
       }
     },
 
-    // =====================================================
-    // AUTH
-    // =====================================================
     waitForAuthAndLoad() {
       const that = this;
       const current = that.$fire?.auth?.currentUser;
@@ -712,9 +765,6 @@ export default {
       }
     },
 
-    // =====================================================
-    // LOAD
-    // =====================================================
     async loadProfile() {
       if (!this.uid) return;
       this.loading = true;
@@ -750,7 +800,6 @@ export default {
           this.form = { ...loaded };
           this.original = { ...loaded };
 
-          // Now load the address config + options for this estate
           if (this.estateId) {
             await this.loadAddressOptions();
           }
@@ -773,8 +822,6 @@ export default {
         );
 
         if (status === 200 && data) {
-          // Expected shape: { sections: [], courts: [], streets: [], config: {...} }
-          // Fallback to top-level arrays if `config` is missing.
           this.addressOptions = {
             sections: this.pickArray(data, ["sections", "section"]),
             courts: this.pickArray(data, ["courts", "court"]),
@@ -793,14 +840,12 @@ export default {
         }
       } catch (err) {
         console.warn("loadAddressOptions failed:", err.response?.status || err.message);
-        // Don't block the profile — just fall back to free-text (all fields shown)
         this.addressConfig = DEFAULT_ADDRESS_CONFIG();
       } finally {
         this.loadingAddressConfig = false;
       }
     },
 
-    // Accept both `["A", "B"]` and `[{name: "A"}, {section_name: "B"}]`
     pickArray(data, keys) {
       for (const key of keys) {
         const v = data?.[key];
@@ -832,9 +877,6 @@ export default {
       return fallback;
     },
 
-    // =====================================================
-    // EDITING
-    // =====================================================
     startEditing() {
       if (!this.householdId) {
         this.showSnackbar("Profile is still loading. Please wait a moment.", "warning");
@@ -856,7 +898,6 @@ export default {
         return;
       }
 
-      // Normalize phone to 254XXXXXXXXX where possible
       const rawPhone = String(this.form.contact_number || "").replace(/\D/g, "");
       let normalizedPhone = rawPhone;
       if (normalizedPhone.startsWith("0")) {
@@ -885,7 +926,6 @@ export default {
       try {
         const headers = await this.getAuthHeaders();
 
-        // Uses EXISTING route: PATCH /households/update_household/:id
         await axios.patch(
           `${API}/households/update_household/${this.householdId}`,
           payload,
@@ -913,6 +953,7 @@ export default {
     },
 
     logout() {
+      this.confirmLogout = false;
       if (this.$fire?.auth) this.$fire.auth.signOut();
       this.$router.push("/login");
     },
@@ -994,6 +1035,25 @@ export default {
 .back-btn:hover {
   background: rgba(128, 81, 255, 0.06);
   border-color: rgba(128, 81, 255, 0.3);
+}
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  color: #dc2626;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.icon-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
 }
 
 .edit-btn {
@@ -1172,6 +1232,46 @@ export default {
   gap: 18px;
 }
 
+/* ============================================================
+   PANEL ACTIONS (account card)
+   ============================================================ */
+.panel-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.panel-action-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.panel-action-ghost {
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #eef1f6;
+}
+.panel-action-ghost:hover {
+  border-color: rgba(128, 81, 255, 0.35);
+  color: #8051ff;
+}
+.panel-action-danger {
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.panel-action-danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
 .edit-pill {
   display: inline-flex;
   align-items: center;
@@ -1245,7 +1345,6 @@ export default {
   box-shadow: 0 0 0 3px rgba(128, 81, 255, 0.1);
 }
 .field-input::placeholder { color: #94a3b8; font-weight: 500; }
-
 .field-input-readonly {
   background: #f6f7fb;
   border-color: transparent;
@@ -1257,7 +1356,6 @@ export default {
   background: #f6f7fb;
   box-shadow: none;
 }
-
 select.field-input {
   appearance: none;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
@@ -1266,9 +1364,7 @@ select.field-input {
   padding-right: 38px;
   cursor: pointer;
 }
-select.field-input:disabled {
-  cursor: default;
-}
+select.field-input:disabled { cursor: default; }
 
 .address-loading {
   display: flex;
@@ -1372,7 +1468,6 @@ select.field-input:disabled {
   color: #ffffff;
 }
 .save-bar-cancel:hover { background: rgba(255, 255, 255, 0.14); }
-
 .save-bar-save {
   background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
   color: #ffffff;
@@ -1396,6 +1491,73 @@ select.field-input:disabled {
   opacity: 0;
   transform: translateY(10px);
 }
+
+/* ============================================================
+   CONFIRM LOGOUT DIALOG
+   ============================================================ */
+.confirm-card {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 26px 24px;
+  box-shadow: 0 24px 60px -20px rgba(15, 13, 36, 0.4);
+  text-align: center;
+}
+.confirm-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  background: rgba(128, 81, 255, 0.1);
+}
+.confirm-icon-red { background: rgba(239, 68, 68, 0.1); }
+.confirm-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.confirm-text {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-top: 8px;
+  line-height: 1.55;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+.confirm-cancel,
+.confirm-proceed {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.confirm-cancel {
+  background: #f6f7fb;
+  color: #475569;
+  border: 1px solid #eef1f6;
+}
+.confirm-cancel:hover { background: #eef1f6; }
+.confirm-proceed {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 10px 24px -12px rgba(220, 38, 38, 0.7);
+}
+.confirm-proceed:hover { background: #b91c1c; }
 
 /* ============================================================
    SNACKBAR + MOBILE NAV
@@ -1430,5 +1592,6 @@ select.field-input:disabled {
   .save-bar-text { justify-content: center; }
   .save-bar-actions { justify-content: stretch; }
   .save-bar-btn { flex: 1; justify-content: center; }
+  .panel-action-btn { flex: 1; justify-content: center; }
 }
 </style>

@@ -126,7 +126,9 @@
             {{ paymentsReceipt.length }}
           </v-chip>
         </div>
-        <div class="table-wrap">
+
+        <!-- Desktop: table -->
+        <div class="table-wrap desktop-only">
           <v-data-table
             :headers="headers_recent"
             :items="paymentsReceipt"
@@ -152,6 +154,42 @@
             </template>
           </v-data-table>
         </div>
+
+        <!-- Mobile: card list -->
+        <div class="mobile-only payment-mini-list">
+          <div v-if="!paymentsReceipt.length" class="payment-mini-empty">
+            No payments yet
+          </div>
+          <div
+            v-for="p in paymentsReceipt.slice(0, 5)"
+            :key="p.payment_id || p.transaction_id"
+            class="payment-mini-row"
+          >
+            <div class="payment-mini-left">
+              <div class="payment-mini-receipt">
+                {{ p.transaction_id || '—' }}
+              </div>
+              <div class="payment-mini-method">
+                <v-icon size="11">mdi-credit-card-outline</v-icon>
+                {{ p.payment_method || '—' }}
+              </div>
+            </div>
+            <div class="payment-mini-right">
+              <div class="payment-mini-amount">
+                KSh {{ numeral(p.amount_paid || 0).format("0,0") }}
+              </div>
+              <v-chip
+                x-small
+                label
+                :color="p.payment_status === 'Completed' ? '#d1fae5' : '#fef3c7'"
+                :style="p.payment_status === 'Completed' ? 'color:#065f46;' : 'color:#92400e;'"
+                class="font-weight-bold payment-mini-status"
+              >
+                {{ p.payment_status || "Pending" }}
+              </v-chip>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -170,7 +208,9 @@
             {{ houseHolds.length }}
           </v-chip>
         </div>
-        <div class="table-wrap">
+
+        <!-- Desktop: table -->
+        <div class="table-wrap desktop-only">
           <v-data-table
             :headers="headers"
             :items="houseHolds"
@@ -195,6 +235,34 @@
               </v-chip>
             </template>
           </v-data-table>
+        </div>
+
+        <!-- Mobile: card list -->
+        <div class="mobile-only mini-list">
+          <div v-if="!houseHolds.length" class="mini-empty">
+            No households yet
+          </div>
+          <div
+            v-for="h in houseHolds.slice(0, 5)"
+            :key="h.household_id || h.id"
+            class="mini-row"
+          >
+            <div class="user-avatar">
+              {{ (h.primary_owner || "?").substring(0, 2).toUpperCase() }}
+            </div>
+            <div class="mini-body">
+              <div class="mini-name">{{ h.primary_owner || '—' }}</div>
+              <div class="mini-meta">
+                <span v-if="h.contact_number">
+                  <v-icon size="10">mdi-phone</v-icon>
+                  {{ h.contact_number }}
+                </span>
+                <span v-if="h.house_number" class="mini-tag">
+                  {{ h.house_number }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -238,7 +306,8 @@
           </button>
         </div>
 
-        <div class="table-wrap">
+        <!-- Desktop: table -->
+        <div class="table-wrap desktop-only">
           <v-data-table
             :headers="headers_config"
             :items="addressEstate"
@@ -261,6 +330,43 @@
             </template>
           </v-data-table>
         </div>
+
+        <!-- Mobile: card list -->
+        <div class="mobile-only mini-list">
+          <div v-if="!addressEstate.length" class="mini-empty">
+            No addresses yet
+          </div>
+          <div
+            v-for="a in addressEstate.slice(0, 5)"
+            :key="a.name"
+            class="mini-row mini-row-stacked"
+          >
+            <div class="mini-body">
+              <div class="mini-name">{{ a.name || '—' }}</div>
+              <div class="mini-stats">
+                <div class="mini-stat">
+                  <span class="mini-stat-label">Households</span>
+                  <span class="mini-stat-value">{{ a.households || 0 }}</span>
+                </div>
+                <div class="mini-stat">
+                  <span class="mini-stat-label">Total paid</span>
+                  <span class="mini-stat-value">
+                    KSh {{ numeral(a.total_paid || 0).format("0,0") }}
+                  </span>
+                </div>
+                <div class="mini-stat">
+                  <span class="mini-stat-label">Arrears</span>
+                  <span
+                    class="mini-stat-value"
+                    :class="Number(a.arrears) > 0 ? 'text-red' : 'text-green'"
+                  >
+                    KSh {{ numeral(Math.abs(a.arrears || 0)).format("0,0") }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -279,7 +385,9 @@
             {{ officials.length }}
           </v-chip>
         </div>
-        <div class="table-wrap">
+
+        <!-- Desktop: table -->
+        <div class="table-wrap desktop-only">
           <v-data-table
             :headers="headers_of"
             :items="officials"
@@ -304,6 +412,32 @@
               </v-chip>
             </template>
           </v-data-table>
+        </div>
+
+        <!-- Mobile: card list -->
+        <div class="mobile-only mini-list">
+          <div v-if="!officials.length" class="mini-empty">
+            No officials yet
+          </div>
+          <div
+            v-for="o in officials.slice(0, 5)"
+            :key="o.official_id || o.full_name"
+            class="mini-row"
+          >
+            <div class="user-avatar user-avatar-green">
+              {{ (o.full_name || "?").substring(0, 2).toUpperCase() }}
+            </div>
+            <div class="mini-body">
+              <div class="mini-name">{{ o.full_name || '—' }}</div>
+              <div class="mini-meta">
+                <span class="mini-tag mini-tag-green">{{ o.role || '—' }}</span>
+                <span v-if="o.contact_number">
+                  <v-icon size="10">mdi-phone</v-icon>
+                  {{ o.contact_number }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1024,6 +1158,7 @@ export default {
   display: flex;
   flex-direction: column;
   box-shadow: 0 1px 2px rgba(30, 27, 75, 0.03);
+  min-width: 0;
 }
 
 .card-head {
@@ -1031,6 +1166,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+  gap: 12px;
 }
 
 .card-title {
@@ -1049,6 +1185,7 @@ export default {
 .chip-purple {
   color: #7c3aed !important;
   font-weight: 800 !important;
+  flex-shrink: 0;
 }
 
 .card-action {
@@ -1063,6 +1200,7 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .card-action:hover {
@@ -1077,7 +1215,7 @@ export default {
 }
 
 /* ============================================================
-   TABLE
+   TABLE (desktop)
    ============================================================ */
 .table-wrap {
   flex: 1;
@@ -1114,6 +1252,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .user-avatar {
@@ -1155,6 +1294,7 @@ export default {
   color: #1e1b4b;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .text-red {
@@ -1340,15 +1480,292 @@ export default {
 }
 
 /* ============================================================
-   Responsive
+   DESKTOP / MOBILE TOGGLES
    ============================================================ */
+.mobile-only { display: none; }
+.desktop-only { display: block; }
+
+/* ============================================================
+   MOBILE MINI LISTS — Recent payments / Households / Addresses / Officials
+   ============================================================ */
+.payment-mini-list,
+.mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.payment-mini-empty,
+.mini-empty {
+  text-align: center;
+  padding: 24px 12px;
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+.payment-mini-row,
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fafaff;
+  border: 1px solid #f0eef8;
+  border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.payment-mini-row {
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mini-row-stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.payment-mini-left,
+.mini-body {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.payment-mini-receipt {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1e1b4b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.payment-mini-method {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.64rem;
+  color: #7c7a95;
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+.payment-mini-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  max-width: 55%;
+  overflow: hidden;
+}
+
+.payment-mini-amount {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.payment-mini-status {
+  height: 18px !important;
+  font-size: 0.56rem !important;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Generic mini list text */
+.mini-name {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.mini-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+  font-size: 0.66rem;
+  color: #7c7a95;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.mini-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-meta .v-icon {
+  flex-shrink: 0;
+}
+
+.mini-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mini-tag-green {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Address stacked stats */
+.mini-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #ece9f5;
+  width: 100%;
+}
+
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mini-stat-label {
+  font-size: 0.54rem;
+  font-weight: 800;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.mini-stat-value {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #1e1b4b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* Tablet / large phone: keep 2 cols for stats */
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+/* Phone: switch to mobile card lists, 2×2 stat grid */
 @media (max-width: 599px) {
+  .mobile-only { display: block; }
+  .desktop-only { display: none; }
+
+  .dashboard-page {
+    gap: 14px;
+  }
+
+  /* Stats: 2×2 grid */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .stat-top {
+    margin-bottom: 10px;
+  }
+
+  .stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .stat-icon .v-icon {
+    font-size: 18px !important;
+  }
+
+  .stat-refresh {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+  }
+
+  .stat-refresh .v-icon {
+    font-size: 12px !important;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+  }
+
   .stat-value {
-    font-size: 1.4rem;
+    font-size: 1.15rem;
+    letter-spacing: -0.5px;
+    margin-top: 4px;
   }
+
   .stat-value-plain {
-    font-size: 1.6rem;
+    font-size: 1.3rem;
   }
+
+  .stat-currency {
+    font-size: 0.7rem;
+    margin-right: 2px;
+  }
+
+  .stat-footer {
+    font-size: 0.62rem;
+    margin-top: 8px;
+    gap: 3px;
+  }
+
+  .stat-footer .v-icon {
+    font-size: 10px !important;
+  }
+
+  /* Quick bar */
   .quick-bar {
     gap: 12px;
   }
@@ -1358,6 +1775,74 @@ export default {
   .quick-btn {
     flex: 1;
     justify-content: center;
+    font-size: 0.78rem;
+    padding: 8px 12px;
+  }
+
+  /* Cards */
+  .card {
+    padding: 14px 12px;
+    border-radius: 16px;
+  }
+
+  .card-head {
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 0.9rem;
+  }
+
+  .card-sub {
+    font-size: 0.7rem;
+  }
+
+  /* Avatar sizing inside mini rows */
+  .mini-row .user-avatar {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    font-size: 0.66rem;
+  }
+
+  /* Address tabs */
+  .address-tab {
+    font-size: 0.72rem;
+    padding: 7px 10px;
+  }
+
+  /* Map */
+  .map-wrap {
+    min-height: 220px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .stat-value-plain {
+    font-size: 1.15rem;
+  }
+
+  .stat-label {
+    font-size: 0.55rem;
+  }
+
+  .payment-mini-amount,
+  .mini-stat-value {
+    font-size: 0.68rem;
   }
 }
 </style>

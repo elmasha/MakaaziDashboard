@@ -179,7 +179,7 @@
         </div>
 
         <!-- ============================================================
-             KPI CARDS
+             KPI CARDS — 4 across desktop · 2×2 mobile (grid preserved)
              ============================================================ -->
         <div class="kpi-grid">
           <!-- Households -->
@@ -258,7 +258,7 @@
         </div>
 
         <!-- ============================================================
-             QUICK ACTIONS — medium tiles
+             QUICK ACTIONS — adaptive: desktop = curated, mobile = hidden menu items
              ============================================================ -->
         <div class="panel-card mt-4 reveal-card" style="animation-delay: 200ms">
           <div class="panel-head">
@@ -266,12 +266,16 @@
               <v-icon size="20" color="white">mdi-lightning-bolt</v-icon>
             </div>
             <div class="panel-title-group">
-              <div class="panel-title">Quick actions</div>
-              <div class="panel-sub">Common tasks for your estate</div>
+              <div class="panel-title">
+                {{ nav_bars ? 'More actions' : 'Quick actions' }}
+              </div>
+              <div class="panel-sub">
+                {{ nav_bars ? 'Everything else from your menu' : 'Common tasks for your estate' }}
+              </div>
             </div>
           </div>
 
-          <div class="actions-grid">
+          <div class="actions-grid" :class="{ 'actions-grid-mobile': nav_bars }">
             <button
               v-for="action in quickActions"
               :key="action.title"
@@ -439,32 +443,26 @@ export default {
       return n.split(/\s+/)[0];
     },
     quickActions() {
-      return [
-        {
-          title: 'Approve',
-          icon: 'mdi-account-check',
-          route: '/officials/pending',
-          tone: 'primary',
-        },
-        {
-          title: 'Add charge',
-          icon: 'mdi-tag-plus',
-          route: '/officials/charges',
-          tone: 'lime',
-        },
-        {
-          title: 'Residents',
-          icon: 'mdi-home-group',
-          route: '/officials/residence',
-          tone: 'slate',
-        },
-        {
-          title: 'Reports',
-          icon: 'mdi-chart-bar',
-          route: '/officials/payments',
-          tone: 'slate',
-        },
-      ];
+      // Desktop: curated set of the most-used tasks
+      if (!this.nav_bars) {
+        return [
+          { title: 'Approve',    icon: 'mdi-account-check', route: '/officials/pending',   tone: 'primary' },
+          { title: 'Add charge', icon: 'mdi-tag-plus',      route: '/officials/charges',   tone: 'lime' },
+          { title: 'Residents',  icon: 'mdi-home-group',    route: '/officials/residence', tone: 'slate' },
+          { title: 'Reports',    icon: 'mdi-chart-bar',     route: '/officials/payments',  tone: 'slate' },
+        ];
+      }
+
+      // Mobile: surface every menu item NOT already in the bottom nav
+      const bottomRoutes = this.bottomMenuItems.map((i) => i.route);
+      return this.menuItems
+        .filter((item) => !bottomRoutes.includes(item.route))
+        .map((item) => ({
+          title: item.title,
+          icon: item.icon,
+          route: item.route,
+          tone: this.toneForRoute(item.route),
+        }));
     },
   },
   mounted() {
@@ -505,9 +503,16 @@ export default {
       }
     },
 
-    // =====================================================
-    // AUTH
-    // =====================================================
+    // Map a route to a tile color tone
+    toneForRoute(route) {
+      if (route.includes('residence')) return 'lime';
+      if (route.includes('charges'))   return 'primary';
+      if (route.includes('team'))      return 'slate';
+      if (route.includes('cash'))      return 'slate';
+      if (route.includes('settings'))  return 'slate';
+      return 'slate';
+    },
+
     waitForAuthAndLoad() {
       const that = this;
       const current = that.$fire?.auth?.currentUser;
@@ -680,6 +685,12 @@ export default {
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }
 
+@keyframes kpiPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+  70%  { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
 /* ============================================================
    SIDEBAR
    ============================================================ */
@@ -839,14 +850,15 @@ export default {
 }
 
 /* ============================================================
-   KPI CARDS
+   KPI GRID — 4 across desktop · 2×2 mobile (grid preserved)
    ============================================================ */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-top: 16px;
 }
+
 .kpi {
   position: relative;
   padding: 18px 20px;
@@ -855,9 +867,7 @@ export default {
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s ease;
   overflow: hidden;
 }
-.kpi:hover {
-  transform: translateY(-3px);
-}
+.kpi:hover { transform: translateY(-3px); }
 
 .kpi-light {
   background: #ffffff;
@@ -916,11 +926,6 @@ export default {
   box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
   animation: kpiPulse 1.8s infinite;
 }
-@keyframes kpiPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-  70%  { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-}
 
 .kpi-label {
   font-size: 0.64rem;
@@ -953,6 +958,44 @@ export default {
 .kpi-foot-muted { color: #94a3b8; }
 .kpi-foot-warn  { color: #b45309; }
 .kpi-foot-light { color: rgba(255, 255, 255, 0.85); }
+
+/* Tablet: 2 columns */
+@media (max-width: 900px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+/* Mobile: still 2 columns, tighter spacing */
+@media (max-width: 599px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .kpi {
+    padding: 14px;
+    border-radius: 16px;
+  }
+  .kpi-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  .kpi-icon .v-icon { font-size: 18px !important; }
+  .kpi-value {
+    font-size: 1.35rem;
+    letter-spacing: -0.5px;
+  }
+  .kpi-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.7px;
+  }
+  .kpi-foot {
+    font-size: 0.66rem;
+    margin-top: 8px;
+  }
+}
 
 /* ============================================================
    PANEL (quick actions, payments)
@@ -1023,7 +1066,7 @@ export default {
 }
 
 /* ============================================================
-   QUICK ACTIONS — medium tiles
+   QUICK ACTIONS — adaptive grid
    ============================================================ */
 .actions-grid {
   display: grid;
@@ -1217,11 +1260,9 @@ export default {
 }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE (non-KPI)
    ============================================================ */
 @media (max-width: 767px) {
-  .kpi-value { font-size: 1.5rem; }
-  .kpi { padding: 16px; }
   .estate-strip { padding: 16px; gap: 14px; }
   .estate-logo { width: 52px; height: 52px; }
   .estate-name { font-size: 0.95rem; }

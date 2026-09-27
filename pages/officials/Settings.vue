@@ -273,7 +273,7 @@
           </div>
 
           <!-- ============================================================
-               SERVICE CHARGES
+               SERVICE CHARGES  —  FIXED
                ============================================================ -->
           <div class="panel-card mt-4 reveal-card" style="animation-delay: 100ms">
             <div class="panel-head">
@@ -282,15 +282,30 @@
               </div>
               <div class="panel-title-group">
                 <div class="panel-title">Service charges</div>
-                <div class="panel-sub">Monthly and recurring fees for households</div>
+                <div class="panel-sub">
+                  {{ charges.length }} charge{{ charges.length === 1 ? '' : 's' }} configured
+                </div>
               </div>
-              <button class="add-pill-btn" @click="chargeDialog = true">
+              <button class="add-pill-btn" @click="openAddChargeDialog">
                 <v-icon size="14" class="mr-1">mdi-plus</v-icon>
                 Add charge
               </button>
             </div>
 
-            <div v-if="charges.length" class="charges-list">
+            <!-- Loading state -->
+            <div v-if="loadingCharges" class="pa-4">
+              <v-skeleton-loader type="list-item-two-line, list-item-two-line" />
+            </div>
+
+            <!-- Error state -->
+            <div v-else-if="chargesError" class="charges-error">
+              <v-icon size="16" color="#dc2626" class="mr-2">mdi-alert-circle-outline</v-icon>
+              <span>{{ chargesError }}</span>
+              <button class="charges-retry-btn" @click="fetchCharges">Retry</button>
+            </div>
+
+            <!-- List -->
+            <div v-else-if="charges.length" class="charges-list">
               <div
                 v-for="c in charges"
                 :key="c.charges_id"
@@ -300,7 +315,9 @@
                   <v-icon size="18" color="white">mdi-cash</v-icon>
                 </div>
                 <div class="charge-body">
-                  <div class="charge-name">{{ c.charge_name }}</div>
+                  <div class="charge-name">
+                    {{ c.charge_type || c.charge_name || 'Unnamed charge' }}
+                  </div>
                   <div class="charge-meta">
                     <span class="charge-freq">{{ c.frequency }}</span>
                     <span class="charge-sep">·</span>
@@ -313,6 +330,7 @@
               </div>
             </div>
 
+            <!-- Empty -->
             <div v-else class="empty-mini">
               <div class="empty-mini-icon">
                 <v-icon size="32" color="#cbd5e1">mdi-tag-off-outline</v-icon>
@@ -490,13 +508,23 @@
           <div class="dialog-body">
             <div class="field-block">
               <label class="field-label">Charge name</label>
-              <input v-model="chargeForm.charge_name" class="field-input" type="text" placeholder="e.g. Security" />
+              <input
+                v-model="chargeForm.charge_type"
+                class="field-input"
+                type="text"
+                placeholder="e.g. Security"
+              />
             </div>
             <div class="field-block">
               <label class="field-label">Amount (KES)</label>
               <div class="field-input-wrap">
                 <span class="field-prefix">KES</span>
-                <input v-model.number="chargeForm.amount" class="field-input field-input-with-prefix" type="number" placeholder="0" />
+                <input
+                  v-model.number="chargeForm.amount"
+                  class="field-input field-input-with-prefix"
+                  type="number"
+                  placeholder="0"
+                />
               </div>
             </div>
             <div class="field-block">
@@ -512,7 +540,7 @@
               Cancel
             </button>
             <button class="dialog-btn dialog-btn-primary" :disabled="savingCharge" @click="saveCharge">
-              <v-icon size="14" :class="['spin', { spin: savingCharge }]">
+              <v-icon size="14" :class="['mr-1', { spin: savingCharge }]">
                 {{ savingCharge ? 'mdi-loading' : 'mdi-check' }}
               </v-icon>
               {{ savingCharge ? 'Saving…' : 'Save' }}
@@ -598,7 +626,10 @@ export default {
       },
       savingAddressConfig: false,
 
+      // Service charges
       charges: [],
+      loadingCharges: false,
+      chargesError: '',
       frequencies: ['Monthly', 'Quarterly', 'Half yearly', 'Annual', 'Adhoc'],
 
       team: {
@@ -619,7 +650,7 @@ export default {
       chargeDialog: false,
       chargeForm: {
         charges_id: null,
-        charge_name: '',
+        charge_type: '',
         amount: '',
         frequency: 'Monthly',
       },
@@ -764,7 +795,7 @@ export default {
         if (status === 200) {
           this.estate = {
             estate_name: data.estate_name || '',
-            location: data.location || '',
+            location: data.estate_location || data.location || '',
             latitude: data.latitude || '',
             longitude: data.longitude || '',
           };
@@ -793,18 +824,62 @@ export default {
       }
     },
 
+    // ==========================================================
+    // FETCH CHARGES  —  FIXED
+    // Tries the correct /services/getEstateServiceCharges/:estateId
+    // endpoint first, then falls back to /services/getAll with a
+    // client-side filter by estate_id.
+    // ==========================================================
     async fetchCharges() {
       if (!this.estateId) return;
+      this.loadingCharges = true;
+      this.chargesError = '';
+
+      const primaryUrl = `${API}/services/getEstateServiceCharges/${this.estateId}`;
+      const fallbackUrl = `${API}/services/getAll`;
+
       try {
-        const { data, status } = await axios.get(
-          `${API}/service-charges/estate/${this.estateId}`
-        );
-        if (status === 200) {
-          this.charges = Array.isArray(data) ? data : [];
+        let raw = null;
+
+        // 1. Try the estate-scoped endpoint
+        try {
+          const { data, status } = await axios.get(primaryUrl);
+          if (status === 200 && Array.isArray(data)) {
+            raw = data;
+            console.log('🔵 Charges loaded via getEstateServiceCharges:', data.length);
+          }
+        } catch (e) {
+          console.warn('getEstateServiceCharges failed:', e.response?.status || e.message);
         }
-      } catch (error) {
-        console.warn('Charges fetch failed:', error.response?.data || error.message);
+
+        // 2. Fallback to /services/getAll and filter
+        if (raw === null) {
+          try {
+            const { data, status } = await axios.get(fallbackUrl);
+            if (status === 200 && Array.isArray(data)) {
+              raw = data.filter(
+                (c) => Number(c.estate_id) === Number(this.estateId)
+              );
+              console.log('🔵 Charges loaded via getAll (filtered):', raw.length);
+            }
+          } catch (e) {
+            console.warn('getAll failed:', e.response?.status || e.message);
+          }
+        }
+
+        if (raw === null) {
+          this.charges = [];
+          this.chargesError = 'Could not load service charges.';
+          return;
+        }
+
+        this.charges = raw;
+      } catch (err) {
+        console.error('fetchCharges fatal:', err.message);
         this.charges = [];
+        this.chargesError = 'Could not load service charges.';
+      } finally {
+        this.loadingCharges = false;
       }
     },
 
@@ -889,10 +964,23 @@ export default {
       }
     },
 
+    // ==========================================================
+    // CHARGE DIALOG
+    // ==========================================================
+    openAddChargeDialog() {
+      this.chargeForm = {
+        charges_id: null,
+        charge_type: '',
+        amount: '',
+        frequency: 'Monthly',
+      };
+      this.chargeDialog = true;
+    },
+
     editCharge(c) {
       this.chargeForm = {
         charges_id: c.charges_id,
-        charge_name: c.charge_name,
+        charge_type: c.charge_type || c.charge_name || '',
         amount: c.amount,
         frequency: c.frequency,
       };
@@ -903,14 +991,19 @@ export default {
       this.chargeDialog = false;
       this.chargeForm = {
         charges_id: null,
-        charge_name: '',
+        charge_type: '',
         amount: '',
         frequency: 'Monthly',
       };
     },
 
+    // ==========================================================
+    // SAVE CHARGE — FIXED
+    // Uses /services/addServiceCharge (the working endpoint)
+    // and sends `charge_type` (the actual DB column name).
+    // ==========================================================
     async saveCharge() {
-      if (!this.chargeForm.charge_name || !this.chargeForm.amount) {
+      if (!this.chargeForm.charge_type || !this.chargeForm.amount) {
         this.showSnackbar('Charge name and amount are required', 'warning');
         return;
       }
@@ -918,17 +1011,19 @@ export default {
       try {
         const payload = {
           estate_id: this.estateId,
-          charge_name: this.chargeForm.charge_name,
+          charge_type: this.chargeForm.charge_type,
           amount: parseFloat(this.chargeForm.amount),
           frequency: this.chargeForm.frequency,
         };
         if (this.chargeForm.charges_id) {
           payload.charges_id = this.chargeForm.charges_id;
         }
+
         const { status } = await axios.post(
-          `${API}/service-charges/addCharge`,
+          `${API}/services/addServiceCharge`,
           payload
         );
+
         if (status === 200 || status === 201) {
           this.showSnackbar(
             this.chargeForm.charges_id ? 'Charge updated' : 'Charge added',
@@ -957,11 +1052,6 @@ export default {
       this.confirmLogout = false;
       if (this.$fire?.auth) this.$fire.auth.signOut();
       this.$router.push('/');
-    },
-  },
-  watch: {
-    editEstate(val) {
-      if (val) this.openEstateEdit();
     },
   },
 };
@@ -1348,6 +1438,33 @@ export default {
   color: #8051ff;
   border-color: rgba(128, 81, 255, 0.2);
 }
+
+/* Charges error */
+.charges-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.05);
+  border-top: 1px solid rgba(239, 68, 68, 0.1);
+}
+.charges-retry-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.charges-retry-btn:hover { background: rgba(239, 68, 68, 0.08); }
 
 /* ============================================================
    EMPTY MINI

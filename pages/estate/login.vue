@@ -3,7 +3,7 @@
     <!-- ============================================================
          LEFT PANEL (illustrated) — hidden on mobile
          ============================================================ -->
-    <div class="auth-left d-none d-md-flex">
+    <div class="auth-left hidden-xs-only">
       <div class="left-content">
         <!-- Brand -->
         <div class="brand">
@@ -88,7 +88,7 @@
     <div class="auth-right">
       <div class="form-wrap">
         <!-- Mobile brand -->
-        <div class="mobile-brand d-flex d-md-none">
+        <div class="mobile-brand">
           <div class="brand-mark-sm">
             <v-icon color="white" size="16">mdi-shield-account</v-icon>
           </div>
@@ -118,11 +118,13 @@
         </div>
 
         <!-- Load error -->
-        <div v-if="estateLoadError" class="inline-error">
-          <v-icon size="14" color="#c62828">mdi-alert-circle-outline</v-icon>
-          <span>{{ estateLoadError }}</span>
-          <a class="retry-link" @click="Fetch_PostAllEstates">Retry</a>
-        </div>
+        <transition name="slide-fade">
+          <div v-if="estateLoadError" class="inline-error">
+            <v-icon size="14" color="#c62828">mdi-alert-circle-outline</v-icon>
+            <span>{{ estateLoadError }}</span>
+            <a class="retry-link" @click="Fetch_PostAllEstates">Retry</a>
+          </div>
+        </transition>
 
         <!-- Form -->
         <v-form ref="form" v-model="valid" lazy-validation class="form-body">
@@ -320,16 +322,14 @@ export default {
   },
   methods: {
     // =========================================================
-    // ESTATE LOOKUP — uses the working /getall endpoint
+    // ESTATE LOOKUP
     // =========================================================
     async Fetch_PostAllEstates() {
       this.estateLoadError = "";
       try {
-        // THIS IS THE WORKING URL (verified in browser)
         const { data, status } = await axios.get(`${API}/estates/getall`);
         console.log("🔍 Estates response:", status);
 
-        // Your backend returns an array directly
         const list = Array.isArray(data)
           ? data
           : Array.isArray(data?.data)
@@ -559,7 +559,6 @@ export default {
   max-width: 440px;
 }
 
-/* Preview cards */
 .preview-stack {
   position: relative;
   height: 260px;
@@ -684,9 +683,14 @@ export default {
 .form-wrap { width: 100%; max-width: 420px; }
 
 .mobile-brand {
+  display: none;
   align-items: center;
   gap: 10px;
   margin-bottom: 32px;
+}
+
+@media (max-width: 959px) {
+  .mobile-brand { display: flex; }
 }
 
 .brand-mark-sm {
