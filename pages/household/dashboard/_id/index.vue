@@ -5,11 +5,11 @@
       v-if="!nav_bars"
       permanent
       width="260"
-      class="elevation-1 sidebar-glass"
+      class="elevation-0 sidebar-glass"
     >
       <div class="pa-6 pb-4">
         <div class="d-flex align-center cursor-pointer brand-hover" @click="goTo(dashboardRoute)">
-          <v-avatar color="#8051FF" size="46" class="elevation-2 mr-3">
+          <v-avatar color="#8051FF" size="46" class="elevation-3 mr-3 brand-avatar">
             <v-icon color="white" size="24">mdi-home-city</v-icon>
           </v-avatar>
           <div>
@@ -28,7 +28,7 @@
           @click="goTo(item.route)"
           link
           class="mb-1 rounded-xl nav-item-premium"
-          :class="{ 'purple lighten-5 purple--text': isActive(item.route) }"
+          :class="{ 'nav-item-active': isActive(item.route) }"
           :style="{ 'animation-delay': idx * 50 + 'ms' }"
         >
           <v-list-item-icon class="mr-3">
@@ -37,7 +37,10 @@
             </v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title class="font-weight-semibold text-body-2">
+            <v-list-item-title
+              class="font-weight-semibold text-body-2"
+              :class="{ 'purple--text': isActive(item.route) }"
+            >
               {{ item.title }}
             </v-list-item-title>
           </v-list-item-content>
@@ -46,11 +49,16 @@
 
       <template v-slot:append>
         <div class="pa-4 pb-6">
+          <div class="help-card mb-4">
+            <v-icon color="#8051FF" size="22" class="mb-2">mdi-lifebuoy</v-icon>
+            <div class="help-title">Need help?</div>
+            <div class="help-sub">Contact your estate office</div>
+          </div>
           <v-btn
             block
             outlined
             color="#8051FF"
-            class="rounded-xl text-capitalize mt-3 font-weight-medium"
+            class="rounded-xl text-capitalize font-weight-medium signout-btn"
             @click="logout"
           >
             <v-icon left size="18" color="#8051FF">mdi-logout</v-icon>
@@ -85,15 +93,15 @@
 
     <!-- Main -->
     <v-main :class="nav_bars ? 'pb-16' : ''" class="main-premium">
-      <div class="sticky-header-premium px-4 px-sm-6 py-3">
+      <div class="sticky-header-premium px-4 px-sm-6 py-4">
         <v-container fluid class="pa-0">
           <v-row align="center" no-gutters>
             <v-col cols="8" sm="6">
               <div class="d-flex align-center">
-                <div>
+                <div class="greeting-block">
                   <div class="d-flex align-center">
                     <h1 class="text-h6 text-sm-h5 font-weight-bold text--primary page-title">
-                      Hi! {{ household.primary_owner || 'Resident' }}
+                      Hi, {{ firstName }} 👋
                     </h1>
                     <v-chip
                       x-small
@@ -105,8 +113,8 @@
                     </v-chip>
                   </div>
                   <div class="d-flex align-center mt-1">
-                    <v-icon x-small color="success" class="mr-1">mdi-circle</v-icon>
-                    <span class="text-caption text--secondary">Welcome back</span>
+                    <v-icon x-small :color="statusColor" class="mr-1">mdi-circle</v-icon>
+                    <span class="text-caption text--secondary">{{ statusLabel }}</span>
                   </div>
                 </div>
               </div>
@@ -131,7 +139,7 @@
                 <span>Refresh</span>
               </v-tooltip>
 
-              <v-avatar color="#8051FF" size="36" class="ml-1">
+              <v-avatar color="#8051FF" size="38" class="ml-1 avatar-glow">
                 <v-img :src="avatarUrl" />
               </v-avatar>
             </v-col>
@@ -139,86 +147,145 @@
         </v-container>
       </div>
 
-      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-2 pt-sm-4 pb-8">
-        <!-- KPI cards -->
-        <v-row dense class="mb-4 mb-sm-6">
-          <v-col cols="6" md="6" class="reveal-card">
-            <v-card outlined elevation="0" class="pa-4 pa-sm-5 rounded-2xl h-100 kpi-card-premium">
-              <div class="d-flex align-start justify-space-between mb-2">
-                <div class="text-caption font-weight-bold text-uppercase mb-1 tracking-wide text--secondary">
-                  Month Eqv
+      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-3 pt-sm-5 pb-8">
+        <!-- Account info strip -->
+        <v-row dense class="mb-5 reveal-card" style="animation-delay: 40ms">
+          <v-col cols="12">
+            <div class="account-strip">
+              <div class="strip-item">
+                <div class="strip-icon strip-icon-purple">
+                  <v-icon size="16" color="white">mdi-identifier</v-icon>
                 </div>
-                <v-icon small :color="numbers.overdue > 0 ? 'red darken-2' : 'green darken-2'">
-                  {{ numbers.overdue > 0 ? 'mdi-alert-circle-outline' : 'mdi-check-circle-outline' }}
-                </v-icon>
-              </div>
-              <div class="text-h4 font-weight-bold text--primary">
-                {{ formatNum(numbers.months_equivalent) }}
-              </div>
-              <div
-                class="text-caption mt-1 font-weight-medium"
-                :class="numbers.overdue > 0 ? 'red--text' : 'green--text'"
-              >
-                {{ numbers.overdue > 0 ? 'Overdue' : 'Prepaid' }}
-                {{ formatSigned(numbers.overdue > 0 ? -numbers.overdue : numbers.prepaid) }}
-              </div>
-            </v-card>
-          </v-col>
-
-          <v-col cols="6" md="6" class="reveal-card" style="animation-delay: 100ms">
-            <v-card color="#8051FF" dark elevation="0" class="pa-4 pa-sm-5 rounded-2xl h-100">
-              <div class="d-flex justify-space-between align-start">
                 <div>
-                  <div class="text-caption font-weight-bold text-uppercase mb-1 tracking-wide" style="opacity: 0.85;">
-                    Total Paid
-                  </div>
-                  <div class="text-h5 font-weight-bold">
-                    {{ formatNum(numbers.total_paid) }}
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="text-caption font-weight-bold text-uppercase mb-1 tracking-wide" style="opacity: 0.85;">
-                    Due YTD
-                  </div>
-                  <div class="text-h5 font-weight-bold">
-                    {{ formatNum(numbers.due_to_date) }}
-                  </div>
+                  <div class="strip-label">Account No.</div>
+                  <div class="strip-value mono">{{ shortUid }}</div>
                 </div>
               </div>
-            </v-card>
+
+              <div class="strip-divider"></div>
+
+              <div class="strip-item">
+                <div class="strip-icon strip-icon-lime">
+                  <v-icon size="16" color="#0A0A14">mdi-office-building-outline</v-icon>
+                </div>
+                <div>
+                  <div class="strip-label">Estate</div>
+                  <div class="strip-value">{{ household.estate_name || '—' }}</div>
+                </div>
+              </div>
+
+              <div class="strip-divider"></div>
+
+              <div class="strip-item strip-item-grow">
+                <div class="strip-icon strip-icon-amber">
+                  <v-icon size="16" color="white">mdi-map-marker-outline</v-icon>
+                </div>
+                <div>
+                  <div class="strip-label">Address</div>
+                  <div class="strip-value">{{ addressLine }}</div>
+                </div>
+              </div>
+            </div>
           </v-col>
         </v-row>
 
-        <!-- Make payment -->
-        <v-row class="mb-4 reveal-card" style="animation-delay: 150ms">
-          <v-col cols="12" class="d-flex justify-center">
-            <v-btn
-              rounded
-              large
-              elevation="0"
-              color="#eeeeee"
-              class="pay-btn text-capitalize"
-              @click="goTo('/household/make_payment')"
-            >
-              <v-icon left color="#8051FF">mdi-wallet</v-icon>
-              <span style="color: black; text-transform: none; font-weight: 600;">Make payment</span>
-            </v-btn>
+        <!-- KPI cards -->
+        <v-row dense class="mb-4 mb-sm-5">
+          <v-col cols="6" md="6" class="reveal-card">
+            <div class="kpi-card kpi-card-light">
+              <div class="kpi-head">
+                <div class="kpi-icon kpi-icon-purple">
+                  <v-icon size="20" color="white">mdi-calendar-check-outline</v-icon>
+                </div>
+                <div class="kpi-badge" :class="numbers.overdue > 0 ? 'kpi-badge-warn' : 'kpi-badge-ok'">
+                  <v-icon size="12" color="white">
+                    {{ numbers.overdue > 0 ? 'mdi-alert' : 'mdi-check' }}
+                  </v-icon>
+                </div>
+              </div>
+              <div class="kpi-label">Month Equivalent</div>
+              <div class="kpi-value">{{ formatNum(numbers.months_equivalent) }}</div>
+              <div class="kpi-foot" :class="numbers.overdue > 0 ? 'kpi-foot-warn' : 'kpi-foot-ok'">
+                {{ numbers.overdue > 0 ? 'Overdue' : 'Prepaid' }}
+                <span class="kpi-foot-value">
+                  {{ formatSigned(numbers.overdue > 0 ? -numbers.overdue : numbers.prepaid) }}
+                </span>
+              </div>
+            </div>
+          </v-col>
+
+          <v-col cols="6" md="6" class="reveal-card" style="animation-delay: 100ms">
+            <div class="kpi-card kpi-card-dark">
+              <div class="kpi-head">
+                <div class="kpi-icon kpi-icon-white">
+                  <v-icon size="20" color="#0A0A14">mdi-cash-multiple</v-icon>
+                </div>
+              </div>
+              <div class="kpi-dark-pair">
+                <div>
+                  <div class="kpi-label-dark">Total Paid</div>
+                  <div class="kpi-value-dark">{{ formatNum(numbers.total_paid) }}</div>
+                </div>
+                <div class="kpi-dark-right">
+                  <div class="kpi-label-dark">Due YTD</div>
+                  <div class="kpi-value-dark">{{ formatNum(numbers.due_to_date) }}</div>
+                </div>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+
+        <!-- Outstanding balance alert -->
+        <v-row v-if="numbers.overdue > 0" class="mb-4 reveal-card" style="animation-delay: 130ms">
+          <v-col cols="12">
+            <div class="overdue-banner">
+              <div class="overdue-icon">
+                <v-icon size="22" color="white">mdi-alert-outline</v-icon>
+              </div>
+              <div class="overdue-body">
+                <div class="overdue-title">Outstanding balance</div>
+                <div class="overdue-sub">
+                  You owe <strong>KES {{ formatNum(numbers.overdue) }}</strong> for this period.
+                </div>
+              </div>
+              <button class="overdue-btn" @click="goTo('/household/make_payment')">
+                Settle now
+                <v-icon size="16" class="ml-1">mdi-arrow-right</v-icon>
+              </button>
+            </div>
+          </v-col>
+        </v-row>
+
+        <!-- Make payment CTA -->
+        <v-row class="mb-5 reveal-card" style="animation-delay: 150ms">
+          <v-col cols="12">
+            <button class="pay-cta" @click="goTo('/household/make_payment')">
+              <div class="pay-cta-icon">
+                <v-icon size="24" color="#8051FF">mdi-wallet</v-icon>
+              </div>
+              <div class="pay-cta-body">
+                <div class="pay-cta-title">Make a payment</div>
+                <div class="pay-cta-sub">Pay via M-Pesa in seconds</div>
+              </div>
+              <v-icon size="22" color="#8051FF" class="pay-cta-chevron">mdi-chevron-right</v-icon>
+            </button>
           </v-col>
         </v-row>
 
         <!-- Recent payments -->
         <v-row class="reveal-card" style="animation-delay: 200ms">
           <v-col cols="12">
-            <v-card class="rounded-2xl" elevation="0" outlined>
-              <v-card-title class="px-4 px-sm-6 py-4 card-header-premium d-flex align-center">
-                <v-avatar color="purple lighten-5" size="36" class="mr-3">
-                  <v-icon color="#8051FF">mdi-history</v-icon>
-                </v-avatar>
-                <div>
-                  <div class="text-h6 font-weight-bold text--primary">Recent payments</div>
-                  <div class="text-caption text--secondary">Your latest transactions</div>
+            <div class="payments-card">
+              <div class="payments-head">
+                <div class="payments-head-left">
+                  <div class="payments-icon">
+                    <v-icon size="20" color="#8051FF">mdi-history</v-icon>
+                  </div>
+                  <div>
+                    <div class="payments-title">Recent payments</div>
+                    <div class="payments-sub">Your latest transactions</div>
+                  </div>
                 </div>
-                <v-spacer></v-spacer>
                 <v-text-field
                   v-model="search"
                   placeholder="Search"
@@ -231,44 +298,42 @@
                   style="max-width: 220px"
                   clearable
                 />
-              </v-card-title>
-              <v-divider></v-divider>
+              </div>
 
-              <v-list class="pa-0" v-if="filteredPayments.length">
-                <v-list-item
+              <div v-if="filteredPayments.length" class="payments-list">
+                <div
                   v-for="p in filteredPayments"
                   :key="p.payment_id || p.id"
-                  class="py-3 px-4 px-sm-6 hover-row"
+                  class="payment-row"
                 >
-                  <v-list-item-avatar color="green lighten-5" size="40">
-                    <v-icon color="green darken-2" small>mdi-cash-check</v-icon>
-                  </v-list-item-avatar>
-                  <v-list-item-content>
-                    <v-list-item-title class="font-weight-semibold text--primary">
-                      {{ p.transaction_id }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle class="text-caption text--secondary">
+                  <div class="payment-row-icon">
+                    <v-icon size="18" color="#3f6b00">mdi-cash-check</v-icon>
+                  </div>
+                  <div class="payment-row-body">
+                    <div class="payment-row-title">{{ p.transaction_id }}</div>
+                    <div class="payment-row-sub">
                       {{ p.payment_method }} · {{ formatDate(p.payment_date || p.created_at) }}
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                  <v-list-item-action>
-                    <span class="font-weight-bold text--primary">
-                      {{ formatNum(p.amount_paid) }}
-                    </span>
-                  </v-list-item-action>
-                </v-list-item>
-              </v-list>
+                    </div>
+                  </div>
+                  <div class="payment-row-amount">
+                    <span class="payment-currency">KES</span>
+                    <span class="payment-value">{{ formatNum(p.amount_paid) }}</span>
+                  </div>
+                </div>
+              </div>
 
-              <div v-else-if="!loading" class="pa-12 text-center">
-                <v-icon size="56" color="grey lighten-2">mdi-receipt-text-outline</v-icon>
-                <div class="text-h6 grey--text text--darken-1 mt-3">No payments yet</div>
-                <div class="text-body-2 grey--text">Your payment history will appear here.</div>
+              <div v-else-if="!loading" class="payments-empty">
+                <div class="payments-empty-icon">
+                  <v-icon size="40" color="#cbd5e1">mdi-receipt-text-outline</v-icon>
+                </div>
+                <div class="payments-empty-title">No payments yet</div>
+                <div class="payments-empty-sub">Your payment history will appear here.</div>
               </div>
 
               <div v-else class="pa-6">
                 <v-skeleton-loader type="list-item-two-line, list-item-two-line, list-item-two-line" />
               </div>
-            </v-card>
+            </div>
           </v-col>
         </v-row>
       </v-container>
@@ -309,7 +374,14 @@ export default {
       loading: false,
       uid: null,
       householdId: null,
-      household: { primary_owner: '', section: '', court: '', street: '' },
+      household: {
+        primary_owner: '',
+        section: '',
+        court: '',
+        street: '',
+        estate_name: '',
+        status: '',
+      },
       numbers: {
         months_equivalent: 0,
         total_paid: 0,
@@ -326,10 +398,6 @@ export default {
     };
   },
   computed: {
-    /**
-     * ⚡ Dashboard URL matches /household/dashboard/:uid route
-     * (folder has _id.vue, so the URL needs the uid).
-     */
     dashboardRoute() {
       return this.uid
         ? `/household/dashboard/${this.uid}`
@@ -355,6 +423,28 @@ export default {
           (p.transaction_id || '').toLowerCase().includes(q) ||
           (p.payment_method || '').toLowerCase().includes(q)
       );
+    },
+    firstName() {
+      const n = (this.household.primary_owner || '').trim();
+      if (!n) return 'Resident';
+      return n.split(/\s+/)[0];
+    },
+    statusLabel() {
+      if (this.numbers.overdue > 0) {
+        return `Outstanding · KES ${this.formatNum(this.numbers.overdue)}`;
+      }
+      return 'Welcome back · All caught up';
+    },
+    statusColor() {
+      return this.numbers.overdue > 0 ? 'amber darken-2' : 'success';
+    },
+    shortUid() {
+      if (!this.uid) return '—';
+      return this.uid.length > 12 ? `${this.uid.slice(0, 6)}…${this.uid.slice(-4)}` : this.uid;
+    },
+    addressLine() {
+      const parts = [this.household.section, this.household.court, this.household.street].filter(Boolean);
+      return parts.length ? parts.join(' · ') : '—';
     },
   },
   mounted() {
@@ -395,69 +485,50 @@ export default {
       }
     },
 
-    // =====================================================
-    // AUTH — reads UID from Firebase
-    // =====================================================
     waitForAuthAndLoad() {
       const that = this;
-
       const current = that.$fire?.auth?.currentUser;
       if (current && current.uid) {
         that.uid = current.uid;
-        console.log('🔵 Dashboard UID (immediate):', that.uid);
         that.refreshAll();
         return;
       }
-
-      console.log('🔵 Waiting for Firebase Auth...');
       that._authUnsub = that.$fire.auth.onAuthStateChanged((user) => {
         if (user && user.uid) {
           that.uid = user.uid;
-          console.log('🔵 Dashboard UID (from listener):', that.uid);
           that.refreshAll();
-
           if (that._authUnsub) {
             that._authUnsub();
             that._authUnsub = null;
           }
         } else {
-          console.warn('🔴 No Firebase user signed in');
           that.showSnackbar('Please sign in to view your dashboard', 'error');
         }
       });
     },
 
     async refreshAll() {
-      if (!this.uid) {
-        console.warn('🔴 refreshAll called with no UID');
-        return;
-      }
+      if (!this.uid) return;
       this.loading = true;
-      await Promise.all([
+      await Promise.allSettled([
         this.Fetch_Dashboard(),
         this.Fetch_RecentPayments(),
       ]);
       this.loading = false;
     },
 
-    // =====================================================
-    // FETCH DASHBOARD
-    // =====================================================
     async Fetch_Dashboard() {
       const that = this;
-      const url = `${API}/households/dashboard/${that.uid}`;
-      console.log('🔵 GET', url);
-
       try {
-        const { data, status } = await axios.get(url);
-        console.log('🔵 Dashboard response:', status, data);
-
+        const { data, status } = await axios.get(`${API}/households/dashboard/${that.uid}`);
         if (status === 200) {
           that.household = {
             primary_owner: data.primary_owner || '',
             section: data.section || '',
             court: data.court || '',
             street: data.street || '',
+            estate_name: data.estate_name || '',
+            status: data.status || '',
           };
           that.numbers = {
             months_equivalent: Number(data.months_equivalent) || 0,
@@ -471,13 +542,6 @@ export default {
           };
         }
       } catch (error) {
-        console.error('🔴 Dashboard fetch error:', {
-          url,
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
-
         if (error.response?.status === 404) {
           that.showSnackbar('No household found for your account', 'error');
         } else {
@@ -486,40 +550,23 @@ export default {
       }
     },
 
-    // =====================================================
-    // RECENT PAYMENTS — uses /households/:id/payments
-    // =====================================================
     async Fetch_RecentPayments() {
       const that = this;
       try {
-        // Resolve household_id from UID
         const hh = await axios.get(`${API}/households/getHouseHoldId/${that.uid}`);
         const householdId = hh.data?.household_id;
         that.householdId = householdId;
-        console.log('🔵 Household ID resolved:', householdId);
         if (!householdId) return;
 
-        const url = `${API}/households/${householdId}/payments`;
-        console.log('🔵 GET', url);
-        const { data, status } = await axios.get(url);
-
+        const { data, status } = await axios.get(`${API}/households/${householdId}/payments`);
         if (status === 200) {
           that.payments = Array.isArray(data) ? data.slice(0, 10) : [];
-          console.log('🔵 Payments loaded:', that.payments.length);
         }
       } catch (error) {
-        console.warn('Recent payments failed:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
         that.payments = [];
       }
     },
 
-    // =====================================================
-    // FORMATTERS
-    // =====================================================
     formatNum(n) {
       return numeral(n || 0).format('0,0');
     },
@@ -530,10 +577,10 @@ export default {
     formatDate(d) {
       if (!d) return '';
       try {
-        return new Date(d).toISOString().slice(0, 10);
-      } catch {
-        return '';
-      }
+        return new Date(d).toLocaleDateString('en-GB', {
+          day: '2-digit', month: 'short', year: 'numeric',
+        });
+      } catch { return ''; }
     },
     showSnackbar(text, color = 'success') {
       this.snackbar = { show: true, text, color };
@@ -547,90 +594,570 @@ export default {
 </script>
 
 <style scoped>
+/* ============================================================
+   BASE
+   ============================================================ */
 .cursor-pointer { cursor: pointer; }
-.bg-surface { background-color: #f8fafc !important; }
-.rounded-2xl { border-radius: 20px !important; }
-.h-100 { height: 100%; }
-.tracking-wide { letter-spacing: 0.08em; }
+.bg-surface { background-color: #f6f7fb !important; }
+.mono { font-family: ui-monospace, SFMono-Regular, monospace; }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.reveal-card { animation: fadeInUp 0.6s ease-out both; }
+.reveal-card { animation: fadeInUp 0.5s ease-out both; }
 
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
 .sidebar-glass {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-right: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  border-right: 1px solid #eef1f6 !important;
 }
 .brand-text { letter-spacing: -0.5px; }
 .brand-hover { transition: opacity 0.2s; }
-.brand-hover:hover { opacity: 0.8; }
+.brand-hover:hover { opacity: 0.85; }
+.brand-avatar {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%) !important;
+  box-shadow: 0 12px 24px -12px rgba(128, 81, 255, 0.7);
+}
 
 .nav-item-premium {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 4px;
   border-radius: 12px !important;
 }
 .nav-item-premium:hover {
   background-color: rgba(128, 81, 255, 0.06);
-  transform: translateX(4px);
+  transform: translateX(3px);
+}
+.nav-item-active {
+  background: rgba(128, 81, 255, 0.09) !important;
 }
 
+.help-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(128, 81, 255, 0.08) 0%, rgba(155, 108, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.12);
+}
+.help-title { font-size: 0.82rem; font-weight: 800; color: #0f0d24; }
+.help-sub { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+
+.signout-btn {
+  transition: all 0.2s ease;
+}
+.signout-btn:hover {
+  background: rgba(128, 81, 255, 0.06);
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 .main-premium { scroll-behavior: smooth; }
 .sticky-header-premium {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: rgba(248, 250, 252, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid transparent;
-  transition: all 0.3s ease;
+  background: rgba(246, 247, 251, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
-.page-title { letter-spacing: -0.5px; }
-.refresh-btn { transition: all 0.2s ease; }
-.refresh-btn:hover { border-color: #8051FF; color: #8051FF !important; }
+.page-title { letter-spacing: -0.6px; }
+.greeting-block { min-width: 0; }
 
-.kpi-card-premium {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #e2e8f0;
-  background: white;
+.refresh-btn {
+  transition: all 0.2s ease;
+  background: #ffffff !important;
 }
-.kpi-card-premium:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06) !important;
-  border-color: #cbd5e1;
+.refresh-btn:hover {
+  border-color: #8051FF;
+  color: #8051FF !important;
 }
 
-.pay-btn { max-width: 260px; }
-
-.card-header-premium {
-  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+.avatar-glow {
+  box-shadow: 0 8px 18px -8px rgba(128, 81, 255, 0.6);
 }
 
-.hover-row { transition: background-color 0.2s ease; }
-.hover-row:hover { background-color: #f8fafc !important; }
+/* ============================================================
+   ACCOUNT STRIP
+   ============================================================ */
+.account-strip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 18px;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+  flex-wrap: wrap;
+}
+.strip-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.strip-item-grow { flex: 1; min-width: 0; }
 
-.search-field-premium ::v-deep .v-input__slot { transition: all 0.25s ease; }
-.search-field-premium ::v-deep .v-input__slot:hover,
+.strip-divider {
+  width: 1px;
+  height: 36px;
+  background: #eef1f6;
+}
+.strip-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.strip-icon-purple {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  box-shadow: 0 8px 16px -8px rgba(128, 81, 255, 0.6);
+}
+.strip-icon-lime {
+  background: linear-gradient(135deg, #d4ff4a 0%, #b6ff00 100%);
+  box-shadow: 0 8px 16px -8px rgba(182, 255, 0, 0.6);
+}
+.strip-icon-amber {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 8px 16px -8px rgba(245, 158, 11, 0.55);
+}
+.strip-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 2px;
+}
+.strip-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f0d24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+/* ============================================================
+   KPI CARDS
+   ============================================================ */
+.kpi-card {
+  border-radius: 20px;
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s ease;
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+}
+
+.kpi-card-light {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.kpi-card-light:hover {
+  box-shadow: 0 22px 40px -20px rgba(15, 13, 36, 0.15);
+}
+
+.kpi-card-dark {
+  background: linear-gradient(140deg, #0a0a14 0%, #221047 55%, #2b1256 100%);
+  border: none;
+  box-shadow: 0 22px 44px -22px rgba(34, 16, 71, 0.55);
+}
+.kpi-card-dark:hover {
+  box-shadow: 0 26px 50px -22px rgba(34, 16, 71, 0.7);
+}
+
+.kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kpi-icon-purple {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.kpi-icon-white {
+  background: #ffffff;
+  box-shadow: 0 10px 22px -10px rgba(255, 255, 255, 0.5);
+}
+.kpi-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kpi-badge-ok   { background: linear-gradient(135deg, #d4ff4a 0%, #b6ff00 100%); color: #0a0a14; }
+.kpi-badge-warn { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+
+.kpi-label {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 4px;
+}
+.kpi-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -1px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-foot {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kpi-foot-ok   { color: #3f6b00; }
+.kpi-foot-warn { color: #b45309; }
+.kpi-foot-value {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(15, 13, 36, 0.05);
+  font-weight: 800;
+}
+.kpi-foot-warn .kpi-foot-value {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+}
+.kpi-foot-ok .kpi-foot-value {
+  background: rgba(122, 184, 0, 0.14);
+  color: #3f6b00;
+}
+
+.kpi-dark-pair {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+.kpi-dark-right { text-align: right; }
+.kpi-label-dark {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 4px;
+}
+.kpi-value-dark {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.8px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   OVERDUE BANNER
+   ============================================================ */
+.overdue-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  flex-wrap: wrap;
+}
+.overdue-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 10px 22px -10px rgba(245, 158, 11, 0.7);
+}
+.overdue-body { flex: 1; min-width: 0; }
+.overdue-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #7c2d12;
+  letter-spacing: -0.2px;
+}
+.overdue-sub {
+  font-size: 0.78rem;
+  color: #92400e;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.overdue-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #b45309;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 22px -10px rgba(180, 83, 9, 0.6);
+}
+.overdue-btn:hover {
+  background: #92400e;
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   PAY CTA
+   ============================================================ */
+.pay-cta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.pay-cta:hover {
+  transform: translateY(-2px);
+  border-color: rgba(128, 81, 255, 0.4);
+  box-shadow: 0 20px 40px -20px rgba(128, 81, 255, 0.35);
+}
+.pay-cta-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(128, 81, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pay-cta-body { flex: 1; min-width: 0; }
+.pay-cta-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.pay-cta-sub {
+  font-size: 0.76rem;
+  color: #64748b;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.pay-cta-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.pay-cta:hover .pay-cta-chevron {
+  transform: translateX(4px);
+}
+
+/* ============================================================
+   PAYMENTS CARD
+   ============================================================ */
+.payments-card {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.payments-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+.payments-head-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.payments-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(128, 81, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.payments-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.payments-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 1px;
+  font-weight: 500;
+}
+
+.payments-list { padding: 6px 0; }
+.payment-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 22px;
+  transition: background 0.15s ease;
+}
+.payment-row:hover { background: #fafbff; }
+.payment-row-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: rgba(122, 184, 0, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.payment-row-body { flex: 1; min-width: 0; }
+.payment-row-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.payment-row-sub {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.payment-row-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.payment-currency {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.payment-value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f0d24;
+  font-variant-numeric: tabular-nums;
+}
+
+.payments-empty {
+  padding: 56px 24px;
+  text-align: center;
+}
+.payments-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 24px;
+  background: #f6f7fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.payments-empty-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+}
+.payments-empty-sub {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   SEARCH + SNACKBAR
+   ============================================================ */
+.search-field-premium ::v-deep .v-input__slot {
+  background: #f6f7fb !important;
+  transition: all 0.25s ease;
+}
 .search-field-premium.v-input--is-focused ::v-deep .v-input__slot {
-  box-shadow: 0 2px 8px rgba(128, 81, 255, 0.1);
+  background: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(128, 81, 255, 0.12);
 }
 
 .snackbar-premium ::v-deep .v-snackbar__content { padding: 12px 20px; }
 
+/* ============================================================
+   MOBILE NAV
+   ============================================================ */
 .bottom-nav-premium {
-  border-top: 1px solid #e2e8f0 !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px);
+  border-top: 1px solid #eef1f6 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(14px);
 }
 .mobile-nav-btn { min-width: 0 !important; }
-.mobile-nav-label { font-size: 10px; margin-top: 2px; }
+.mobile-nav-label {
+  font-size: 10px;
+  margin-top: 2px;
+  font-weight: 700;
+}
 
-@media (max-width: 599px) {
-  .sticky-header-premium { padding-left: 12px; padding-right: 12px; }
-  .reveal-card { animation-duration: 0.4s; }
-  .kpi-card-premium { padding: 16px !important; }
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 767px) {
+  .kpi-value { font-size: 1.5rem; }
+  .kpi-value-dark { font-size: 1.25rem; }
+  .kpi-card { padding: 16px; }
+  .strip-item-grow { flex: 0 0 100%; }
+  .strip-divider { display: none; }
+  .account-strip { gap: 14px; padding: 14px 16px; }
+  .strip-value { max-width: 160px; }
+  .overdue-btn { width: 100%; justify-content: center; }
+  .payment-row { padding: 12px 16px; }
+  .payments-head { padding: 16px; }
 }
 </style>

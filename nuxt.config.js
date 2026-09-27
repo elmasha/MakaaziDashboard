@@ -38,7 +38,7 @@ export default {
   plugins: ["@/plugins/mapGoogle.client.js","@/plugins/directionsRenderer.js",'@/plugins/chart.js'],
 
   router: {
-    middleware: ["auth"]
+    middleware: ["auth" ]
   },
 
   env: {
@@ -76,13 +76,13 @@ export default {
       "@nuxtjs/firebase",
       {
         config: {
-          apiKey: "AIzaSyAF1CYyGUcM2d_Ut1jvkCFiT9n2bS-JIwc",
-          authDomain: "mock-26efe.firebaseapp.com",
-          projectId: "mock-26efe",
-          storageBucket: "mock-26efe.appspot.com",
-          messagingSenderId: "860033241212",
-          appId: "1:860033241212:web:b9e62b50103ad2170d39f9",
-          measurementId: "G-C1KR12P7KT"
+          apiKey: "AIzaSyAQk97EiEFViRl2DND60UR-SowAsdEAJxs",
+          authDomain: "makaazi-5d6aa.firebaseapp.com",
+          projectId: "makaazi-5d6aa",
+          storageBucket: "makaazi-5d6aa.firebasestorage.app",
+          messagingSenderId: "455915424946",
+          appId: "1:455915424946:web:b4ee4fba8475c2b46a8dab",
+          measurementId: "G-FN1YLGL5WN"
         },
         services: {
           auth: {

@@ -7,11 +7,11 @@
       v-if="!nav_bars"
       permanent
       width="260"
-      class="elevation-1 sidebar-glass"
+      class="elevation-0 sidebar-glass"
     >
       <div class="pa-6 pb-4">
         <div class="d-flex align-center cursor-pointer brand-hover" @click="goTo(dashboardRoute)">
-          <v-avatar color="#8051FF" size="46" class="elevation-2 mr-3">
+          <v-avatar color="#8051FF" size="46" class="elevation-3 mr-3 brand-avatar">
             <v-icon color="white" size="24">mdi-home-city</v-icon>
           </v-avatar>
           <div>
@@ -30,7 +30,7 @@
           @click="goTo(item.route)"
           link
           class="mb-1 rounded-xl nav-item-premium"
-          :class="{ 'purple lighten-5 purple--text': isActive(item.route) }"
+          :class="{ 'nav-item-active': isActive(item.route) }"
           :style="{ 'animation-delay': idx * 50 + 'ms' }"
         >
           <v-list-item-icon class="mr-3">
@@ -39,7 +39,10 @@
             </v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title class="font-weight-semibold text-body-2">
+            <v-list-item-title
+              class="font-weight-semibold text-body-2"
+              :class="{ 'purple--text': isActive(item.route) }"
+            >
               {{ item.title }}
             </v-list-item-title>
           </v-list-item-content>
@@ -48,11 +51,14 @@
 
       <template v-slot:append>
         <div class="pa-4 pb-6">
+          <div class="help-card mb-4">
+            <v-icon color="#8051FF" size="22" class="mb-2">mdi-lifebuoy</v-icon>
+            <div class="help-title">Need help?</div>
+            <div class="help-sub">Contact your estate office</div>
+          </div>
           <v-btn
-            block
-            outlined
-            color="#8051FF"
-            class="rounded-xl text-capitalize mt-3 font-weight-medium"
+            block outlined color="#8051FF"
+            class="rounded-xl text-capitalize font-weight-medium signout-btn"
             @click="logout"
           >
             <v-icon left size="18" color="#8051FF">mdi-logout</v-icon>
@@ -92,16 +98,21 @@
          ============================================================ -->
     <v-main :class="nav_bars ? 'pb-16' : ''" class="main-premium">
       <!-- HEADER -->
-      <div class="sticky-header-premium px-4 px-sm-6 py-3">
+      <div class="sticky-header-premium px-4 px-sm-6 py-4">
         <v-container fluid class="pa-0">
           <v-row align="center" no-gutters>
             <v-col cols="8" sm="6">
               <div class="d-flex align-center">
-                <v-btn icon small class="mr-2" @click="goTo(dashboardRoute)">
-                  <v-icon>mdi-chevron-left</v-icon>
+                <v-btn
+                  icon
+                  small
+                  class="mr-2 back-btn"
+                  @click="goTo(dashboardRoute)"
+                >
+                  <v-icon size="20">mdi-arrow-left</v-icon>
                 </v-btn>
-                <div>
-                  <div class="d-flex align-center">
+                <div class="header-text">
+                  <div class="d-flex align-center flex-wrap">
                     <h1 class="text-h6 text-sm-h5 font-weight-bold text--primary page-title">
                       Payment Summary
                     </h1>
@@ -115,7 +126,7 @@
                     </v-chip>
                   </div>
                   <div class="d-flex align-center mt-1">
-                    <v-icon x-small color="success" class="mr-1">mdi-circle</v-icon>
+                    <v-icon x-small :color="headerStatusColor" class="mr-1">mdi-circle</v-icon>
                     <span class="text-caption text--secondary">
                       {{ rows.length }} household{{ rows.length === 1 ? '' : 's' }} in your estate
                     </span>
@@ -155,7 +166,7 @@
                 <span>Refresh</span>
               </v-tooltip>
 
-              <v-avatar color="#8051FF" size="36" class="ml-1">
+              <v-avatar color="#8051FF" size="38" class="ml-1 avatar-glow">
                 <v-img :src="avatarUrl" />
               </v-avatar>
             </v-col>
@@ -163,81 +174,49 @@
         </v-container>
       </div>
 
-      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-2 pt-sm-4 pb-8">
+      <v-container :fluid="nav_bars" class="px-4 px-sm-6 pt-3 pt-sm-5 pb-8">
         <!-- ============================================================
-             HERO / SUMMARY CARD
+             HERO / SUMMARY CARD — upgraded
              ============================================================ -->
-        <v-row class="reveal-card">
-          <v-col cols="12">
-            <v-card class="rounded-2xl" elevation="0" outlined>
-              <div class="pa-4 pa-sm-6">
-                <div class="d-flex align-center flex-wrap">
-                  <v-avatar color="#8051FF" size="52" class="mr-3">
-                    <span class="white--text font-weight-bold" style="font-size: 1.05rem;">
-                      {{ ownerInitials }}
-                    </span>
-                  </v-avatar>
-                  <div class="flex-grow-1">
-                    <div class="purple--text font-weight-bold" style="font-size: 1.05rem;">
-                      {{ household.primary_owner || 'Resident' }}
-                    </div>
-                    <div class="text-caption text--secondary">
-                      {{ [household.section, household.court, household.street].filter(Boolean).join(' · ') || '—' }}
-                    </div>
-                  </div>
-                  <v-chip
-                    small
-                    label
-                    class="font-weight-bold"
-                    :color="statusChipColor"
-                    :text-color="statusChipTextColor"
-                  >
-                    <v-icon x-small left>{{ statusIcon }}</v-icon>
-                    {{ numbers.status }}
-                  </v-chip>
-                </div>
-
-                <v-divider class="my-4" />
-
-                <v-row dense>
-                  <v-col cols="6" sm="3">
-                    <div class="text-caption text--secondary">Balance B/F</div>
-                    <div class="font-weight-bold text--primary" style="font-size: 1.05rem;">
-                      KES {{ formatNum(numbers.balance_brought_forward) }}
-                    </div>
-                  </v-col>
-                  <v-col cols="6" sm="3">
-                    <div class="text-caption text--secondary">Total paid</div>
-                    <div class="font-weight-bold text--primary" style="font-size: 1.05rem;">
-                      KES {{ formatNum(numbers.total_paid) }}
-                    </div>
-                  </v-col>
-                  <v-col cols="6" sm="3" class="mt-3 mt-sm-0">
-                    <div class="text-caption text--secondary">Due YTD</div>
-                    <div class="font-weight-bold text--primary" style="font-size: 1.05rem;">
-                      KES {{ formatNum(numbers.due_to_date) }}
-                    </div>
-                  </v-col>
-                  <v-col cols="6" sm="3" class="mt-3 mt-sm-0">
-                    <div class="text-caption text--secondary">
-                      {{ numbers.overdue > 0 ? 'Overdue' : 'Prepaid' }}
-                    </div>
-                    <div
-                      class="font-weight-bold"
-                      :class="numbers.overdue > 0 ? 'red--text' : 'green--text'"
-                      style="font-size: 1.05rem;"
-                    >
-                      KES {{ formatNum(numbers.overdue > 0 ? numbers.overdue : numbers.prepaid) }}
-                    </div>
-                  </v-col>
-                </v-row>
+        <div class="hero-card reveal-card">
+          <div class="hero-head">
+            <div class="hero-avatar">{{ ownerInitials }}</div>
+            <div class="hero-info">
+              <div class="hero-name">{{ household.primary_owner || 'Resident' }}</div>
+              <div class="hero-address">
+                {{ [household.section, household.court, household.street].filter(Boolean).join(' · ') || '—' }}
               </div>
-            </v-card>
-          </v-col>
-        </v-row>
+            </div>
+            <div class="hero-status" :class="statusChipClass">
+              <v-icon size="14">{{ statusIcon }}</v-icon>
+              <span>{{ numbers.status }}</span>
+            </div>
+          </div>
+
+          <div class="hero-grid">
+            <div class="hero-metric">
+              <div class="metric-label">Balance B/F</div>
+              <div class="metric-value">KES {{ formatNum(numbers.balance_brought_forward) }}</div>
+            </div>
+            <div class="hero-metric">
+              <div class="metric-label">Total paid</div>
+              <div class="metric-value">KES {{ formatNum(numbers.total_paid) }}</div>
+            </div>
+            <div class="hero-metric">
+              <div class="metric-label">Due YTD</div>
+              <div class="metric-value">KES {{ formatNum(numbers.due_to_date) }}</div>
+            </div>
+            <div class="hero-metric">
+              <div class="metric-label">{{ numbers.overdue > 0 ? 'Overdue' : 'Prepaid' }}</div>
+              <div class="metric-value" :class="numbers.overdue > 0 ? 'text-red' : 'text-green'">
+                KES {{ formatNum(numbers.overdue > 0 ? numbers.overdue : numbers.prepaid) }}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- ============================================================
-             ALL HOUSEHOLDS TABLE — horizontal 12 months
+             ALL HOUSEHOLDS TABLE — UNCHANGED
              ============================================================ -->
         <v-row class="mt-4 reveal-card" style="animation-delay: 100ms">
           <v-col cols="12">
@@ -381,78 +360,69 @@
         </v-row>
 
         <!-- ============================================================
-             DETAILED RECORDS (my own only)
+             DETAILED RECORDS — upgraded
              ============================================================ -->
-        <v-row class="mt-4 reveal-card" style="animation-delay: 150ms">
-          <v-col cols="12">
-            <v-card class="rounded-2xl" elevation="0" outlined>
-              <v-card-title class="px-4 px-sm-6 py-4 card-header-premium d-flex align-center">
-                <v-avatar color="purple lighten-5" size="36" class="mr-3">
-                  <v-icon color="#8051FF">mdi-history</v-icon>
-                </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="text-h6 font-weight-bold text--primary">My detailed records</div>
-                  <div class="text-caption text--secondary">
-                    {{ filteredPayments.length }} transaction{{ filteredPayments.length === 1 ? '' : 's' }} in {{ year }}
-                  </div>
-                </div>
-                <v-text-field
-                  v-model="search"
-                  placeholder="Search"
-                  dense
-                  outlined
-                  rounded
-                  hide-details
-                  prepend-inner-icon="mdi-magnify"
-                  class="search-field-premium hidden-xs-only"
-                  style="max-width: 220px"
-                  clearable
-                />
-              </v-card-title>
-              <v-divider></v-divider>
-
-              <div v-if="loading && !payments.length" class="pa-6">
-                <v-skeleton-loader type="list-item-two-line, list-item-two-line, list-item-two-line" />
+        <div class="panel-card mt-4 reveal-card" style="animation-delay: 150ms">
+          <div class="panel-head">
+            <div class="panel-icon panel-icon-lime">
+              <v-icon size="20" color="#0A0A14">mdi-history</v-icon>
+            </div>
+            <div class="panel-title-group">
+              <div class="panel-title">My detailed records</div>
+              <div class="panel-sub">
+                {{ filteredPayments.length }} transaction{{ filteredPayments.length === 1 ? '' : 's' }} in {{ year }}
               </div>
+            </div>
+            <v-text-field
+              v-model="search"
+              placeholder="Search"
+              dense
+              outlined
+              rounded
+              hide-details
+              prepend-inner-icon="mdi-magnify"
+              class="search-field-premium hidden-xs-only"
+              style="max-width: 220px"
+              clearable
+            />
+          </div>
 
-              <div v-else-if="!filteredPayments.length" class="pa-12 text-center">
-                <v-icon size="56" color="grey lighten-2">mdi-receipt-text-outline</v-icon>
-                <div class="text-h6 grey--text text--darken-1 mt-3">No transactions</div>
-                <div class="text-body-2 grey--text">
-                  {{ search ? 'No matches for that search.' : `You haven't made any payments for ${year}.` }}
+          <div v-if="loading && !payments.length" class="pa-6">
+            <v-skeleton-loader type="list-item-two-line, list-item-two-line, list-item-two-line" />
+          </div>
+
+          <div v-else-if="!filteredPayments.length" class="empty-block">
+            <div class="empty-icon">
+              <v-icon size="36" color="#cbd5e1">mdi-receipt-text-outline</v-icon>
+            </div>
+            <div class="empty-title">No transactions</div>
+            <div class="empty-sub">
+              {{ search ? 'No matches for that search.' : `You haven't made any payments for ${year}.` }}
+            </div>
+          </div>
+
+          <div v-else class="payments-list">
+            <div
+              v-for="(p, i) in filteredPayments"
+              :key="p.payment_id || p.id || i"
+              class="payment-row"
+            >
+              <div class="payment-icon">
+                <v-icon size="18" color="#3f6b00">mdi-cash-check</v-icon>
+              </div>
+              <div class="payment-body">
+                <div class="payment-title">{{ p.transaction_id }}</div>
+                <div class="payment-sub">
+                  {{ p.payment_method }} · {{ formatDate(p.payment_date || p.created_at) }}
                 </div>
               </div>
-
-              <v-list v-else class="pa-0">
-                <template v-for="(p, i) in filteredPayments">
-                  <v-list-item :key="p.payment_id || p.id" class="py-3 px-4 px-sm-6 hover-row">
-                    <v-list-item-avatar color="green lighten-5" size="40">
-                      <v-icon color="green darken-2" small>mdi-cash-check</v-icon>
-                    </v-list-item-avatar>
-                    <v-list-item-content>
-                      <v-list-item-title class="font-weight-semibold text--primary">
-                        {{ p.transaction_id }}
-                      </v-list-item-title>
-                      <v-list-item-subtitle class="text-caption text--secondary">
-                        {{ p.payment_method }} · {{ formatDate(p.payment_date || p.created_at) }}
-                      </v-list-item-subtitle>
-                    </v-list-item-content>
-                    <v-list-item-action>
-                      <span class="font-weight-bold text--primary">
-                        {{ formatNum(p.amount_paid) }}
-                      </span>
-                    </v-list-item-action>
-                  </v-list-item>
-                  <v-divider
-                    v-if="i < filteredPayments.length - 1"
-                    :key="`d-${p.payment_id || p.id}`"
-                    inset
-                  />
-                </template>
-              </v-list>
-            </v-card>
-          </v-col>
-        </v-row>
+              <div class="payment-amount">
+                <span class="payment-currency">KES</span>
+                <span class="payment-value">{{ formatNum(p.amount_paid) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </v-container>
 
       <v-snackbar
@@ -500,7 +470,6 @@ export default {
       myHouseholdId: null,
       year: new Date().getFullYear(),
 
-      // Logged-in resident's own info
       household: {
         primary_owner: "",
         section: "",
@@ -510,13 +479,9 @@ export default {
         contact_number: "",
       },
 
-      // Full household record for merge-in
       myHouseholdRecord: null,
-
-      // All households in the estate
       rows: [],
 
-      // Logged-in resident's own monthly breakdown
       numbers: {
         balance_brought_forward: 0,
         total_paid: 0,
@@ -587,18 +552,16 @@ export default {
       return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
     },
 
-    statusChipColor() {
-      const s = this.numbers.status;
-      if (s === "Overdue") return "red lighten-5";
-      if (s === "Prepaid") return "green lighten-5";
-      return "purple lighten-5";
+    headerStatusColor() {
+      if (this.numbers.overdue > 0) return 'amber darken-2';
+      return 'success';
     },
 
-    statusChipTextColor() {
+    statusChipClass() {
       const s = this.numbers.status;
-      if (s === "Overdue") return "red darken-2";
-      if (s === "Prepaid") return "green darken-2";
-      return "purple darken-2";
+      if (s === "Overdue") return "hero-status-red";
+      if (s === "Prepaid") return "hero-status-green";
+      return "hero-status-purple";
     },
 
     statusIcon() {
@@ -661,10 +624,6 @@ export default {
       }
     },
 
-    /**
-     * Robust "is this my row?" check.
-     * Matches by UID (Firebase) OR by household_id.
-     */
     isMe(row) {
       if (!row) return false;
       if (this.uid && row.uid && row.uid === this.uid) return true;
@@ -678,9 +637,6 @@ export default {
       return false;
     },
 
-    // =====================================================
-    // AUTH
-    // =====================================================
     waitForAuthAndLoad() {
       const that = this;
       const current = that.$fire?.auth?.currentUser;
@@ -707,17 +663,14 @@ export default {
       if (!this.uid) return;
       this.loading = true;
 
-      // 1. Resolve our own household first (needed by fetches below)
       await this.resolveHousehold();
 
-      // 2. Fetch everything in parallel
       await Promise.allSettled([
         this.fetchSummary(),
         this.fetchEstateRows(),
         this.fetchMyPayments(),
       ]);
 
-      // 3. Ensure our own row is always in the table
       this.ensureSelfInRows();
 
       this.loading = false;
@@ -740,20 +693,12 @@ export default {
           };
           this.estateId = data.estate_id || null;
           this.myHouseholdId = data.household_id || null;
-          console.log("🔵 My household:", {
-            id: this.myHouseholdId,
-            uid: this.uid,
-            name: this.household.primary_owner,
-          });
         }
       } catch (err) {
         console.warn("Could not resolve household:", err.message);
       }
     },
 
-    // =====================================================
-    // MY SUMMARY (for the hero card)
-    // =====================================================
     async fetchSummary() {
       const url = `${API}/households/payment-summary/${this.uid}?year=${this.year}`;
       try {
@@ -789,9 +734,6 @@ export default {
       }
     },
 
-    // =====================================================
-    // ESTATE-WIDE ROWS
-    // =====================================================
     async fetchEstateRows() {
       if (!this.estateId) {
         this.rows = [];
@@ -836,23 +778,17 @@ export default {
       }
     },
 
-    /**
-     * Guarantee the logged-in user's own row is present and on top.
-     * If the backend didn't return it, we build one from our local state.
-     */
     ensureSelfInRows() {
       if (!this.uid && this.myHouseholdId == null) return;
 
       const existingIdx = this.rows.findIndex((r) => this.isMe(r));
 
       if (existingIdx >= 0) {
-        // Already present — move to top, keep the backend data
         const [mine] = this.rows.splice(existingIdx, 1);
         this.rows.unshift(mine);
         return;
       }
 
-      // Not present — construct a row from local state
       const monthMap = {};
       for (const m of this.months) {
         const num = m.month_number || this.monthNumberFromName(m.month);
@@ -891,13 +827,9 @@ export default {
         december: monthMap.december || 0,
       };
 
-      console.log("🔵 Self row not in backend data — inserted locally:", selfRow);
       this.rows.unshift(selfRow);
     },
 
-    // =====================================================
-    // MY DETAILED PAYMENTS
-    // =====================================================
     async fetchMyPayments() {
       try {
         const hh = await axios.get(`${API}/households/getHouseHoldId/${this.uid}`);
@@ -921,9 +853,6 @@ export default {
       }
     },
 
-    // =====================================================
-    // HELPERS
-    // =====================================================
     monthKey(monthNumber) {
       const keys = [
         "january", "february", "march", "april", "may", "june",
@@ -995,84 +924,345 @@ export default {
 </script>
 
 <style scoped>
+/* ============================================================
+   BASE
+   ============================================================ */
 .cursor-pointer { cursor: pointer; }
-.bg-surface { background-color: #f8fafc !important; }
+.bg-surface { background-color: #f6f7fb !important; }
 .rounded-2xl { border-radius: 20px !important; }
 .h-100 { height: 100%; }
 .tracking-wide { letter-spacing: 0.08em; }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.reveal-card { animation: fadeInUp 0.6s ease-out both; }
+.reveal-card { animation: fadeInUp 0.5s ease-out both; }
 
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
 .sidebar-glass {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-right: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  border-right: 1px solid #eef1f6 !important;
 }
 .brand-text { letter-spacing: -0.5px; }
 .brand-hover { transition: opacity 0.2s; }
-.brand-hover:hover { opacity: 0.8; }
-
+.brand-hover:hover { opacity: 0.85; }
+.brand-avatar {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%) !important;
+  box-shadow: 0 12px 24px -12px rgba(128, 81, 255, 0.7);
+}
 .nav-item-premium {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 4px;
   border-radius: 12px !important;
 }
 .nav-item-premium:hover {
   background-color: rgba(128, 81, 255, 0.06);
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
+.nav-item-active { background: rgba(128, 81, 255, 0.09) !important; }
+.help-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(128, 81, 255, 0.08) 0%, rgba(155, 108, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.12);
+}
+.help-title { font-size: 0.82rem; font-weight: 800; color: #0f0d24; }
+.help-sub { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+.signout-btn:hover { background: rgba(128, 81, 255, 0.06); }
 
+/* ============================================================
+   HEADER
+   ============================================================ */
 .main-premium { scroll-behavior: smooth; }
 .sticky-header-premium {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: rgba(248, 250, 252, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid transparent;
-  transition: all 0.3s ease;
+  background: rgba(246, 247, 251, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
-.page-title { letter-spacing: -0.5px; }
-.refresh-btn { transition: all 0.2s ease; }
-.refresh-btn:hover { border-color: #8051FF; color: #8051FF !important; }
+.page-title { letter-spacing: -0.6px; }
+.header-text { min-width: 0; }
 
-.year-select ::v-deep .v-input__slot { background: white !important; }
-
-.card-header-premium {
-  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+.back-btn {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  transition: all 0.2s ease;
 }
-
-.hover-row { transition: background-color 0.2s ease; }
-.hover-row:hover { background-color: #f8fafc !important; }
-
-.search-field-premium ::v-deep .v-input__slot { transition: all 0.25s ease; }
-.search-field-premium ::v-deep .v-input__slot:hover,
-.search-field-premium.v-input--is-focused ::v-deep .v-input__slot {
-  box-shadow: 0 2px 8px rgba(128, 81, 255, 0.1);
+.back-btn:hover {
+  background: rgba(128, 81, 255, 0.06);
+  border-color: rgba(128, 81, 255, 0.3);
 }
 
-.scroll-hint {
+.refresh-btn {
+  background: #ffffff !important;
+  transition: all 0.2s ease;
+}
+.refresh-btn:hover {
+  border-color: #8051FF;
+  color: #8051FF !important;
+}
+
+.avatar-glow { box-shadow: 0 8px 18px -8px rgba(128, 81, 255, 0.6); }
+.year-select ::v-deep .v-input__slot { background: #ffffff !important; }
+
+/* ============================================================
+   HERO CARD
+   ============================================================ */
+.hero-card {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.hero-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.hero-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.hero-info { flex: 1; min-width: 0; }
+.hero-name {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero-address {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  margin-top: 3px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.hero-status-purple { background: rgba(128, 81, 255, 0.12); color: #8051ff; }
+.hero-status-green  { background: rgba(122, 184, 0, 0.14); color: #3f6b00; }
+.hero-status-red    { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 20px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #f1f5f9;
+}
+@media (min-width: 600px) {
+  .hero-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.hero-metric { min-width: 0; }
+.metric-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 4px;
+}
+.metric-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.text-red { color: #dc2626; }
+.text-green { color: #3f6b00; }
+
+/* ============================================================
+   PANEL (Detailed records)
+   ============================================================ */
+.panel-card {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+}
+.panel-title-group { flex: 1; min-width: 0; }
+.panel-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.panel-icon-lime {
+  background: linear-gradient(135deg, #d4ff4a 0%, #b6ff00 100%);
+  box-shadow: 0 10px 22px -10px rgba(182, 255, 0, 0.6);
+}
+.panel-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.panel-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
 }
 
+/* Payments list */
+.payments-list { padding: 6px 0; }
+.payment-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  transition: background 0.15s ease;
+}
+.payment-row:hover { background: #fafbff; }
+.payment-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: rgba(122, 184, 0, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.payment-body { flex: 1; min-width: 0; }
+.payment-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.payment-sub {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.payment-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.payment-currency {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.payment-value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f0d24;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Empty state */
+.empty-block {
+  padding: 48px 20px;
+  text-align: center;
+}
+.empty-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  background: #f6f7fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+.empty-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f0d24;
+}
+.empty-sub {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  margin-top: 4px;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   SEARCH + SNACKBAR + MOBILE NAV
+   ============================================================ */
+.search-field-premium ::v-deep .v-input__slot {
+  background: #f6f7fb !important;
+  transition: all 0.25s ease;
+}
+.search-field-premium.v-input--is-focused ::v-deep .v-input__slot {
+  background: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(128, 81, 255, 0.12);
+}
 .snackbar-premium ::v-deep .v-snackbar__content { padding: 12px 20px; }
 
 .bottom-nav-premium {
-  border-top: 1px solid #e2e8f0 !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px);
+  border-top: 1px solid #eef1f6 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(14px);
 }
 .mobile-nav-btn { min-width: 0 !important; }
-.mobile-nav-label { font-size: 10px; margin-top: 2px; }
+.mobile-nav-label {
+  font-size: 10px;
+  margin-top: 2px;
+  font-weight: 700;
+}
 
 /* ============================================================
-   TABLE — with TWO sticky columns
+   TABLE — UNTOUCHED (same as original)
    ============================================================ */
 .table-scroll {
   overflow-x: auto;
@@ -1087,9 +1277,7 @@ export default {
   background: #e2e8f0;
   border-radius: 5px;
 }
-.table-scroll::-webkit-scrollbar-thumb:hover {
-  background: #c7b8ff;
-}
+.table-scroll::-webkit-scrollbar-thumb:hover { background: #c7b8ff; }
 
 .payment-table {
   border-collapse: separate;
@@ -1098,7 +1286,6 @@ export default {
   min-width: 1500px;
   font-size: 0.82rem;
 }
-
 .payment-table thead th {
   position: sticky;
   top: 0;
@@ -1113,7 +1300,6 @@ export default {
   white-space: nowrap;
   z-index: 2;
 }
-
 .th-num { text-align: right; }
 .th-index { min-width: 44px; }
 .th-name { text-align: left; min-width: 220px; }
@@ -1122,7 +1308,6 @@ export default {
 .th-total { color: #8051FF; min-width: 110px; }
 .th-eq { min-width: 80px; }
 .th-past { color: #1e293b; }
-
 .th-sticky {
   position: sticky;
   left: 0;
@@ -1131,7 +1316,6 @@ export default {
   width: 44px;
   min-width: 44px;
 }
-
 .th-sticky-2 {
   position: sticky;
   left: 44px;
@@ -1139,18 +1323,13 @@ export default {
   z-index: 4;
   box-shadow: 1px 0 0 #e2e8f0;
 }
-
 .payment-table tbody td {
   padding: 14px 12px;
   border-bottom: 1px solid #f1f5f9;
   color: #475569;
   white-space: nowrap;
 }
-
-.payment-table tbody tr:hover td {
-  background: #fafbff;
-}
-
+.payment-table tbody tr:hover td { background: #fafbff; }
 .td-sticky {
   position: sticky;
   left: 0;
@@ -1163,7 +1342,6 @@ export default {
   font-weight: 600;
   font-family: inherit;
 }
-
 .td-sticky-2 {
   position: sticky;
   left: 44px;
@@ -1173,31 +1351,19 @@ export default {
   text-align: left;
   font-family: inherit;
 }
-
 .payment-table tbody tr:hover .td-sticky,
-.payment-table tbody tr:hover .td-sticky-2 {
-  background: #fafbff;
-}
-
+.payment-table tbody tr:hover .td-sticky-2 { background: #fafbff; }
 .tr-self .td-sticky,
 .tr-self .td-sticky-2,
-.tr-self td {
-  background: #f5f3ff !important;
-}
-.tr-self td.td-total {
-  background: #ede9fe !important;
-}
-
+.tr-self td { background: #f5f3ff !important; }
+.tr-self td.td-total { background: #ede9fe !important; }
 .td-num {
   text-align: right;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 0.82rem;
 }
-
 .td-name { text-align: left; font-family: inherit; }
-
 .name-cell { display: flex; align-items: center; gap: 10px; }
-
 .name-avatar {
   width: 34px;
   height: 34px;
@@ -1212,9 +1378,7 @@ export default {
   flex-shrink: 0;
   letter-spacing: 0.5px;
 }
-
 .name-text { min-width: 0; }
-
 .name-line {
   font-size: 0.84rem;
   font-weight: 800;
@@ -1223,7 +1387,6 @@ export default {
   align-items: center;
   gap: 4px;
 }
-
 .name-meta {
   font-size: 0.68rem;
   color: #94a3b8;
@@ -1233,33 +1396,25 @@ export default {
   text-overflow: ellipsis;
   max-width: 180px;
 }
-
 .name-meta .dot { color: #cbd5e1; }
-
 .td-bf { color: #64748b; }
-
 .td-month { font-weight: 600; }
 .td-past { background: rgba(128, 81, 255, 0.04); }
 .td-paid { color: #1e293b; font-weight: 700; }
 .td-empty { color: #cbd5e1; }
-
 .month-amount {
   font-family: ui-monospace, SFMono-Regular, monospace;
   display: inline-flex;
   align-items: baseline;
   gap: 3px;
 }
-
 .dash { opacity: 0.35; }
-
 .td-total {
   background: #faf5ff;
   border-left: 1px solid #e2e8f0;
   border-right: 1px solid #e2e8f0;
 }
-
 .amount-strong { font-weight: 800; color: #1e293b; }
-
 .mo-eq {
   display: inline-block;
   padding: 3px 9px;
@@ -1270,10 +1425,19 @@ export default {
   border-radius: 6px;
 }
 
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 599px) {
   .sticky-header-premium { padding-left: 12px; padding-right: 12px; }
   .reveal-card { animation-duration: 0.4s; }
   .payment-table { min-width: 1300px; }
   .name-meta { max-width: 140px; }
+  .hero-card { padding: 16px; }
+  .hero-avatar { width: 46px; height: 46px; font-size: 0.95rem; }
+  .hero-name { font-size: 0.95rem; }
+  .metric-value { font-size: 0.88rem; }
+  .panel-head { padding: 14px 16px; }
+  .payment-row { padding: 12px 16px; }
 }
 </style>

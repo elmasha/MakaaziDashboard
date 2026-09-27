@@ -1,1709 +1,1077 @@
 <template>
-  <div>
-    <v-card color="white" elevation="0">
-      <v-app-bar color="white" light elevation="0">
-        <v-app-bar-nav-icon @click="drawer = true"></v-app-bar-nav-icon>
-
-        <div
-          class="d-flex"
-          style="background-color: #b6ff00; border-radius: 120px; padding: 4px"
-        >
-          <v-avatar color="black" size="28">
-            <span style="color: #b6ff00">El</span>
-          </v-avatar>
-          <v-toolbar-title style="color: black; margin-start: 8px; margin-right: 8px"
-            >Intech</v-toolbar-title
-          >
+  <div class="admin-dashboard">
+    <!-- ============================================================
+         PAGE HEADER
+         ============================================================ -->
+    <div class="page-header">
+      <div>
+        <div class="page-title-row">
+          <h1 class="page-title">Dashboard</h1>
+          <div class="live-pill">
+            <span class="live-dot"></span>
+            Live
+          </div>
         </div>
-
-        <v-spacer></v-spacer>
-        <v-btn icon>
-          <v-icon>mdi-bell</v-icon>
+        <p class="page-sub">
+          Welcome back, {{ adminName || adminEmail || 'Admin' }} · {{ todayLabel }}
+        </p>
+      </div>
+      <div class="page-actions">
+        <v-btn
+          text
+          rounded
+          class="text-capitalize refresh-btn"
+          :loading="loading"
+          @click="refreshAll"
+        >
+          <v-icon left small>mdi-refresh</v-icon>
+          Refresh
         </v-btn>
-        <v-btn icon>
-          <v-icon>mdi-logout</v-icon>
+        <v-btn
+          color="#B6FF00"
+          rounded
+          depressed
+          class="text-capitalize new-estate-btn"
+          @click="$router.push('/admin/new')"
+        >
+          <v-icon left small color="#0A0A14">mdi-plus</v-icon>
+          <span style="color:#0A0A14; font-weight:700;">New estate</span>
         </v-btn>
-      </v-app-bar>
+      </div>
+    </div>
 
-      <v-navigation-drawer v-model="drawer" absolute temporary>
-        <v-list nav dense>
-          <v-list-item-group
-            v-model="group"
-            active-class="deep-purple--text text--accent-4"
-          >
-            <v-list-item>
-              <v-list-item-icon>
-                <v-icon>mdi-home</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Home</v-list-item-title>
-            </v-list-item>
+    <!-- ============================================================
+         KPI CARDS
+         ============================================================ -->
+    <div class="kpi-grid">
+      <!-- Estates -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon kpi-icon-lime">
+            <v-icon size="18" color="#0A0A14">mdi-office-building</v-icon>
+          </div>
+          <div class="kpi-trend kpi-trend-up">
+            <v-icon size="10">mdi-arrow-up</v-icon>
+            {{ stats.active_estates }} active
+          </div>
+        </div>
+        <div class="kpi-label">Total estates</div>
+        <div class="kpi-value">{{ formatNum(stats.total_estates) }}</div>
+        <div class="kpi-footer">
+          <span>{{ stats.total_estates - stats.active_estates }} inactive</span>
+        </div>
+      </div>
 
-            <v-list-item>
-              <v-list-item-icon>
-                <v-icon>mdi-account</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>Account</v-list-item-title>
-            </v-list-item>
-          </v-list-item-group>
-        </v-list>
-      </v-navigation-drawer>
+      <!-- Households -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon kpi-icon-purple">
+            <v-icon size="18" color="white">mdi-home-group</v-icon>
+          </div>
+          <div v-if="stats.pending_households > 0" class="kpi-trend kpi-trend-warn">
+            <v-icon size="10">mdi-alert</v-icon>
+            {{ stats.pending_households }} pending
+          </div>
+        </div>
+        <div class="kpi-label">Approved households</div>
+        <div class="kpi-value">{{ formatNum(stats.total_households) }}</div>
+        <div class="kpi-footer">
+          <span>{{ stats.pending_households }} awaiting approval</span>
+        </div>
+      </div>
 
-      <v-row justify="" align="" class="">
-        <v-col cols="12" sm="12" md="12">
-          <div class="container">
-            <div class="">
-              <v-btn
-                color="black"
-                rounded
-                style="color: white; margin: 12px"
-                to="/addestate"
-              >
-                <v-icon left color="white"> mdi-plus </v-icon>
-                Add new estate
-              </v-btn>
-              <br />
-              <v-spacer></v-spacer>
+      <!-- Revenue YTD -->
+      <div class="kpi-card kpi-card-highlight">
+        <div class="kpi-top">
+          <div class="kpi-icon kpi-icon-lime">
+            <v-icon size="18" color="#0A0A14">mdi-cash-multiple</v-icon>
+          </div>
+          <div class="kpi-trend kpi-trend-up">
+            <v-icon size="10">mdi-arrow-up</v-icon>
+            YTD
+          </div>
+        </div>
+        <div class="kpi-label">Collected this year</div>
+        <div class="kpi-value">
+          <span class="kpi-currency">KES</span>
+          {{ formatNum(stats.collected_this_year) }}
+        </div>
+        <div class="kpi-footer">
+          <span>All-time: KES {{ formatNum(stats.total_collected) }}</span>
+        </div>
+      </div>
+
+      <!-- Officials -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon kpi-icon-purple">
+            <v-icon size="18" color="white">mdi-shield-account</v-icon>
+          </div>
+        </div>
+        <div class="kpi-label">Officials</div>
+        <div class="kpi-value">{{ formatNum(stats.total_officials) }}</div>
+        <div class="kpi-footer">
+          <span>{{ stats.active_subscriptions }} active subscriptions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         RECENT ESTATES
+         ============================================================ -->
+    <div class="section-card">
+      <div class="section-head">
+        <div class="section-head-left">
+          <div class="section-icon">
+            <v-icon size="18" color="#B6FF00">mdi-office-building-outline</v-icon>
+          </div>
+          <div>
+            <div class="section-title">Recent estates</div>
+            <div class="section-sub">Latest onboarded estates across the platform</div>
+          </div>
+        </div>
+        <v-btn
+          text
+          small
+          rounded
+          class="text-capitalize view-all-btn"
+          @click="$router.push('/admin/estates')"
+        >
+          View all
+          <v-icon right small>mdi-arrow-right</v-icon>
+        </v-btn>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="loading && !recentEstates.length" class="section-loading">
+        <v-skeleton-loader type="list-item-avatar-two-line" />
+        <v-skeleton-loader type="list-item-avatar-two-line" />
+        <v-skeleton-loader type="list-item-avatar-two-line" />
+      </div>
+
+      <!-- Empty -->
+      <div v-else-if="!recentEstates.length" class="section-empty">
+        <v-icon size="40" color="#475569">mdi-office-building-outline</v-icon>
+        <div class="section-empty-title">No estates yet</div>
+        <div class="section-empty-text">
+          Onboard your first estate to get started.
+        </div>
+        <v-btn
+          rounded
+          depressed
+          color="#B6FF00"
+          class="mt-4 text-capitalize"
+          @click="$router.push('/admin/estates/new')"
+        >
+          <v-icon left small color="#0A0A14">mdi-plus</v-icon>
+          <span style="color:#0A0A14; font-weight:700;">Create estate</span>
+        </v-btn>
+      </div>
+
+      <!-- List -->
+      <div v-else class="estate-list">
+        <div
+          v-for="(e, i) in recentEstates"
+          :key="e.estate_id"
+          class="estate-row"
+          @click="$router.push(`/admin/estates/${e.estate_id}`)"
+        >
+          <div class="estate-avatar">
+            <span>{{ initialsOf(e.estate_name) }}</span>
+          </div>
+          <div class="estate-body">
+            <div class="estate-name-row">
+              <span class="estate-name">{{ e.estate_name }}</span>
+              <div class="estate-status" :class="`status-${e.status.toLowerCase()}`">
+                {{ e.status }}
+              </div>
             </div>
-            <v-expand-transition>
-              <v-row class="container" v-show="true">
-                <v-col cols="6" sm="2" md="2">
-                  <v-card color="#dadada" elevation="0">
-                    <v-card-subtitle>
-                      <h4>Total Estates</h4>
-                    </v-card-subtitle>
-                    <v-card-actions>
-                      <h2>{{ totalEstate }}</h2>
-                    </v-card-actions>
-                  </v-card>
-                </v-col>
-                <v-col cols="6" sm="2" md="2">
-                  <v-card color="#dadada" elevation="0">
-                    <v-card-subtitle>
-                      <h4>Total HouseHolds</h4>
-                    </v-card-subtitle>
-                    <v-card-actions>
-                      <h2>{{ totalResidence }}</h2>
-                    </v-card-actions>
-                  </v-card>
-                </v-col>
-                <v-col cols="6" sm="2" md="2">
-                  <v-card color="#dadada" elevation="0">
-                    <v-card-subtitle>
-                      <h4>Active Residents</h4>
-                    </v-card-subtitle>
-                    <v-card-actions>
-                      <h2>{{ totalActiveResidence }}</h2>
-                    </v-card-actions>
-                  </v-card>
-                </v-col>
-                <v-col cols="6" sm="2" md="2">
-                  <v-card color="#dadada" elevation="0">
-                    <v-card-subtitle>
-                      <h4>Pending payments</h4>
-                    </v-card-subtitle>
-                    <v-card-actions>
-                      <h2>0</h2>
-                    </v-card-actions>
-                  </v-card>
-                </v-col>
-                <v-col cols="6" sm="2" md="2">
-                  <v-card color="#dadada" elevation="0">
-                    <v-card-subtitle>
-                      <h4>Incidents</h4>
-                    </v-card-subtitle>
-                    <v-card-actions>
-                      <h2>0</h2>
-                    </v-card-actions>
-                  </v-card>
-                </v-col>
-                <v-col cols="6" sm="2" md="2">
-                  <v-card color="#dadada" elevation="0">
-                    <v-card-subtitle>
-                      <h4>Visitors</h4>
-                    </v-card-subtitle>
-                    <v-card-actions>
-                      <h2>0</h2>
-                    </v-card-actions>
-                  </v-card>
-                </v-col>
-              </v-row>
-            </v-expand-transition>
-          </div>
-        </v-col>
-
-        <v-col cols="12" sm="6" md="6">
-          <div class="container">
-            <div class="d-flex" style="margin: 12px">
-              <v-text-field
-                width="200"
-                style="margin: 12px"
-                v-model="estates_search"
-                @change="searchEstate(estates_search)"
-                placeholder="Search for estates"
-                filled
-                rounded
-                clearable
-                dense
-              >
-              </v-text-field>
-              <v-btn
-                style="margin: 12px"
-                fab
-                x-small
-                color="#b6ff00"
-                @click="searchEstate(estates_search)"
-              >
-                <v-icon color="black"> mdi-magnify </v-icon>
-              </v-btn>
-              <v-spacer></v-spacer>
+            <div class="estate-meta">
+              <span class="estate-urn">{{ e.estate_urn }}</span>
+              <span class="meta-dot">·</span>
+              <span>{{ e.estate_location || 'No location' }}</span>
             </div>
-            <v-container>
-              <div class="row text--center" id="all_items">
-                <div v-for="tag in estates" :key="tag.id" class="col-md-4">
-                  <div class="container">
-                    <v-card elevation="0">
-                      <v-img
-                        :src="tag.estate_image"
-                        class="white--text align-end"
-                        gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
-                        height="200px"
-                      >
-                        <v-avatar color="#8051FF" style="margin: 8px">
-                          <v-img :src="tag.logo_url" contain alt="John" height="200" />
-                        </v-avatar>
-                      </v-img>
-                      <div>
-                        <div>
-                          <v-card-text>
-                            <h2 style="font-size: 1.2rem; margin: 0px">
-                              {{ tag.estate_name }}
-                            </h2>
-                            <p style="font-size: 0.8rem; margin: 0px">
-                              {{ tag.estateURN }}
-                            </p>
-                            <p style="font-size: 0.6rem; margin: 0px">
-                              {{ tag.estate_streetName }}
-                            </p>
-                          </v-card-text>
-                        </div>
-                        <div class="d-flex" style="margin: 12px">
-                          <div>
-                            <v-btn
-                              icon
-                              @click="
-                                (dialog = true),
-                                  (estate_name = tag.estate_name),
-                                  (estateURN = tag.estateURN),
-                                  (estate_id = tag.estate_id),
-                                  Fetch_EstateOfficials(tag.estate_id)
-                              "
-                              color="black"
-                            >
-                              <div class="">
-                                <v-icon large color="black">mdi-account-plus</v-icon>
-                                <span style="margin-top: 4px; color: white">
-                                  <strong>{{ tag.likes }}</strong>
-                                </span>
-                              </div> </v-btn
-                            ><br />
-                          </div>
-                          <!-- <v-nuxt-link
-                          style="text-decoration: none"
-                          :to="`/post/${tag.id}`"
-                        >
-
-                        </v-nuxt-link> -->
-                          <v-spacer></v-spacer>
-                          <v-btn color="black" :to="`/estate/${tag.estate_id}`">
-                            <v-icon color="white">mdi-share-outline</v-icon>
-                          </v-btn>
-                        </div>
-                      </div>
-                    </v-card>
-                  </div>
-                </div>
-              </div>
-            </v-container>
           </div>
-        </v-col>
-        <v-col cols="12" sm="6" md="6" lg="6">
-          <v-row>
-            <v-col cols="12" sm="12" md="12">
-              <v-subheader> <h4>Estate Map Location</h4> </v-subheader>
-              <div class="container">
-                <Map />
+          <div class="estate-stats">
+            <div class="estate-stat">
+              <div class="estate-stat-value">{{ e.household_count }}</div>
+              <div class="estate-stat-label">households</div>
+            </div>
+            <div class="estate-stat">
+              <div class="estate-stat-value">{{ e.official_count }}</div>
+              <div class="estate-stat-label">officials</div>
+            </div>
+            <div class="estate-stat">
+              <div class="estate-stat-value">
+                {{ formatNumShort(e.total_collected) }}
               </div>
-            </v-col>
-            <v-col cols="12" sm="6" md="6" lg="6">
-              <div>
-                <div class="container">
-                  <v-subheader>HouseHolds</v-subheader>
-                  <div class="d-flex" style="margin: 12px">
-                    <v-text-field
-                      width="200"
-                      style="margin: 12px"
-                      v-model="pay_search"
-                      @change="searchPayments(pay_search)"
-                      placeholder="Search for payment"
-                      filled
-                      rounded
-                      clearable
-                      dense
-                    >
-                    </v-text-field>
-                    <v-btn
-                      style="margin: 12px"
-                      fab
-                      x-small
-                      color="black"
-                      @click="searchPayments(pay_search)"
-                    >
-                      <v-icon color="white"> mdi-magnify </v-icon>
-                    </v-btn>
-                    <v-spacer></v-spacer>
-                  </div>
-                </div>
-                <div class="container" id="all_items">
-                  <v-list subheader>
-                    <v-list-item v-for="chat in houseHolds" :key="chat.primary_owner">
-                      <v-list-item
-                        @click="
-                          (householdOwner = chat.primary_owner),
-                            getToken(chat.household_id)
-                        "
-                      >
-                        <v-list-item-avatar>
-                          <v-avatar color="#b6ff00" size="56">{{
-                            chat.primary_owner.substring(0, 2)
-                          }}</v-avatar>
-                        </v-list-item-avatar>
-
-                        <v-list-item-content>
-                          <v-list-item-title
-                            v-text="chat.primary_owner"
-                          ></v-list-item-title>
-                        </v-list-item-content>
-
-                        <v-list-item-icon>
-                          <v-icon :color="chat.active ? 'blue' : 'grey'">
-                            mdi-check-decagram
-                          </v-icon>
-                        </v-list-item-icon>
-                      </v-list-item>
-                    </v-list-item>
-                  </v-list>
-                </div>
-              </div>
-            </v-col>
-            <v-col cols="12" sm="6" md="6" lg="6">
-              <div class="container">
-                <div>
-                  <v-subheader>Recent payments</v-subheader>
-                  <div class="d-flex" style="margin: 12px">
-                    <v-text-field
-                      width="200"
-                      style="margin: 12px"
-                      v-model="pay_search"
-                      @change="searchPayments(pay_search)"
-                      placeholder="Search for payment"
-                      filled
-                      rounded
-                      clearable
-                      dense
-                    >
-                    </v-text-field>
-                    <v-btn
-                      style="margin: 12px"
-                      fab
-                      x-small
-                      color="black"
-                      @click="searchPayments(pay_search)"
-                    >
-                      <v-icon color="white"> mdi-magnify </v-icon>
-                    </v-btn>
-                    <v-spacer></v-spacer>
-                  </div>
-                </div>
-                <div class="container" id="all_items">
-                  <v-list subheader three-line>
-                    <v-list-item-group active-class="pink--text" multiple>
-                      <template v-for="(item, index) in payments">
-                        <v-list-item :key="item.transaction_type">
-                          <template v-slot:default="{ active }">
-                            <v-list-item-content>
-                              <v-list-item-title
-                                v-text="item.estate_name"
-                              ></v-list-item-title>
-
-                              <v-list-item-subtitle
-                                class="text--primary"
-                                v-text="item.transaction_id"
-                              ></v-list-item-subtitle>
-
-                              <v-list-item-subtitle
-                                v-text="item.transaction_type"
-                              ></v-list-item-subtitle>
-                            </v-list-item-content>
-
-                            <v-list-item-action>
-                              <v-list-item-action-text
-                                v-text="item.total_paid"
-                              ></v-list-item-action-text>
-                            </v-list-item-action>
-                          </template>
-                        </v-list-item>
-
-                        <v-divider
-                          v-if="index < items.length - 1"
-                          :key="index"
-                        ></v-divider>
-                      </template>
-                    </v-list-item-group>
-                  </v-list>
-                </div>
-              </div>
-            </v-col>
-          </v-row>
-        </v-col>
-        <v-col cols="12" sm="6" md="6" lg="6"> </v-col>
-        <v-col cols="12" sm="6" md="6" lg="6">
-          <div class="">
-            <v-row>
-              <v-col cols="12" sm="6" md="6"> </v-col>
-              <v-col cols="12" sm="6" md="6"> </v-col>
-            </v-row>
+              <div class="estate-stat-label">collected</div>
+            </div>
           </div>
-        </v-col>
-        <v-col cols="12" sm="12" md="12"> </v-col>
-      </v-row>
+          <v-icon size="18" color="#475569" class="estate-chevron">mdi-chevron-right</v-icon>
+        </div>
+      </div>
+    </div>
 
-      <v-snackbar
-        color="primary accent-8"
-        :timeout="6000"
-        v-model="snackbar_s"
-        centered
-        bottom
-      >
-        {{ snackbarText_s }}
-      </v-snackbar>
-      <v-snackbar color="success" :timeout="2000" v-model="snackbar" outlined center>
-        {{ snackbarText }}
-      </v-snackbar>
-      <v-snackbar color="error" :timeout="2500" v-model="snackbar2" outlined center>
-        {{ snackbarText2 }}
-      </v-snackbar>
-    </v-card>
-    <v-row justify="space-around">
-      <v-col cols="auto">
-        <v-dialog v-model="dialog" transition="dialog-top-transition" max-width="600">
-          <!-- <template v-slot:activator="{ on, attrs }">
-            <v-btn color="primary" v-bind="attrs" v-on="on">From the top</v-btn>
-          </template> -->
-          <template v-slot:default="dialog">
-            <v-card>
-              <v-toolbar color="#b6ff00" light
-                >Add Official/Agent
-                <br />
+    <!-- ============================================================
+         QUICK ACTIONS
+         ============================================================ -->
+    <div class="quick-grid">
+      <div class="quick-card" @click="$router.push('/admin/estates/new')">
+        <div class="quick-icon quick-icon-lime">
+          <v-icon size="20" color="#0A0A14">mdi-plus-circle-outline</v-icon>
+        </div>
+        <div class="quick-title">Create estate</div>
+        <div class="quick-sub">Onboard a new estate</div>
+      </div>
 
-                <v-spacer></v-spacer>
-                <v-card-actions class="justify-end">
-                  <v-btn text @click="dialog.value = false">Close</v-btn>
-                </v-card-actions>
-              </v-toolbar>
-              <v-card-text>
-                <div class="text-span pa-2">
-                  <h2>{{ estate_name }}</h2>
-                  <br />
-                  <h3>{{ estateURN }}</h3>
-                </div>
-              </v-card-text>
+      <div class="quick-card" @click="$router.push('/admin/estates')">
+        <div class="quick-icon quick-icon-purple">
+          <v-icon size="20" color="white">mdi-office-building-outline</v-icon>
+        </div>
+        <div class="quick-title">Manage estates</div>
+        <div class="quick-sub">View, edit, archive</div>
+      </div>
 
-              <div class="container">
-                <div class="">
-                  <v-select
-                    v-model="role"
-                    :items="roles"
-                    label="Role"
-                    flat
-                    required
-                  ></v-select>
+      <div class="quick-card" @click="$router.push('/admin/audit-logs')">
+        <div class="quick-icon quick-icon-purple">
+          <v-icon size="20" color="white">mdi-history</v-icon>
+        </div>
+        <div class="quick-title">Audit logs</div>
+        <div class="quick-sub">Recent admin activity</div>
+      </div>
 
-                  <div class="">
-                    <v-text-field
-                      clearable
-                      v-model="household_search"
-                      @change="searchHouseholdsEstate(household_search)"
-                      placeholder="Search households"
-                      flat
-                      rounded
-                      style="background-color: beige; height: 50px"
-                      required
-                    ></v-text-field>
-                  </div>
-                </div>
-                <div class="row text--center" id="all_items">
-                  <!-- <div v-for="tag in houseHolds" :key="tag.id" class="col-md-6"></div> -->
+      <div class="quick-card" @click="$router.push('/admin/admins')">
+        <div class="quick-icon quick-icon-lime">
+          <v-icon size="20" color="#0A0A14">mdi-shield-crown</v-icon>
+        </div>
+        <div class="quick-title">Admins</div>
+        <div class="quick-sub">Manage staff access</div>
+      </div>
+    </div>
 
-                  <v-list subheader>
-                    <v-subheader>Households</v-subheader>
-
-                    <v-list-item v-for="hs in estate_houseHolds" :key="hs.title">
-                      <v-list-item
-                        @click="
-                          (householdOwner = hs.primary_owner), getToken(hs.household_id)
-                        "
-                      >
-                        <v-list-item-avatar>
-                          <v-avatar color="#8051FF" size="48">
-                            <span style="color: black">{{
-                              hs.primary_owner.substring(0, 3)
-                            }}</span>
-                          </v-avatar>
-                        </v-list-item-avatar>
-
-                        <v-list-item-content>
-                          <v-list-item-title>{{ hs.primary_owner }}</v-list-item-title>
-                        </v-list-item-content>
-                        <v-list-item-icon>
-                          <v-spacer></v-spacer>
-
-                          <div>
-                            <v-card-actions>
-                              <v-icon color="green" v-show="hs.is_official ? false : true"
-                                >mdi-account-badge</v-icon
-                              >
-                            </v-card-actions>
-                          </div>
-                        </v-list-item-icon>
-
-                        <v-list-item-action>
-                          <div v-show="hs.is_official ? true : false">
-                            <span style="font-size: 0.6rem">Assign official</span>
-
-                            <v-btn
-                              icon
-                              color="orange"
-                              v-show="hs.is_official ? true : false"
-                              @click="
-                                getToken(hs.household_id),
-                                  assignOfficials(hs.household_id, hs.uid),
-                                  (full_name = hs.primary_owner),
-                                  (householdOwner = hs.primary_owner),
-                                  (contact_number = hs.contact_number)
-                              "
-                              ><v-icon>mdi-account-network-outline</v-icon></v-btn
-                            >
-                          </div>
-                          <div v-show="true">
-                            <v-btn
-                              style="margin: 4px"
-                              icon
-                              v-show="hs.is_official ? false : true"
-                              @click="
-                                assignOfficials2(hs.household_id),
-                                  DeleteOfficial(hs.contact_number)
-                              "
-                            >
-                              <v-icon>mdi-close</v-icon>
-                            </v-btn>
-                            <span style="font-size: 0.6rem"></span>
-                          </div>
-                        </v-list-item-action>
-                        <v-icon style="margin: 4px" :color="hs.active ? 'grey' : 'blue'">
-                          mdi-check-decagram
-                        </v-icon>
-                      </v-list-item>
-                    </v-list-item>
-                  </v-list>
-                </div>
-              </div>
-              <v-form v-show="false" @submit.prevent="AddOfficial">
-                <v-text-field
-                  v-model="full_name"
-                  label="Full Name"
-                  outlined
-                  required
-                ></v-text-field>
-
-                <v-select
-                  v-model="role"
-                  :items="roles"
-                  label="Role"
-                  outlined
-                  required
-                ></v-select>
-
-                <v-text-field
-                  v-model="contact_number"
-                  label="Contact Number"
-                  outlined
-                  required
-                ></v-text-field>
-
-                <v-text-field
-                  v-model="email"
-                  label="Email Address"
-                  outlined
-                  required
-                ></v-text-field>
-
-                <v-btn color="#b6ff00" class="mt-4" type="submit" style="color: black"
-                  >Submit</v-btn
-                >
-              </v-form>
-            </v-card>
-          </template>
-        </v-dialog>
-      </v-col>
-    </v-row>
+    <!-- Snackbar -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="3000"
+      top
+      rounded="pill"
+    >
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">
+          {{ snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+        </v-icon>
+        <span>{{ snackbar.text }}</span>
+      </div>
+    </v-snackbar>
   </div>
 </template>
 
 <script>
-import CryptoJS from "crypto-js";
-import axios from "axios";
-import dayjs from "@nuxtjs/dayjs";
-import moment from "moment";
-import Map from "@/components/map.vue";
+import axios from 'axios';
+import numeral from 'numeral';
 
-import { uuid } from "vue-uuid";
-
-const keyValue = "fd85b4945YF'i"; // your key value (eg: key)
-const ivKey = "smslt";
+const API = 'https://makaaziserver22.up.railway.app/api';
 
 export default {
-  name: "index",
+  name: 'AdminDashboard',
+  layout: 'admin',
 
-  mounted() {
-    this.Fetch_AllOfficials();
-    // this.Fetch_ActiveHouseholds();
-    this.Fetch_PostAllEstates();
-    this.Fetch_AllPayments();
-  },
-  components: {
-    Map,
-  },
   data() {
     return {
-      roles: ["Chairman", "Secretary", "Treasurer"],
-      dialog: false,
-      totalEstate: 0,
-      totalResidence: 0,
-      totalActiveResidence: 0,
-      estate_name: null,
-      estateURN: null,
-      show: true,
-      switch: false,
-      drawer: false,
-      group: null,
-      estates_search: "",
-      pay_search: "",
-      household_search: "",
-      search_estates: [],
-      payments: [],
-      houseHolds: [],
-      estate_houseHolds: [],
-      rules: [
-        (value) => !!value || "Required.",
-        (value) => (value || "").length <= 4 || "Max 4 characters",
-      ],
-      estates: [],
-      deposit: true,
-      depo_amount: "",
-      depo_number: "",
-      showB: false,
-      pin_input: "",
-      pin_input_deposit: "",
-      cash_deposit_dialog: false,
-      cash_refund_dialog: false,
-      pin_set_dialog: false,
-      pin_dialog: false,
-      pin_dialog2: false,
-      pin_view_bal_dialog: false,
-      pin: null,
-      pinbal: null,
-      pin_transfer: null,
-      pin_transact: null,
-      refund: false,
-      password_status: false,
-      stk_push: false,
-      verify_pin: null,
-      auth_state: false,
-      security_quiz: false,
-      security_key: false,
-      secretKey: null,
-      set_Pin: false,
-      pass_status: "",
-      pin: null,
-      verify_pin: null,
-      b2c: false,
-      bg: require("@/assets/bg.png"),
-      logo: require("@/assets/logo.svg"),
-      errorResponse: "",
-      successResponse: "",
-      Amount: "",
-      Phone: null,
-      UserName: "",
-      snackbar_s: false,
-      snackbarText_s: "",
-      snackbar: false,
-      snackbar2: false,
-      snackbarText: "",
-      snackbarText2: "",
-      status: false,
-      timerEnabled: false,
-      show: false,
-      show6: false,
-      timerCount: 25,
-      valid: true,
-      name: "",
-      nameRules: [
-        (v) => !!v || "Name is required",
-        (v) => (v && v.length <= 20) || "Name must be less than 10 characters",
-      ],
-      email: "",
-      emailRules: [
-        (v) => !!v || "E-mail is required",
-        (v) => /.+@.+\..+/.test(v) || "E-mail must be valid",
-      ],
-      select: null,
-      items: ["Item 1", "Item 2", "Item 3", "Item 4"],
-      checkbox: false,
-      CheckoutRequestID: "",
-      balance: "0",
-      transactions: [],
-      show6: false,
-      errorResponse: "",
-      successResponse: "",
-      timerEnabled3: false,
-      timerCount3: 2,
-      timerEnabled2: false,
-      timerCount2: 2,
-      uid: null,
-      payment: false,
-      full_name: null,
-      role: null,
-      contact_number: null,
-      email: null,
-      estate_urn: null,
-      estate_id: null,
-      payment_msg: "",
-      deviceToken: "",
-      title: "",
-      body: "",
-      householdOwner: "",
+      loading: false,
+      adminEmail: '',
+      adminName: '',
+      authReady: false,
+
+      stats: {
+        total_estates: 0,
+        active_estates: 0,
+        total_households: 0,
+        pending_households: 0,
+        total_officials: 0,
+        total_collected: 0,
+        collected_this_year: 0,
+        active_subscriptions: 0,
+      },
+
+      recentEstates: [],
+
+      snackbar: { show: false, text: '', color: 'success' },
     };
   },
-  methods: {
-    async getToken(val) {
-      let that = this;
-      axios
-        .get(`https://makaaziserver22.up.railway.app/api/fcm/get-token/${val}`, {})
-        .then(function (response) {
-          if (response.status == 200) {
-            that.deviceToken = response.data.fcm_token;
-            console.log("fcm_token", that.deviceToken, "user name", that.householdOwner);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async SendNotification() {
-      let that = this;
 
-      axios
-        .post(`https://makaaziserver22.up.railway.app/api/fcm/sendNotification`, {
-          fcmToken: that.deviceToken,
-          title: that.title,
-          body: that.body,
-        })
-        .then(function (response) {
-          if (response.status == 200) {
-            that.snackbar = true;
-            that.snackbarText = response.data;
-            console.log("Notification sent");
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async checkOfficial(val) {
-      if (val == 1) {
-        return false;
-      } else if (val == 0) {
-        return true;
-      }
-    },
-    async searchHouseholdsEstate(val) {
-      let that = this;
-      if (val == null) {
-        that.Fetch_EstateOfficials(that.estate_id);
-      } else {
-        that.estate_houseHolds.splice(that.estate_houseHolds);
-        axios
-          .get(
-            `https://makaaziserver22.up.railway.app/api/households/search/${that.estate_id}?query=${val}`,
-            {}
-          )
-          .then(function (response) {
-            if (response.status == 200) {
-              // that.snackbar = true;
-              // that.snackbarText = response.data;
-              that.estate_houseHolds = response.data;
-              console.log("Households", that.estate_houseHolds);
-            } else if (response.status == 400) {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data;
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-            that.snackbarText2 = error;
-            that.snackbar2 = true;
-          });
-      }
-    },
-    async searchPayments(val) {
-      if (val == "") {
-        this.Fetch_AllPayments();
-      } else {
-        let that = this;
-        that.payments.splice(that.payments);
-        axios
-          .get(`https://makaaziserver22.up.railway.app/api/payments/searchAll/?query=${val}`, {})
-          .then(function (response) {
-            if (response.status == 200) {
-              // that.snackbar = true;
-              // that.snackbarText = response.data;
-              that.payments = response.data;
-              console.log("Search payments", that.payments);
-            } else if (response.status == 400) {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data;
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-            that.snackbarText2 = error;
-            that.snackbar2 = true;
-          });
-      }
-    },
-    async searchEstate(val) {
-      if (val == "") {
-        this.Fetch_PostAllEstates();
-      } else {
-        let that = this;
-        that.estates.splice(that.estates);
-        axios
-          .get(`https://makaaziserver22.up.railway.app/api/estates/search/?query=${val}`, {})
-          .then(function (response) {
-            if (response.status == 200) {
-              // that.snackbar = true;
-              // that.snackbarText = response.data;
-              that.estates = response.data;
-              console.log("Search estates", that.estates);
-            } else if (response.status == 400) {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data;
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-            that.snackbarText2 = error;
-            that.snackbar2 = true;
-          });
-      }
-    },
-    async searchHouseholds(val) {
-      if (val == "") {
-        this.Fetch_AllOfficials();
-      } else {
-        let that = this;
-        that.houseHolds.splice(that.houseHolds);
-        axios
-          .get(`https://makaaziserver22.up.railway.app/api/households/search/?query=${val}`, {})
-          .then(function (response) {
-            if (response.status == 200) {
-              // that.snackbar = true;
-              // that.snackbarText = response.data;
-              that.houseHolds = response.data;
-              console.log("Households", that.houseHolds);
-            } else if (response.status == 400) {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data;
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-            that.snackbarText2 = error;
-            that.snackbar2 = true;
-          });
-      }
-    },
-    async assignOfficials(val, val1) {
-      let that = this;
-
-      if (that.role == null) {
-        that.snackbar2 = true;
-        that.snackbarText2 = "Select a role";
-      } else {
-        axios
-          .patch(`https://makaaziserver22.up.railway.app/api/households/update_household/${val}`, {
-            is_official: 0,
-            official_role: that.role,
-          })
-          .then(function (response) {
-            if (response.status == 200) {
-              that.snackbar = true;
-              that.snackbarText = response.data;
-              that.AddOfficial(val1);
-              console.log("Official assigned");
-            } else if (response.status == 400) {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data;
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-            that.snackbarText2 = error;
-            that.snackbar2 = true;
-          });
-      }
-    },
-    async assignOfficials2(val) {
-      let that = this;
-      axios
-        .patch(`https://makaaziserver22.up.railway.app/api/households/update_household/${val}`, {
-          is_official: 1,
-          official_role: "none",
-        })
-        .then(function (response) {
-          if (response.status == 200) {
-            that.snackbar = true;
-            that.snackbarText = response.data;
-            that.Fetch_EstateOfficials(that.estate_id);
-            console.log("Official assigned");
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async DeleteOfficial(val) {
-      let that = this;
-      axios
-        .put(`https://makaaziserver22.up.railway.app/api/officials/delete_official/${val}`, {})
-        .then(function (response) {
-          if (response.status == 200) {
-            that.snackbar = true;
-            that.snackbarText = response.data;
-            that.Fetch_EstateOfficials(that.estate_id);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async AddOfficial(val) {
-      let that = this;
-      that.title = "Verification";
-      that.body =
-        "Hi! " +
-        that.householdOwner +
-        " your account has been verified welcome to makaazi App";
-      axios
-        .post(`https://makaaziserver22.up.railway.app/api/officials/addOfficial`, {
-          full_name: that.full_name,
-          estate_id: that.estate_id,
-          role: that.role,
-          contact_number: that.contact_number,
-          estate_urn: that.estateURN,
-          uid: val,
-        })
-        .then(function (response) {
-          if (response.status == 200) {
-            that.snackbar = true;
-            that.snackbarText = response.data;
-            that.SendNotification();
-            that.Fetch_EstateOfficials(that.estate_id);
-            console.log("Official added");
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async Search_estates(val) {
-      if (val == "") {
-        this.Fetch_PostAll();
-      } else {
-        let that = this;
-        axios
-          .get(
-            `https://node-mysql-5c19e7a5ca18.herokuapp.com/estates/searchestates?query=${val}`,
-            {}
-          )
-          .then(function (response) {
-            if (response.status == 200) {
-              // that.snackbar = true;
-              // that.snackbarText = response.data;
-              that.estates = response.data;
-              console.log("Search estates", that.estates);
-            } else if (response.status == 400) {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data;
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-            that.snackbarText2 = error;
-            that.snackbar2 = true;
-          });
-      }
-    },
-    async Fetch_AllPayments() {
-      let that = this;
-      axios
-        .get("https://makaaziserver22.up.railway.app/api/payments/getAll", {})
-        .then(function (response) {
-          if (response.status == 200) {
-            // that.snackbar = true;
-            // that.snackbarText = response.data;
-            that.payments = response.data;
-            console.log("Payments", that.payments);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async Fetch_ActiveHouseholds() {
-      let that = this;
-      axios
-        .get("https://makaaziserver22.up.railway.app/api/households/getActiveHouseHolds/0", {})
-        .then(function (response) {
-          if (response.status == 200) {
-            // that.snackbar = true;
-            // that.snackbarText = response.data;
-
-            that.totalActiveResidence = response.data.length;
-            console.log("Estates", that.estates);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async Fetch_AllOfficials() {
-      let that = this;
-      that.houseHolds.splice(that.houseHolds);
-      axios
-        .get("https://makaaziserver22.up.railway.app/api/households/getall/", {})
-        .then(function (response) {
-          if (response.status == 200) {
-            // that.snackbar = true;
-            // that.snackbarText = response.data;
-            that.houseHolds = response.data;
-            that.totalResidence = response.data.length;
-            console.log("Households", that.houseHolds);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async Fetch_EstateOfficials(val) {
-      let that = this;
-      that.estate_houseHolds.splice(that.estate_houseHolds);
-      axios
-        .get(`https://makaaziserver22.up.railway.app/api/households/getBHsHldEstId/${val}`, {})
-        .then(function (response) {
-          if (response.status == 200) {
-            // that.snackbar = true;
-            // that.snackbarText = response.data;
-            that.estate_houseHolds = response.data;
-            console.log("Households", that.estate_houseHolds);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    async Fetch_PostAllEstates() {
-      let that = this;
-      that.estates.splice(that.estates);
-      axios
-        .get("https://makaaziserver22.up.railway.app/api/estates/getall", {})
-        .then(function (response) {
-          if (response.status == 200) {
-            // that.snackbar = true;
-            // that.snackbarText = response.data;
-            that.estates = response.data;
-            that.totalEstate = response.data.length;
-            console.log("Estates", that.estates);
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          that.snackbarText2 = error;
-          that.snackbar2 = true;
-        });
-    },
-    loginAnonymously() {
-      this.$fire.auth
-        .signInAnonymously()
-        .catch(function (error) {
-          this.snackbarText = error.message;
-          this.snackbar = true;
-          this.showLogin = false;
-        })
-        .then((user) => {
-          //we are signed in
-          let ID = uuid.v1();
-          console.log(uuid.v1());
-          const db = this.$fire.firestore;
-          let uid = user.user.uid;
-          console.log("user uid", uid);
-        });
-    },
-    CheckPhone() {
-      this.pin_dialog = true;
-      this.pin_transfer = null;
-    },
-    checkColor(val) {
-      if (val == "Deposit") {
-        return "green2";
-      } else if (val == "Withdraw") {
-        return "red";
-      } else if (val == "Tips") {
-        return "blue";
-      }
-    },
-    checkType(val) {
-      if (val == "Deposit") {
-        return "arrow-up";
-      } else if (val == "Withdraw") {
-        return "arrow-down";
-      } else if (val == "Tips") {
-        return "hand-coin";
-      }
-    },
-
-    verifyPin24(val) {
-      if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-        console.log("PIn match");
-        this.FetchBalance();
-        this.pin_status = "";
-        this.showB = true;
-        this.pin_view_bal_dialog = false;
-      } else {
-        console.log("PIn not match");
-        this.pin_status = "Invalid pin. \nProvide a valid pin number";
-        this.snackbar2 = true;
-        this.snackbarText2 = "Please enter a valid pin number";
-      }
-    },
-    verifyPin22(val) {
-      if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-        console.log("PIn match");
-        this.MpesaPaymentStk();
-        this.pin_status = "";
-        this.pin_dialog = false;
-      } else {
-        console.log("PIn not match");
-        this.pin_status = "Invalid pin. \nProvide a valid pin number";
-        this.snackbar2 = true;
-        this.snackbarText2 = "Invalid pin. \nProvide a valid pin number";
-      }
-    },
-    verifyPin2(val) {
-      if (this.decrypteData(this.pin) === this.decrypteData(val)) {
-        console.log("PIn match");
-        this.mpesaB2c();
-        this.pin_status = "";
-        this.pin_dialog = false;
-        this.pin_transfer = null;
-      } else {
-        console.log("PIn not match");
-        this.pin_status = "Invalid pin. \nProvide a valid pin number";
-        this.snackbar2 = true;
-        this.snackbarText2 = "Invalid pin. \nProvide a valid pin number";
-      }
-    },
-    encrypteData(data) {
-      if (this.secretKey == null) {
-        this.pass_status = "UnAble detect key";
-      } else {
-        if (data != null) {
-          const key = CryptoJS.PBKDF2(this.secretKey, "salt", {
-            keySize: 256 / 32,
-            iterations: 1000,
-          });
-          const iv = CryptoJS.enc.Utf8.parse(ivKey); // Convert string to WordArray
-          const encrypted = CryptoJS.AES.encrypt(data, key, {
-            iv: iv,
-            mode: CryptoJS.mode.CBC,
-          });
-
-          this.encryptedText = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
-          return encrypted.ciphertext.toString(CryptoJS.enc.Hex);
-        }
-      }
-    },
-    decrypteData(data) {
-      if (this.secretKey == null) {
-        this.pass_status = "UnAble detect key";
-      } else {
-        if (data) {
-          const key = CryptoJS.PBKDF2(this.secretKey, "salt", {
-            keySize: 256 / 32,
-            iterations: 1000,
-          });
-          const iv = CryptoJS.enc.Utf8.parse(ivKey);
-          const decrypted = CryptoJS.AES.decrypt(
-            {
-              ciphertext: CryptoJS.enc.Hex.parse(data),
-            },
-            key,
-            {
-              iv: iv,
-              mode: CryptoJS.mode.CBC,
-            }
-          );
-          return decrypted.toString(CryptoJS.enc.Utf8);
-        }
-      }
-    },
-    CheckPassword(val, val2) {
-      if (val == val2) {
-        this.pass_status = "Password matches";
-        return true;
-      } else {
-        this.pass_status = "Password does not match";
-        return false;
-      }
-    },
-    ConfirmCode2() {
-      console.log("Code sent to you.", this.code_no2);
-
-      var credential = firebase.auth.PhoneAuthProvider.credential(
-        this.confirmation_Result.verificationId,
-        this.code_no2
-      );
-      if ((this.code_no2 = "")) {
-        this.snackbar2 = true;
-        this.snackbarText2 = "Provide Code sent to you";
-        console.log("Provide Code sent to you");
-      } else {
-        console.log("Verify Code", this.code_no2);
-        this.progress_bar = true;
-        firebase
-          .auth()
-          .signInWithCredential(credential)
-          .then((user) => {
-            // SMS sent. Prompt user to type the code from the message, then sign the
-            // user in with confirmationResult.confirm(code).
-            //this.$toast.success("Otp sent successfully");
-            window.location.reload(true);
-            this.FetchUserPin();
-          })
-          .catch((error) => {
-            this.progress_bar = false;
-            // Error; SMS not sent
-            console.log("Error", error);
-            this.snackbar2 = true;
-            this.snackbarText2 = error;
-          });
-      }
-    },
-    logout() {
-      this.$fire.auth.signOut();
-      window.location.reload(true);
-    },
-    mpesaB2cQuery() {
-      axios
-        .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/result_url", {})
-        .then(function (response) {
-          console.log(response);
-          if (response.status == 200) {
-            this.snackbar = true;
-            this.snackbarText = response.data;
-            this.show6 = false;
-            this.b2c = false;
-          } else if (response.status == 400) {
-            this.snackbar2 = true;
-            this.snackbarText2 = response.data;
-            this.errorMessage = response.data;
-            this.show6 = false;
-            this.b2c = false;
-          }
-        })
-        .catch(function (error) {
-          console.log(error);
-          this.snackbarText = error;
-          this.snackbar = true;
-          this.btn_disabled = false;
-        })
-        .then(function () {
-          // this.timerEnabled = true;
-        });
-    },
-    mpesaB2c() {
-      let that = this;
-      if (that.Phone == null) {
-        that.snackbarText2 = "Provide Phone number..";
-        that.snackbar2 = true;
-      } else if (that.Amount == "") {
-        that.snackbarText2 = "Provide amount.";
-        that.snackbar2 = true;
-      } else if (that.Amount > 3000) {
-        that.snackbarText2 = "amount cannot exceed 1000.";
-        that.snackbar2 = true;
-      } else {
-        that.b2c = true;
-        that.show6 = true;
-        axios
-          .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/b2c", {
-            Phonenumber: that.Phone,
-            amount: that.Amount,
-            uid: that.$fire.auth.currentUser.uid,
-          })
-          .then(function (response) {
-            console.log(response);
-            if (response.status == 200) {
-              if (response.data.ResponseCode == "0") {
-              } else {
-              }
-
-              if (response.data.errorCode == "400.002.02") {
-                that.snackbar2 = true;
-                that.snackbarText2 = response.data.errorMessage;
-                that.show6 = false;
-                that.b2c = false;
-                that.pin_transfer = null;
-              } else if (response.data.errorCode == "500.001.1001") {
-                that.snackbar2 = true;
-                that.snackbarText2 = response.data.errorMessage;
-                that.show6 = false;
-                that.b2c = false;
-                that.pin_transfer = null;
-              } else {
-                that.successResponse = response.data.CustomerMessage;
-                that.CheckoutRequestID = response.data.CheckoutRequestID;
-                console.log(response.data);
-                that.b2c = false;
-                that.FetchBalance();
-                that.pin_dialog = false;
-                that.show6 = false;
-                that.timerEnabled3 = true;
-                that.pin_transfer = null;
-              }
-            } else if (response.status == 400) {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data;
-              that.errorMessage = response.data;
-              that.show6 = false;
-              that.b2c = false;
-              that.pin_transfer = null;
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-            that.snackbarText = error;
-            that.snackbar = true;
-            that.btn_disabled = false;
-            that.show6 = false;
-            that.pin_transfer = null;
-          });
-      }
-    },
-    validate() {
-      this.$refs.form.validate();
-    },
-    reset() {
-      this.$refs.form.reset();
-    },
-    resetValidation() {
-      this.$refs.form.resetValidation();
-    },
-    MpesaPaymentStk() {
-      let that = this;
-      if (that.depo_number == null) {
-        that.snackbarText2 = "Provide phone number..";
-        that.snackbar2 = true;
-      } else if (this.depo_amount == "") {
-        that.snackbarText2 = "Provide amount.";
-        that.snackbar2 = true;
-      } else {
-        that.show6 = true;
-        axios
-          .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/stk_shop", {
-            Phonenumber: that.depo_number,
-            amount: that.depo_amount,
-          })
-          .then(function (response) {
-            console.log(response);
-            if (response.status == 200) {
-              if (response.data.errorCode == "400.002.02") {
-                that.snackbar2 = true;
-                that.snackbarText2 = response.data.errorMessage;
-                that.show6 = false;
-                that.pin_transact = null;
-              } else if (response.data.errorCode == "500.001.1001") {
-                that.snackbar2 = true;
-                that.snackbarText2 = response.data.errorMessage;
-                that.show6 = false;
-                that.pin_transact = null;
-              } else {
-                that.snackbar = true;
-                that.snackbarText = response.data.CustomerMessage;
-                that.successResponse = response.data.CustomerMessage;
-                that.CheckoutRequestID = response.data.CheckoutRequestID;
-                console.log(that.CheckoutRequestID);
-                that.FetchBalance();
-                that.timerEnabled = true;
-                that.pin_dialog2 = false;
-
-                that.pin_transact = null;
-              }
-            } else if (response.status == 400) {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data;
-              that.errorMessage = response.data;
-              that.show6 = false;
-              that.pin_transact = null;
-            }
-          })
-          .catch(function (error) {
-            console.log(error);
-            that.snackbarText2 = error;
-            that.snackbar2 = true;
-            that.show6 = false;
-            that.pin_transact = null;
-          });
-      }
-    },
-    ////Stk Query////
-    StkQuery() {
-      let that = this;
-      that.snackbar_s = true;
-      that.snackbarText_s = "Checking payment status...";
-      axios
-        .post("https://chargeb2c-78a6d3d19f7e.herokuapp.com/stk_shop/query", {
-          checkoutRequestId: that.CheckoutRequestID,
-        })
-        .then(function (response) {
-          console.log("StkPush Query", response.data);
-          that.show6 = false;
-
-          if (response.status == 200) {
-            if (response.dsata.errorCode == "400.002.02") {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data.errorMessage;
-              that.errorResponse = response.data.errorMessage;
-              that.timerCount = 25;
-              that.timerEnabled = false;
-              that.pin_view_bal_dialog = false;
-            } else if (response.data.errorCode == "500.001.1001") {
-              that.snackbar2 = true;
-              that.snackbarText2 = response.data.errorMessage;
-              that.errorResponse = response.data.errorMessage;
-              that.timerCount = 25;
-              that.timerEnabled = false;
-              that.pin_view_bal_dialog = false;
-            } else {
-              if (response.data.ResultCode == "0") {
-                that.FetchBalance();
-                that.snackbar = true;
-                that.snackbarText = response.data.ResultDesc;
-                that.successResponse = response.data.ResultDesc;
-                that.timerEnabled = false;
-                that.timerCount = 25;
-                that.pin_view_bal_dialog = false;
-              } else if (response.data.ResultCode == "1032") {
-                that.snackbar2 = true;
-                that.snackbarText2 = "Request was cancelled";
-                that.errorResponse = "Request was cancelled";
-                that.timerCount = 25;
-                that.timerEnabled = false;
-                that.pin_view_bal_dialog = false;
-              } else if (response.data.ResultCode == "2001") {
-                that.snackbar2 = true;
-                that.snackbarText2 = "You entered a wrong pin";
-                that.errorResponse = "You entered a wrong pin";
-                that.timerCount = 25;
-                that.timerEnabled = false;
-                that.pin_view_bal_dialog = false;
-              } else {
-                that.snackbar2 = true;
-                that.snackbarText2 = response.data.ResultDesc;
-                that.errorResponse = response.data.ResultDesc;
-                that.timerEnabled = false;
-                that.timerCount = 25;
-                that.pin_view_bal_dialog = false;
-              }
-            }
-          } else if (response.status == 400) {
-            that.snackbar2 = true;
-            that.snackbarText2 = response.data;
-            that.timerCount = 25;
-            that.timerEnabled = false;
-            that.pin_view_bal_dialog = false;
-          }
-        })
-        .catch(function (error) {
-          that.pin_view_bal_dialog = false;
-          that.snackbar2 = true;
-          that.snackbarText2 = error;
-          that.timerCount = 25;
-          that.timerEnabled = false;
-          that.show6 = false;
-        });
-    },
-    loginAnonymously1() {
-      this.$fire.auth
-        .signInAnonymously()
-        .catch(function (error) {
-          this.snackbarText = error.message;
-          this.snackbar = true;
-          this.showLogin = false;
-        })
-        .then((user) => {
-          //we are signed in
-          const start_time = this.$dayjs(new Date()).format("YYYY/MM/DD HH:mm:ss");
-          let ID = uuid.v1();
-          console.log(uuid.v1());
-          const db = this.$fire.firestore;
-          db.collection("Charge24_users")
-            .doc(user.user.uid)
-            .set({
-              user_id: user.user.uid,
-              start_time: start_time,
-              ref: ID,
-              active: true,
-              phone_no: this.Phone,
-            })
-            .then((docRef) => {
-              console.log("User logged in");
-              this.snackbar = true;
-              this.snackbarText = "Process Successfully completed";
-              this.$router.push({
-                path: "/timer",
-              });
-            })
-            .catch((error) => {
-              console.log("Error adding document: ", error);
-            });
-        });
-    },
-    uploadDetails(val) {
-      const db = this.$fire.firestore;
-      const start_timer = this.$dayjs(new Date()).format("YYYY/MM/DD HH:mm:ss");
-      let ID = uuid.v1();
-      console.log(uuid.v1());
-      db.collection("charge24_users")
-        .doc(val)
-        .set({
-          user_id: val,
-          start_time: start_timer,
-          ref: ID,
-          active: true,
-        })
-        .then(() => {
-          console.log("User logged in");
-          this.$router.push({
-            path: "/timer",
-          });
-        })
-        .catch(function (error) {
-          console.log("Error adding document: ", error);
-        });
-    },
-    logout() {
-      this.$fire.auth.signOut();
-      window.location.reload(true);
-    },
-    checkUser() {
-      if (this.$fire.auth.currentUser != null) {
-        this.secretKey = this.$fire.auth.currentUser.uid;
-        this.uid = this.$fire.auth.currentUser.uid;
-        this.FetchUserPin(this.$fire.auth.currentUser.uid);
-        console.log(this.secretKey, "keys");
-      } else {
-        this.auth_state = false;
-        console.log("No user logged in");
-      }
-    },
-    generateRandomNumber() {
-      const digits = "DY*1234FA6789";
-      let randomNumber = "";
-      const length = 9;
-
-      for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * digits.length);
-        randomNumber += digits[randomIndex];
-      }
-
-      this.randomNineDigitNumber = randomNumber;
-
-      return randomNumber;
-    },
-    checkPin(val) {
-      console.log(val);
-    },
-    setPin() {
-      if (this.password_status == false) {
-        this.snackbar2 = true;
-        this.snackbarText2 = "Password does not match";
-      } else {
-        this.progress_bar = true;
-        const db = this.$fire.firestore;
-        const docRef = db
-          .collection("charge24_admin_user")
-          .doc(this.$fire.auth.currentUser.uid);
-
-        const newData = {
-          pin: this.encrypteData(this.verify_pin),
-          Account_id: this.encrypteData(this.$fire.auth.currentUser.uid),
-          user_uid: this.$fire.auth.currentUser.uid,
-          // Add more fields as needed
-        };
-
-        db.runTransaction(async (transaction) => {
-          transaction.set(docRef, newData);
-        })
-          .then((docRef) => {
-            console.log("Pin set Successfully ");
-            this.snackbar = true;
-            this.snackbarText = "Pin set Successfully ";
-            this.progress_bar = false;
-            this.FetchUserPin();
-          })
-          .catch((error) => {
-            this.snackbar2 = true;
-            this.snackbarText2 = error;
-            this.progress_bar = false;
-            console.error("Error adding listing: ", error);
-          });
-      }
-    },
-    resetPin2() {
-      const db = this.$fire.firestore;
-      console.log("Reset pin", uuid.v1());
-      db.collection("charge24_admin_user")
-        .doc(this.$fire.auth.currentUser.uid)
-        .update({
-          payment: false,
-        })
-        .then(() => {
-          that.show6 = false;
-          this.timerCount2 = 2;
-          this.timerCount3 = 2;
-        })
-        .catch(function (error) {
-          console.log("Error adding document: ", error);
-        });
+  computed: {
+    todayLabel() {
+      const d = new Date();
+      return d.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      });
     },
   },
 
-  created() {},
+  mounted() {
+    try {
+      this.adminEmail = localStorage.getItem('admin_email') || '';
+      this.adminName = localStorage.getItem('admin_name') || '';
+    } catch (e) {
+      console.warn(e.message);
+    }
+
+    // Wait for Firebase to expose currentUser before firing the API.
+    const auth = this.$fire?.auth;
+    if (!auth) {
+      console.error('[AdminDashboard] Firebase auth not available on this.$fire.auth');
+      this.authReady = true;
+      this.refreshAll();
+      return;
+    }
+
+    const unsub = auth.onAuthStateChanged(async (user) => {
+      unsub(); // one-shot
+      if (!user) {
+        this.$router.push('/admin/login');
+        return;
+      }
+      this.authReady = true;
+      await this.refreshAll();
+    });
+  },
+
+  methods: {
+    formatNum(n) {
+      return numeral(n || 0).format('0,0');
+    },
+
+    formatNumShort(n) {
+      const v = Number(n) || 0;
+      if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M';
+      if (v >= 1_000) return (v / 1_000).toFixed(0) + 'K';
+      return numeral(v).format('0,0');
+    },
+
+    initialsOf(name) {
+      if (!name) return '?';
+      return name
+        .split(' ')
+        .map((w) => w[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+    },
+
+    // Build a fresh Bearer token for the current Firebase user.
+    async getAuthHeaders() {
+      try {
+        const user = this.$fire?.auth?.currentUser;
+        if (!user) return {};
+        const token = await user.getIdToken();
+        return { Authorization: `Bearer ${token}` };
+      } catch (e) {
+        console.warn('[AdminDashboard] getIdToken failed:', e.message);
+        return {};
+      }
+    },
+
+    async refreshAll() {
+      if (!this.authReady) return;
+      this.loading = true;
+      await Promise.allSettled([
+        this.fetchStats(),
+        this.fetchRecentEstates(),
+      ]);
+      this.loading = false;
+    },
+
+    async fetchStats() {
+      try {
+        const headers = await this.getAuthHeaders();
+        const { data, status } = await axios.get(`${API}/admin/stats`, { headers });
+        if (status === 200 && data) {
+          Object.assign(this.stats, data);
+        }
+      } catch (err) {
+        const status = err.response?.status;
+
+        // Only redirect when Firebase confirms the user is signed out.
+        // A 401 while a user IS logged in means the server rejected the token —
+        // stay on the page and show a message.
+        if (status === 401 || status === 403) {
+          const stillLoggedIn = !!this.$fire?.auth?.currentUser;
+          if (!stillLoggedIn) {
+            this.showSnackbar('Session expired', 'error');
+            this.$router.push('/admin/login');
+          } else {
+            console.warn(
+              '[AdminDashboard] Server rejected auth. Status:', status,
+              '| Response:', err.response?.data
+            );
+            this.showSnackbar(
+              err.response?.data?.error || 'Access denied — check admin account',
+              'error'
+            );
+          }
+          return;
+        }
+
+        console.warn('[AdminDashboard] Stats fetch failed:', err.message);
+        this.showSnackbar('Could not load stats', 'error');
+      }
+    },
+
+    async fetchRecentEstates() {
+      try {
+        const headers = await this.getAuthHeaders();
+        const { data, status } = await axios.get(`${API}/admin/estates`, { headers });
+        if (status === 200 && Array.isArray(data)) {
+          this.recentEstates = data.slice(0, 5);
+        }
+      } catch (err) {
+        console.warn('[AdminDashboard] Estates fetch failed:', err.message);
+        this.recentEstates = [];
+      }
+    },
+
+    showSnackbar(text, color = 'success') {
+      this.snackbar = { show: true, text, color };
+    },
+  },
 };
 </script>
-
-<style>
-#all_items {
-  --scrollbarBG: #00000000;
-  --thumbBG: #2f2c2c00;
-  scrollbar-width: thin;
-  scrollbar-color: var(--thumbBG) var(--scrollbarBG);
-  overflow-y: scroll;
-  width: 100%;
-  align-items: start;
-  bottom: 0;
-  padding: 3px;
-  height: 100vh;
-  justify-content: start;
+<style scoped>
+/* ============================================================
+   ROOT
+   ============================================================ */
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 4px 0 8px;
 }
 
-#all_items::-webkit-scrollbar {
-  width: 8px;
+/* ============================================================
+   PAGE HEADER
+   ============================================================ */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
 }
 
-#all_items::-webkit-scrollbar-track {
-  background: var(--scrollbarBG);
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-#all_items::-webkit-scrollbar-thumb {
-  background-color: var(--thumbBG);
-  border-radius: 8px;
-  border: 3px solid var(--scrollbarBG);
+.page-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #0F0D24;
+  letter-spacing: -0.7px;
+  margin: 0;
+  line-height: 1.15;
 }
 
-.blur {
-  filter: blur(9px);
-  /* Adjust the value (5px) to increase or decrease the blur intensity */
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(122, 184, 0, 0.14);
+  border: 1px solid rgba(122, 184, 0, 0.28);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #3F6B00;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
 }
 
-#charter {
-  transition: 0.5s ease;
-  background-image: url("@/assets/bg.png");
-  background-attachment: fixed;
-  background-position: center;
-  background-size: contain;
-  background-color: black;
-  width: 100%;
-  height: 260px;
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7AB800;
+  box-shadow: 0 0 0 3px rgba(122, 184, 0, 0.25);
+  animation: pulseLive 2s infinite;
+}
+
+@keyframes pulseLive {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(122, 184, 0, 0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(122, 184, 0, 0); }
+}
+
+.page-sub {
+  font-size: 0.85rem;
+  color: #64748B;
+  margin: 6px 0 0;
+  font-weight: 500;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-btn {
+  color: #475569 !important;
+  font-weight: 700 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  min-width: 0 !important;
+  padding: 0 12px !important;
+}
+
+.refresh-btn:hover {
+  color: #0F0D24 !important;
+  background: rgba(15, 13, 36, 0.05) !important;
+}
+
+.new-estate-btn {
+  font-weight: 800 !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 8px 20px -8px rgba(182, 255, 0, 0.65);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 18px !important;
+}
+
+.new-estate-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -8px rgba(182, 255, 0, 0.8);
+}
+
+/* ============================================================
+   KPI GRID
+   ============================================================ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.kpi-card {
+  position: relative;
+  padding: 22px 24px 20px;
+  background: #FFFFFF;
+  border: 1px solid #E9EDF3;
+  border-radius: 20px;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
+}
+
+.kpi-card:hover {
+  transform: translateY(-3px);
+  border-color: #D8DFE9;
+  box-shadow: 0 20px 40px -20px rgba(15, 13, 36, 0.18);
+}
+
+.kpi-card-highlight {
+  background: linear-gradient(140deg, #0A0A14 0%, #221047 55%, #2B1256 100%);
+  border-color: transparent;
+  box-shadow: 0 20px 44px -22px rgba(34, 16, 71, 0.6);
+}
+
+.kpi-card-highlight:hover {
+  box-shadow: 0 28px 52px -22px rgba(34, 16, 71, 0.75);
+}
+
+.kpi-card-highlight .kpi-label {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.kpi-card-highlight .kpi-footer {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.kpi-card-highlight .kpi-value {
+  color: #FFFFFF;
+}
+
+.kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  min-height: 40px;
+}
+
+.kpi-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon-lime {
+  background: linear-gradient(135deg, #D4FF4A 0%, #B6FF00 100%);
+  box-shadow: 0 8px 20px -8px rgba(182, 255, 0, 0.7);
+}
+
+.kpi-icon-purple {
+  background: linear-gradient(135deg, #9B6CFF 0%, #8051FF 100%);
+  box-shadow: 0 8px 20px -8px rgba(128, 81, 255, 0.65);
+}
+
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.kpi-trend-up {
+  background: rgba(122, 184, 0, 0.14);
+  color: #3F6B00;
+}
+
+.kpi-trend-warn {
+  background: rgba(239, 68, 68, 0.12);
+  color: #B91C1C;
+}
+
+.kpi-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0F0D24;
+  letter-spacing: -1.4px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.kpi-currency {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #B6FF00;
+  letter-spacing: 0.5px;
+}
+
+.kpi-footer {
+  font-size: 0.72rem;
+  color: #94A3B8;
+  margin-top: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* ============================================================
+   SECTION CARD
+   ============================================================ */
+.section-card {
+  background: #FFFFFF;
+  border: 1px solid #E9EDF3;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #F1F5F9;
+  flex-wrap: wrap;
+}
+
+.section-head-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #0A0A14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px -10px rgba(10, 10, 20, 0.5);
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0F0D24;
+  letter-spacing: -0.3px;
+}
+
+.section-sub {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.view-all-btn {
+  color: #8051FF !important;
+  font-weight: 800 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+}
+
+.view-all-btn:hover {
+  background: rgba(128, 81, 255, 0.06) !important;
+}
+
+/* Loading */
+.section-loading {
+  padding: 14px 24px;
+}
+
+/* Empty */
+.section-empty {
+  padding: 56px 24px;
+  text-align: center;
+}
+
+.section-empty-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0F0D24;
+  margin-top: 14px;
+  letter-spacing: -0.2px;
+}
+
+.section-empty-text {
+  font-size: 0.82rem;
+  color: #94A3B8;
+  margin-top: 4px;
+}
+
+/* Estate list */
+.estate-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.estate-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.estate-row:last-child {
+  border-bottom: none;
+}
+
+.estate-row:hover {
+  background: #FAFBFF;
+}
+
+.estate-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #9B6CFF 0%, #8051FF 100%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.6px;
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.6);
+}
+
+.estate-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.estate-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.estate-name {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0F0D24;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.estate-status {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background: rgba(122, 184, 0, 0.14);
+  color: #3F6B00;
+}
+
+.status-inactive {
+  background: rgba(148, 163, 184, 0.16);
+  color: #475569;
+}
+
+.status-archived {
+  background: rgba(239, 68, 68, 0.1);
+  color: #B91C1C;
+}
+
+.estate-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #94A3B8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.estate-urn {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.2px;
+}
+
+.meta-dot {
+  color: #CBD5E1;
+}
+
+.estate-stats {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-shrink: 0;
+}
+
+.estate-stat {
+  text-align: right;
+  min-width: 62px;
+}
+
+.estate-stat-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0F0D24;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.4px;
+}
+
+.estate-stat-label {
+  font-size: 0.62rem;
+  color: #94A3B8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-top: 2px;
+}
+
+.estate-chevron {
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.estate-row:hover .estate-chevron {
+  opacity: 0.9;
+  transform: translateX(2px);
+}
+
+/* ============================================================
+   QUICK ACTIONS
+   ============================================================ */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.quick-card {
+  position: relative;
+  padding: 22px 24px;
+  background: #FFFFFF;
+  border: 1px solid #E9EDF3;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.quick-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  background: linear-gradient(135deg, rgba(182, 255, 0, 0.06), transparent 60%);
+  transition: opacity 0.28s ease;
+  pointer-events: none;
+}
+
+.quick-card:hover {
+  transform: translateY(-3px);
+  border-color: #C9F569;
+  box-shadow: 0 20px 40px -20px rgba(182, 255, 0, 0.45);
+}
+
+.quick-card:hover::after {
+  opacity: 1;
+}
+
+.quick-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.quick-icon-lime {
+  background: linear-gradient(135deg, #D4FF4A 0%, #B6FF00 100%);
+  box-shadow: 0 10px 22px -10px rgba(182, 255, 0, 0.7);
+}
+
+.quick-icon-purple {
+  background: linear-gradient(135deg, #9B6CFF 0%, #8051FF 100%);
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.6);
+}
+
+.quick-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0F0D24;
+  letter-spacing: -0.3px;
+}
+
+.quick-sub {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  margin-top: 4px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .estate-stats {
+    gap: 18px;
+  }
+  .estate-stat {
+    min-width: 52px;
+  }
+  .estate-stat-value {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-dashboard {
+    gap: 22px;
+  }
+
+  .page-title {
+    font-size: 1.35rem;
+  }
+
+  .page-actions {
+    width: 100%;
+  }
+
+  .refresh-btn,
+  .new-estate-btn {
+    flex: 1;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .kpi-card {
+    padding: 18px 18px 16px;
+  }
+
+  .kpi-value {
+    font-size: 1.55rem;
+    letter-spacing: -1px;
+  }
+
+  .kpi-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .estate-stats {
+    display: none;
+  }
+
+  .estate-name {
+    max-width: 150px;
+  }
+
+  .estate-row {
+    padding: 14px 18px;
+    gap: 14px;
+  }
+
+  .section-head {
+    padding: 16px 18px;
+  }
+
+  .quick-card {
+    padding: 18px 20px;
+  }
 }
 </style>
-
