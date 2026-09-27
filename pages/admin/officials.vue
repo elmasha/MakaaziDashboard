@@ -594,11 +594,11 @@ export default {
     },
 
     openOfficial(o) {
-      this.$router.push(`/admin/officials/${o.official_id}`);
+      this.$router.push(`/admin/official/${o.official_id}`);
     },
     viewOfficial(o) {
       this.openMenuId = null;
-      this.$router.push(`/admin/officials/${o.official_id}`);
+      this.$router.push(`/admin/official/${o.official_id}`);
     },
     editOfficial(o) {
       this.openMenuId = null;
