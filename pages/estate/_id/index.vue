@@ -90,6 +90,9 @@
             <estateConfig v-else-if="currentView === 'config'" :estateId="estateId" />
           </div>
         </transition>
+
+        <!-- Extra bottom spacer so nothing ends flush against siblings -->
+        <div class="estate-content-tail"></div>
       </div>
     </main>
 
@@ -568,9 +571,9 @@ export default {
    ============================================================ */
 .estate-shell {
   display: flex;
-  height: 100vh;              /* ← fixed height */
-  width: 100vw;               /* ← fixed width */
-  overflow: hidden;           /* ← nothing overflows the shell */
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
   background: #f7f7fb;
   font-family: inherit;
 }
@@ -581,12 +584,12 @@ export default {
 .estate-sidebar {
   width: 268px;
   flex-shrink: 0;
-  height: 100vh;              /* ← always full height */
+  height: 100vh;
   background: linear-gradient(180deg, #16123a 0%, #1e1b4b 55%, #312e81 100%);
   display: flex;
   flex-direction: column;
   padding: 22px 0;
-  overflow: hidden;           /* ← decorative orbs clip inside */
+  overflow: hidden;
   position: relative;
 }
 
@@ -824,17 +827,17 @@ export default {
 .estate-main {
   flex: 1;
   min-width: 0;
-  height: 100vh;              /* ← full height */
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;           /* ← nothing overflows main */
+  overflow: hidden;
 }
 
 /* ============================================================
    TOPBAR — fixed inside main, no sticky needed
    ============================================================ */
 .estate-topbar {
-  flex-shrink: 0;             /* ← always stays at top */
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -947,10 +950,11 @@ export default {
    ============================================================ */
 .estate-content {
   flex: 1;
-  min-height: 0;              /* ← important: allows flex child to shrink */
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 24px 28px 40px;
+  /* Generous bottom padding so content never ends flush against siblings */
+  padding: 24px 28px 80px;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -968,9 +972,38 @@ export default {
   min-height: 100%;
 }
 
-/* Mobile padding adjustment for bottom nav */
+/* Extra tail spacer — guarantees nothing overlaps at the bottom */
+.estate-content-tail {
+  height: 8px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   MOBILE — reserve space for bottom nav + extra components
+   ============================================================ */
+.estate-main-mobile {
+  /* No extra bottom margin on the main itself — the content handles it */
+  padding-bottom: 0;
+}
+
 .estate-main-mobile .estate-content {
-  padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+  /* 72px bottom nav + ~20px breathing + safe area on iOS
+     Bumped from 96 → 120 so nothing hides behind the nav or a FAB */
+  padding: 16px 16px calc(120px + env(safe-area-inset-bottom));
+}
+
+/* Keep the extra tail spacer on mobile too */
+.estate-main-mobile .estate-content-tail {
+  height: 16px;
+}
+
+/* If you have a floating action button or chat widget below the
+   bottom nav, bump the padding even more here: */
+@media (max-width: 959px) {
+  .estate-main-mobile.has-extra-bottom .estate-content {
+    padding-bottom: calc(160px + env(safe-area-inset-bottom));
+  }
 }
 
 /* View transition */
@@ -985,10 +1018,6 @@ export default {
    MOBILE DRAWER
    ============================================================ */
 .mobile-drawer {
-  background: linear-gradient(180deg, #16123a 0%, #1e1b4b 55%, #312e81 100%) !important;
-}
-
-.mobile-drawer-inner {
   display: flex;
   flex-direction: column;
   height: 100%;

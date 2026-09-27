@@ -18,7 +18,7 @@
       <v-chip
         small
         label
-        :color="active ? 'white' : 'white'"
+        color="white"
         class="status-chip"
         :style="active ? 'color:#065f46;' : 'color:#991b1b;'"
       >
@@ -63,7 +63,6 @@
           'plan-card-recommended': plan.recommended && plan.id !== currentBand,
         }"
       >
-        <!-- Badge -->
         <div v-if="plan.id === currentBand" class="plan-badge plan-badge-current">
           Current
         </div>
@@ -74,23 +73,19 @@
           Recommended
         </div>
 
-        <!-- Icon -->
         <div class="plan-icon" :class="`plan-icon-${plan.color}`">
           <v-icon size="22" color="white">{{ plan.icon }}</v-icon>
         </div>
 
-        <!-- Name -->
         <div class="plan-name">{{ plan.name }}</div>
         <div class="plan-range">{{ plan.range }}</div>
 
-        <!-- Price -->
         <div class="plan-price">
           <span class="plan-currency">KSh</span>
           <span class="plan-amount">{{ numeral(plan.amount).format("0,0") }}</span>
           <span class="plan-period">/month</span>
         </div>
 
-        <!-- Features -->
         <ul class="plan-features">
           <li v-for="(f, i) in plan.features" :key="i">
             <v-icon size="14" color="#10b981">mdi-check-circle</v-icon>
@@ -98,11 +93,10 @@
           </li>
         </ul>
 
-        <!-- CTA -->
         <button
           class="plan-cta"
           :class="{ 'plan-cta-primary': plan.id === currentBand }"
-          :disabled="!active && plan.id !== currentBand ? false : plan.id === currentBand && active"
+          :disabled="plan.id === currentBand && active"
           @click="selectPlan(plan)"
         >
           {{ plan.id === currentBand && active ? "Active plan" : "Choose plan" }}
@@ -116,7 +110,6 @@
          ============================================================ -->
     <v-dialog v-model="paymentForm" max-width="480" content-class="payment-dialog">
       <div class="payment-shell">
-        <!-- Header -->
         <div class="payment-header">
           <div class="payment-header-icon">
             <v-icon color="white" size="22">mdi-cellphone-nfc</v-icon>
@@ -125,14 +118,12 @@
             <div class="payment-title">M-Pesa payment</div>
             <div class="payment-sub">{{ duration }} plan · {{ plan_name }}</div>
           </div>
-          <button class="payment-close" @click="paymentForm = false">
+          <button class="payment-close" @click="resetPayment">
             <v-icon size="18" color="white">mdi-close</v-icon>
           </button>
         </div>
 
-        <!-- Body -->
         <div class="payment-body">
-          <!-- Amount display -->
           <div class="amount-display">
             <div class="amount-label">Amount to pay</div>
             <div class="amount-value">
@@ -141,7 +132,6 @@
             </div>
           </div>
 
-          <!-- Phone -->
           <label class="field-label">M-Pesa phone number</label>
           <v-text-field
             v-model="phone"
@@ -153,12 +143,12 @@
             placeholder="07XX XXX XXX"
             prepend-inner-icon="mdi-phone-outline"
             class="mb-2"
+            :disabled="timerEnabled"
           ></v-text-field>
           <div class="field-hint">
             An STK push will be sent to this number. Enter your M-Pesa PIN to complete.
           </div>
 
-          <!-- Timer -->
           <transition name="fade-slide">
             <div v-if="timerEnabled" class="timer-block">
               <div class="timer-icon">
@@ -177,10 +167,9 @@
             </div>
           </transition>
 
-          <!-- Actions -->
           <button
             class="pay-btn"
-            :disabled="!phone || progress_bar"
+            :disabled="!phone || progress_bar || timerEnabled"
             @click="StkPush"
           >
             <v-progress-circular
@@ -228,6 +217,7 @@ import axios from "axios";
 import numeral from "numeral";
 
 const API = "https://makaaziserver22.up.railway.app";
+const POLL_DURATION = 25; // seconds
 
 export default {
   name: "EstateBilling",
@@ -256,9 +246,10 @@ export default {
       progress_bar: false,
       CheckoutRequestID: null,
 
-      // Timer for STK query
+      // Timer
       timerEnabled: false,
-      timerCount: 25,
+      timerCount: POLL_DURATION,
+      timerHandle: null,
 
       // Snackbars
       snackbar_s: false,
@@ -268,7 +259,7 @@ export default {
       snackbarError: false,
       snackbarTextError: "",
 
-      // Plan definitions (matches subscription_plans table)
+      // Plans
       plans: [
         {
           id: 1,
@@ -329,25 +320,45 @@ export default {
       ],
     };
   },
+
   mounted() {
     this.refreshAll();
   },
-  watch: {
-    timerCount: {
-      handler(value) {
-        if (value > 0 && this.timerEnabled) {
-          setTimeout(() => {
-            this.timerCount--;
-          }, 1000);
-        } else if (value === 0 && this.timerEnabled) {
-          this.StkQuery();
-          this.timerCount = 25;
-        }
-      },
-      immediate: false,
-    },
+
+  beforeDestroy() {
+    this.stopTimer();
   },
+
   methods: {
+    // =========================================================
+    // TIMER CONTROL
+    // =========================================================
+    startTimer() {
+      this.stopTimer();
+      this.timerEnabled = true;
+      this.timerCount = POLL_DURATION;
+
+      this.timerHandle = setInterval(() => {
+        if (!this.timerEnabled) {
+          this.stopTimer();
+          return;
+        }
+        this.timerCount -= 1;
+        if (this.timerCount <= 0) {
+          this.stopTimer();
+          this.StkQuery(); // single final check
+        }
+      }, 1000);
+    },
+
+    stopTimer() {
+      if (this.timerHandle) {
+        clearInterval(this.timerHandle);
+        this.timerHandle = null;
+      }
+      this.timerEnabled = false;
+    },
+
     // =========================================================
     // REFRESH
     // =========================================================
@@ -423,7 +434,16 @@ export default {
       this.amount = plan.amount;
       this.plan_name = plan.name;
       this.duration = "Monthly";
+      this.CheckoutRequestID = null;
+      this.stopTimer();
       this.paymentForm = true;
+    },
+
+    resetPayment() {
+      this.stopTimer();
+      this.paymentForm = false;
+      this.CheckoutRequestID = null;
+      this.progress_bar = false;
     },
 
     async StkPush() {
@@ -431,9 +451,11 @@ export default {
         return this.showError("Enter your M-Pesa number");
       }
 
-      const clean = String(this.phone).replace(/\D/g, "");
-      if (clean.length < 9) {
-        return this.showError("Enter a valid phone number");
+      let clean = String(this.phone).replace(/\D/g, "");
+      if (clean.startsWith("0")) clean = "254" + clean.slice(1);
+      if (!clean.startsWith("254")) clean = "254" + clean;
+      if (clean.length !== 12) {
+        return this.showError("Enter a valid phone number (2547XXXXXXXX)");
       }
 
       this.progress_bar = true;
@@ -441,60 +463,130 @@ export default {
         const { data } = await axios.post(
           `${API}/payment/stk_push_subscription`,
           {
-            phone_number: this.phone,
+            phone_number: clean,
             estate_id: this.estateId,
           }
         );
 
-        if (data && data.CheckoutRequestID) {
-          this.CheckoutRequestID = data.CheckoutRequestID;
-          this.timerEnabled = true;
-          this.timerCount = 25;
-          this.snackbar_s = true;
-          this.snackbarText_s = "STK push sent. Check your phone.";
+        console.log("🔵 Subscription STK response:", data);
+
+        const code = String(data.ResponseCode || "");
+        const crid = data.CheckoutRequestID;
+
+        if (code === "0" && crid) {
+          this.CheckoutRequestID = crid;
+          this.startTimer();
+          this.showInfo("STK push sent. Check your phone.");
         } else {
-          this.showError(data?.error || "Could not initiate payment");
+          this.showError(
+            data.errorMessage ||
+            data.ResponseDescription ||
+            data.error ||
+            "Could not initiate payment"
+          );
         }
       } catch (err) {
-        console.error(err);
+        console.error("🔴 Subscription STK error:", err.response?.data || err.message);
         this.showError(
-          err.response?.data?.error || "Payment initiation failed"
+          err.response?.data?.error ||
+          err.response?.data?.detail ||
+          "Payment initiation failed"
         );
       } finally {
         this.progress_bar = false;
       }
     },
 
+    /**
+     * Single query — always closes the dialog and shows a result.
+     * Never restarts the timer.
+     */
     async StkQuery() {
-      if (!this.CheckoutRequestID) return;
+      if (!this.CheckoutRequestID) {
+        this.resetPayment();
+        return;
+      }
+
+      this.stopTimer();
+      this.showInfo("Checking payment status…");
+
+      let outcome = "unknown";
+      let message = "Could not confirm payment. Please try again.";
+
       try {
         const { data } = await axios.post(
           `${API}/payment/stk_push_subscription/query`,
           { checkoutRequestId: this.CheckoutRequestID }
         );
 
-        // If payment done
-        if (data && (data.ResultCode === "0" || data.ResultCode === 0)) {
-          this.timerEnabled = false;
-          this.paymentForm = false;
-          this.showSuccess("Payment received");
-          this.refreshAll();
-        } else if (
-          data &&
-          (data.ResultCode === "1032" || data.ResultCode === "2001")
-        ) {
-          this.timerEnabled = false;
-          this.showError(
-            data.ResultDesc || "Payment was cancelled or failed"
-          );
-        } else {
-          // Still pending — restart timer
-          this.timerEnabled = true;
-          this.timerCount = 25;
+        console.log("🔵 Subscription STK query:", data);
+
+        const rawCode = data.ResultCode ?? data.result_code ?? data.errorCode ?? "";
+        const resultCode = String(rawCode);
+        const resultDesc =
+          data.ResultDesc || data.result_desc || data.errorMessage || "";
+        const mpesaStatus = data.mpesa_status;
+
+        // SUCCESS
+        if (resultCode === "0" || mpesaStatus === "success") {
+          outcome = "success";
+          message = "Payment received. Subscription renewed.";
+        }
+        // USER CANCELLED
+        else if (resultCode === "1032") {
+          outcome = "error";
+          message = "You cancelled the payment on your phone.";
+        }
+        // WRONG PIN
+        else if (resultCode === "2001") {
+          outcome = "error";
+          message = "Wrong M-Pesa PIN. Please try again.";
+        }
+        // INSUFFICIENT FUNDS
+        else if (resultCode === "1") {
+          outcome = "error";
+          message = "Insufficient M-Pesa balance.";
+        }
+        // INVALID PHONE
+        else if (resultCode === "1001") {
+          outcome = "error";
+          message = "Invalid phone number.";
+        }
+        // TIMEOUT
+        else if (resultCode === "1002") {
+          outcome = "error";
+          message = "M-Pesa request timed out. Please try again.";
+        }
+        // GENERIC FAILED
+        else if (mpesaStatus === "failed") {
+          outcome = "error";
+          message = resultDesc || "Payment failed.";
+        }
+        // STILL PENDING
+        else {
+          outcome = "pending";
+          message =
+            "Payment not confirmed yet. If you entered your PIN, it may take a few minutes to reflect. Check your payment history.";
         }
       } catch (err) {
-        console.warn("STK query failed:", err.message);
-        this.timerEnabled = false;
+        console.error("🔴 Subscription STK query failed:", err.response?.data || err.message);
+        outcome = "error";
+        message = "Could not verify payment status. Please try again.";
+      }
+
+      // Always close dialog and show the result
+      this.paymentForm = false;
+      this.CheckoutRequestID = null;
+      this.progress_bar = false;
+      this.stopTimer();
+
+      if (outcome === "success") {
+        this.showSuccess(message);
+        this.refreshAll();
+      } else if (outcome === "pending") {
+        this.showInfo(message);
+      } else {
+        this.showError(message);
       }
     },
 
@@ -509,6 +601,11 @@ export default {
     showError(msg) {
       this.snackbarError = true;
       this.snackbarTextError = msg;
+    },
+
+    showInfo(msg) {
+      this.snackbar_s = true;
+      this.snackbarText_s = msg;
     },
   },
 };
@@ -568,13 +665,8 @@ export default {
   flex-shrink: 0;
 }
 
-.pulse-active {
-  animation: pulseG 2s infinite;
-}
-
-.pulse-inactive {
-  animation: pulseR 1.5s infinite;
-}
+.pulse-active { animation: pulseG 2s infinite; }
+.pulse-inactive { animation: pulseR 1.5s infinite; }
 
 @keyframes pulseG {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6); }
@@ -690,11 +782,8 @@ export default {
   box-shadow: 0 12px 32px -14px rgba(124, 58, 237, 0.35);
 }
 
-.plan-card-recommended {
-  border-color: #a855f7;
-}
+.plan-card-recommended { border-color: #a855f7; }
 
-/* Badge */
 .plan-badge {
   position: absolute;
   top: 14px;
@@ -707,17 +796,13 @@ export default {
   border-radius: 999px;
 }
 
-.plan-badge-current {
-  background: #7c3aed;
-  color: white;
-}
+.plan-badge-current { background: #7c3aed; color: white; }
 
 .plan-badge-recommended {
   background: linear-gradient(135deg, #a855f7, #ec4899);
   color: white;
 }
 
-/* Icon */
 .plan-icon {
   width: 44px;
   height: 44px;
@@ -747,7 +832,6 @@ export default {
   margin-top: 2px;
 }
 
-/* Price */
 .plan-price {
   display: flex;
   align-items: baseline;
@@ -775,7 +859,6 @@ export default {
   margin-left: 2px;
 }
 
-/* Features */
 .plan-features {
   list-style: none;
   padding: 0;
@@ -794,7 +877,6 @@ export default {
   color: #4b5563;
 }
 
-/* CTA */
 .plan-cta {
   display: flex;
   align-items: center;
@@ -909,15 +991,10 @@ export default {
   flex-shrink: 0;
 }
 
-.payment-close:hover {
-  background: rgba(255, 255, 255, 0.28);
-}
+.payment-close:hover { background: rgba(255, 255, 255, 0.28); }
 
-.payment-body {
-  padding: 22px 24px 24px;
-}
+.payment-body { padding: 22px 24px 24px; }
 
-/* Amount display */
 .amount-display {
   background: #faf8ff;
   border: 1px solid #e9e0ff;
@@ -957,7 +1034,6 @@ export default {
   line-height: 1;
 }
 
-/* Field */
 .field-label {
   display: block;
   font-size: 0.74rem;
@@ -985,7 +1061,6 @@ export default {
   border-width: 2px !important;
 }
 
-/* Timer */
 .timer-block {
   display: flex;
   align-items: center;
@@ -1023,7 +1098,6 @@ export default {
   margin-top: 2px;
 }
 
-/* Pay button */
 .pay-btn {
   width: 100%;
   display: flex;
@@ -1064,7 +1138,6 @@ export default {
   font-weight: 600;
 }
 
-/* Transitions */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1075,19 +1148,10 @@ export default {
   transform: translateY(-6px);
 }
 
-/* Responsive */
 @media (max-width: 599px) {
-  .status-banner {
-    padding: 16px 18px;
-  }
-  .status-title {
-    font-size: 0.9rem;
-  }
-  .plans-grid {
-    grid-template-columns: 1fr;
-  }
-  .payment-body {
-    padding: 18px;
-  }
+  .status-banner { padding: 16px 18px; }
+  .status-title { font-size: 0.9rem; }
+  .plans-grid { grid-template-columns: 1fr; }
+  .payment-body { padding: 18px; }
 }
 </style>

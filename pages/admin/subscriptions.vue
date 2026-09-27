@@ -18,6 +18,15 @@
         <v-btn
           text
           rounded
+          class="text-capitalize manage-plans-btn"
+          @click="openPlansDialog"
+        >
+          <v-icon left small>mdi-cog-outline</v-icon>
+          Manage plans
+        </v-btn>
+        <v-btn
+          text
+          rounded
           class="text-capitalize refresh-btn"
           :loading="loading"
           @click="load"
@@ -316,9 +325,13 @@
             <select v-model="form.plan_id" class="form-input">
               <option value="" disabled>Select a plan…</option>
               <option v-for="p in plans" :key="p.plan_id" :value="p.plan_id">
-                {{ p.plan_name }} — KES {{ p.monthly_rate }}/mo
+                {{ p.plan_name }} — KES {{ formatNum(p.monthly_rate) }}/mo
               </option>
             </select>
+            <div v-if="!plans.length" class="form-hint form-hint-warn">
+              <v-icon size="14">mdi-alert-circle-outline</v-icon>
+              No plans available. Click <strong>Manage plans</strong> to create one.
+            </div>
           </div>
 
           <div class="form-grid">
@@ -379,6 +392,140 @@
       </div>
     </v-dialog>
 
+    <!-- ============================================================
+         MANAGE PLANS DIALOG
+         ============================================================ -->
+    <v-dialog
+      v-if="plansDialog"
+      v-model="plansDialog"
+      max-width="640"
+      content-class="sub-dialog-content"
+    >
+      <div class="sub-dialog-card">
+        <div class="sub-dialog-header">
+          <div>
+            <div class="sub-dialog-title">Manage subscription plans</div>
+            <div class="sub-dialog-sub">
+              Create, edit, or remove plans. Estates subscribe to these.
+            </div>
+          </div>
+          <button class="sub-dialog-close" @click="plansDialog = false">
+            <v-icon size="20" color="white">mdi-close</v-icon>
+          </button>
+        </div>
+
+        <div class="sub-dialog-body">
+          <!-- Create / edit form -->
+          <div class="plan-form">
+            <div class="plan-form-title">
+              {{ planEdit.plan_id ? 'Edit plan' : 'New plan' }}
+            </div>
+
+            <div class="form-grid">
+              <div class="form-row">
+                <label class="form-label">Plan name</label>
+                <input
+                  v-model="planEdit.plan_name"
+                  class="form-input"
+                  placeholder="e.g. Band 5 (5000+)"
+                />
+              </div>
+              <div class="form-row">
+                <label class="form-label">Monthly rate (KES)</label>
+                <input
+                  v-model.number="planEdit.monthly_rate"
+                  class="form-input"
+                  type="number"
+                  min="0"
+                  placeholder="400"
+                />
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-row">
+                <label class="form-label">Min households</label>
+                <input
+                  v-model.number="planEdit.min_households"
+                  class="form-input"
+                  type="number"
+                  min="1"
+                  placeholder="1"
+                />
+              </div>
+              <div class="form-row">
+                <label class="form-label">Max households (blank = no limit)</label>
+                <input
+                  v-model.number="planEdit.max_households"
+                  class="form-input"
+                  type="number"
+                  min="1"
+                  placeholder="100"
+                />
+              </div>
+            </div>
+
+            <div class="plan-form-actions">
+              <button
+                v-if="planEdit.plan_id"
+                class="dialog-btn dialog-btn-ghost"
+                @click="resetPlanForm"
+              >
+                Cancel edit
+              </button>
+              <button
+                class="dialog-btn dialog-btn-primary"
+                :disabled="!canSavePlan || savingPlan"
+                @click="savePlan"
+              >
+                <v-icon v-if="savingPlan" size="16" class="mr-2 spin">mdi-loading</v-icon>
+                {{ planEdit.plan_id ? 'Save changes' : 'Create plan' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Existing plans -->
+          <div class="plan-list-title">
+            Existing plans ({{ plans.length }})
+          </div>
+          <div class="plan-list">
+            <div v-if="plansLoading" class="plan-loading">
+              <v-skeleton-loader type="list-item-two-line" />
+              <v-skeleton-loader type="list-item-two-line" />
+            </div>
+            <div v-else-if="!plans.length" class="plan-empty">
+              No plans yet — create one above
+            </div>
+            <div v-for="p in plans" :key="p.plan_id" class="plan-item">
+              <div class="plan-item-body">
+                <div class="plan-item-name">{{ p.plan_name }}</div>
+                <div class="plan-item-meta">
+                  {{ p.min_households }} – {{ p.max_households || '∞' }} households ·
+                  KES {{ formatNum(p.monthly_rate) }}/mo
+                </div>
+              </div>
+              <button class="plan-item-btn" @click="editPlan(p)" title="Edit">
+                <v-icon size="15">mdi-pencil-outline</v-icon>
+              </button>
+              <button
+                class="plan-item-btn plan-item-btn-danger"
+                @click="deletePlan(p)"
+                title="Delete"
+              >
+                <v-icon size="15">mdi-trash-can-outline</v-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-dialog-footer">
+          <button class="dialog-btn dialog-btn-ghost" @click="plansDialog = false">
+            Close
+          </button>
+        </div>
+      </div>
+    </v-dialog>
+
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
@@ -414,6 +561,7 @@ export default {
       subs: [],
       estates: [],
       plans: [],
+      plansLoading: false,
 
       search: '',
       statusFilter: '',
@@ -428,6 +576,17 @@ export default {
         amount_paid: 0,
         payment_status: 'Paid',
         payment_method: 'Mpesa',
+      },
+
+      // Plans management
+      plansDialog: false,
+      savingPlan: false,
+      planEdit: {
+        plan_id: null,
+        plan_name: '',
+        min_households: 1,
+        max_households: 100,
+        monthly_rate: 100,
       },
 
       snackbar: { show: false, text: '', color: 'success' },
@@ -489,6 +648,13 @@ export default {
     },
     canSubmit() {
       return !!(this.form.estate_id && this.form.plan_id && this.form.start_date);
+    },
+    canSavePlan() {
+      return !!(
+        this.planEdit.plan_name &&
+        this.planEdit.min_households != null &&
+        this.planEdit.monthly_rate != null
+      );
     },
   },
 
@@ -554,12 +720,24 @@ export default {
     },
 
     async loadPlans() {
-      this.plans = [
-        { plan_id: 1, plan_name: 'Band 1 (1–100)',   monthly_rate: 100 },
-        { plan_id: 2, plan_name: 'Band 2 (101–500)', monthly_rate: 200 },
-        { plan_id: 3, plan_name: 'Band 3 (501–1000)',monthly_rate: 300 },
-        { plan_id: 4, plan_name: 'Band 4 (1000+)',   monthly_rate: 400 },
-      ];
+      this.plansLoading = true;
+      try {
+        const headers = await this.getAuthHeaders();
+        const { data, status } = await axios.get(
+          `${API}/admin/subscription-plans`,
+          { headers }
+        );
+        if (status === 200 && Array.isArray(data)) {
+          this.plans = data;
+        } else {
+          this.plans = [];
+        }
+      } catch (err) {
+        console.warn('Plans load failed:', err.message);
+        this.plans = [];
+      } finally {
+        this.plansLoading = false;
+      }
     },
 
     formatNum(n) {
@@ -761,6 +939,100 @@ export default {
       }
     },
 
+    // =========================================================
+    // PLANS MANAGEMENT
+    // =========================================================
+    openPlansDialog() {
+      this.plansDialog = true;
+      this.resetPlanForm();
+      this.loadPlans();
+    },
+
+    resetPlanForm() {
+      this.planEdit = {
+        plan_id: null,
+        plan_name: '',
+        min_households: 1,
+        max_households: 100,
+        monthly_rate: 100,
+      };
+    },
+
+    editPlan(p) {
+      this.planEdit = {
+        plan_id: p.plan_id,
+        plan_name: p.plan_name,
+        min_households: Number(p.min_households),
+        max_households:
+          p.max_households == null ? null : Number(p.max_households),
+        monthly_rate: Number(p.monthly_rate),
+      };
+    },
+
+    async savePlan() {
+      if (!this.canSavePlan || this.savingPlan) return;
+      this.savingPlan = true;
+      try {
+        const headers = await this.getAuthHeaders();
+        const payload = {
+          plan_name: this.planEdit.plan_name,
+          min_households: Number(this.planEdit.min_households),
+          max_households:
+            this.planEdit.max_households === '' ||
+            this.planEdit.max_households == null
+              ? null
+              : Number(this.planEdit.max_households),
+          monthly_rate: Number(this.planEdit.monthly_rate),
+        };
+
+        if (this.planEdit.plan_id) {
+          await axios.patch(
+            `${API}/admin/subscription-plans/${this.planEdit.plan_id}`,
+            payload,
+            { headers }
+          );
+          this.showSnackbar('Plan updated', 'success');
+        } else {
+          await axios.post(`${API}/admin/subscription-plans`, payload, { headers });
+          this.showSnackbar('Plan created', 'success');
+        }
+
+        this.resetPlanForm();
+        await this.loadPlans();
+        await this.load();
+      } catch (err) {
+        console.error(err);
+        this.showSnackbar(
+          err.response?.data?.error || 'Could not save plan',
+          'error'
+        );
+      } finally {
+        this.savingPlan = false;
+      }
+    },
+
+    async deletePlan(p) {
+      const confirmed = window.confirm(
+        `Delete "${p.plan_name}"? This cannot be undone.`
+      );
+      if (!confirmed) return;
+
+      try {
+        const headers = await this.getAuthHeaders();
+        await axios.delete(`${API}/admin/subscription-plans/${p.plan_id}`, {
+          headers,
+        });
+        this.showSnackbar('Plan deleted', 'success');
+        await this.loadPlans();
+      } catch (err) {
+        console.error(err);
+        this.showSnackbar(
+          err.response?.data?.error || 'Could not delete plan',
+          'error'
+        );
+      }
+    },
+
     showSnackbar(text, color = 'success') {
       this.snackbar = { show: true, text, color };
     },
@@ -830,9 +1102,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
-.refresh-btn {
+.refresh-btn,
+.manage-plans-btn {
   color: #475569 !important;
   font-weight: 700 !important;
   font-size: 0.72rem !important;
@@ -840,7 +1114,8 @@ export default {
   text-transform: uppercase !important;
 }
 
-.refresh-btn:hover {
+.refresh-btn:hover,
+.manage-plans-btn:hover {
   color: #0f0d24 !important;
   background: rgba(15, 13, 36, 0.05) !important;
 }
@@ -1433,7 +1708,7 @@ export default {
   overflow: visible !important;
   border-radius: 20px !important;
   margin: 16px auto !important;
-  max-width: 520px !important;
+  max-width: 640px !important;
   width: calc(100% - 32px) !important;
   max-height: calc(100vh - 32px) !important;
   display: flex !important;
@@ -1538,6 +1813,19 @@ export default {
   background: #ffffff;
 }
 
+.form-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.form-hint-warn {
+  color: #b45309;
+}
+
 .sub-dialog-footer {
   display: flex;
   justify-content: flex-end;
@@ -1588,6 +1876,129 @@ export default {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ============================================================
+   PLAN MANAGEMENT
+   ============================================================ */
+.plan-form {
+  background: #fafaff;
+  border: 1px solid #e9e7f2;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.plan-form-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 14px;
+}
+
+.plan-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.plan-list-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-empty {
+  text-align: center;
+  padding: 24px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-style: italic;
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+}
+
+.plan-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  border-radius: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.plan-item:hover {
+  border-color: #c7b8ff;
+  box-shadow: 0 8px 20px -14px rgba(128, 81, 255, 0.4);
+}
+
+.plan-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-item-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-item-meta {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 3px;
+  font-weight: 600;
+}
+
+.plan-item-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px solid #e9edf3;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.plan-item-btn:hover {
+  background: #f1f5f9;
+  color: #0f0d24;
+  border-color: #cbd5e1;
+}
+
+.plan-item-btn-danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1024px) {
@@ -1601,8 +2012,47 @@ export default {
 @media (max-width: 767px) {
   .subs-page { gap: 18px; }
   .page-title { font-size: 1.35rem; }
-  .page-actions { width: 100%; }
-  .refresh-btn, .new-estate-btn { flex: 1; }
+
+  /* Page header stacks cleanly */
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  /* Action buttons wrap to their own row using a 2-col grid */
+  .page-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* Top row: Manage plans + Refresh, evenly split */
+  .manage-plans-btn,
+  .refresh-btn {
+    width: 100%;
+    margin: 0 !important;
+    min-width: 0 !important;
+    padding: 0 8px !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  /* Bottom row: New subscription spans both columns */
+  .new-estate-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 0 !important;
+    min-width: 0 !important;
+    padding: 0 14px !important;
+    font-size: 0.74rem !important;
+  }
+
+  .new-estate-btn span {
+    white-space: nowrap;
+    overflow: visible;
+  }
 
   .summary-grid {
     grid-template-columns: repeat(2, 1fr);
