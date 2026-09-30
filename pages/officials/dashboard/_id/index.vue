@@ -300,8 +300,8 @@
               <v-icon size="20" color="white">mdi-car-multiple</v-icon>
             </div>
             <div class="panel-title-group">
-              <div class="panel-title">Vehicles &amp; gate</div>
-              <div class="panel-sub">Registered vehicles, pending approvals and gate activity</div>
+              <div class="panel-title">Vehicles, visitors &amp; gate</div>
+              <div class="panel-sub">Registered vehicles, visitor passes and gate activity</div>
             </div>
             <button
               class="view-all-btn hidden-xs-only"
@@ -332,6 +332,17 @@
           </div>
 
           <div class="vehicles-actions">
+            <button class="veh-action" @click="goTo('/officials/visitors')">
+              <div class="veh-action-icon veh-action-lime">
+                <v-icon size="18" color="#0A0A14">mdi-account-multiple-plus</v-icon>
+              </div>
+              <div class="veh-action-body">
+                <div class="veh-action-title">Visitors</div>
+                <div class="veh-action-sub">Create and manage estate passes</div>
+              </div>
+              <v-icon size="18" color="#8051FF">mdi-chevron-right</v-icon>
+            </button>
+
             <button class="veh-action" @click="goTo('/officials/vehicles')">
               <div class="veh-action-icon veh-action-purple">
                 <v-icon size="18" color="white">mdi-car-cog</v-icon>
@@ -510,6 +521,7 @@ export default {
         { title: 'Dashboard', icon: 'mdi-view-dashboard', route: this.dashboardRoute },
         { title: 'Pending',   icon: 'mdi-account-clock',  route: '/officials/pending',   badge: this.stats.pendingApprovals },
         { title: 'Residents', icon: 'mdi-home-group',     route: '/officials/residence' },
+        { title: 'Visitors',  icon: 'mdi-account-multiple-plus', route: '/officials/visitors' },
         { title: 'Payments',  icon: 'mdi-currency-usd',   route: '/officials/payments' },
         { title: 'Vehicles',  icon: 'mdi-car',            route: '/officials/vehicles' },
         { title: 'Charges',   icon: 'mdi-tag-multiple',   route: '/officials/charges' },
@@ -538,10 +550,10 @@ export default {
       // Desktop: curated set of the most-used tasks
       if (!this.nav_bars) {
         return [
-          { title: 'Approve',    icon: 'mdi-account-check', route: '/officials/pending',   tone: 'primary' },
-          { title: 'Add charge', icon: 'mdi-tag-plus',      route: '/officials/charges',   tone: 'lime' },
-          { title: 'Residents',  icon: 'mdi-home-group',    route: '/officials/residence', tone: 'slate' },
-          { title: 'Vehicles',   icon: 'mdi-car',           route: '/officials/vehicles',  tone: 'slate' },
+          { title: 'Approve',    icon: 'mdi-account-check',          route: '/officials/pending',   tone: 'primary' },
+          { title: 'Add charge', icon: 'mdi-tag-plus',               route: '/officials/charges',   tone: 'lime' },
+          { title: 'Residents',  icon: 'mdi-home-group',             route: '/officials/residence', tone: 'slate' },
+          { title: 'Visitors',   icon: 'mdi-account-multiple-plus',  route: '/officials/visitors',  tone: 'slate' },
         ];
       }
 
@@ -597,6 +609,7 @@ export default {
 
     // Map a route to a tile color tone
     toneForRoute(route) {
+      if (route.includes('visitors'))  return 'lime';
       if (route.includes('residence')) return 'lime';
       if (route.includes('charges'))   return 'primary';
       if (route.includes('vehicles'))  return 'primary';

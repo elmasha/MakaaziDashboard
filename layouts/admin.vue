@@ -164,6 +164,8 @@ export default {
         { title: 'Subscriptions', view: 'subscriptions', icon: 'mdi-credit-card-outline',     route: '/admin/subscriptions', shortTitle: 'Subs' },
         { title: 'Officials',     view: 'officials',     icon: 'mdi-shield-account-outline',  route: '/admin/officials' },
         { title: 'Residents',     view: 'residents',     icon: 'mdi-home-group',              route: '/admin/residents' },
+        { title: 'Vehicles',      view: 'vehicles',      icon: 'mdi-car-multiple',            route: '/admin/vehicles' },
+        { title: 'Visitors',      view: 'visitors',      icon: 'mdi-account-multiple-plus',   route: '/admin/visitors' },
         { title: 'Reports',       view: 'reports',       icon: 'mdi-chart-line',              route: '/admin/reports' },
         { title: 'SMS Logs',      view: 'sms',           icon: 'mdi-message-text-outline',    route: '/admin/sms', shortTitle: 'SMS' },
         { title: 'Audit Logs',    view: 'audit',         icon: 'mdi-history',                 route: '/admin/audit' },
@@ -180,6 +182,8 @@ export default {
       if (p.startsWith('/admin/subscriptions')) return 'subscriptions';
       if (p.startsWith('/admin/officials')) return 'officials';
       if (p.startsWith('/admin/residents')) return 'residents';
+      if (p.startsWith('/admin/vehicles')) return 'vehicles';
+      if (p.startsWith('/admin/visitors')) return 'visitors';
       if (p.startsWith('/admin/reports')) return 'reports';
       if (p.startsWith('/admin/sms')) return 'sms';
       if (p.startsWith('/admin/audit')) return 'audit';
