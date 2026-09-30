@@ -292,6 +292,91 @@
         </div>
 
         <!-- ============================================================
+             VEHICLES & GATE — official summary
+             ============================================================ -->
+        <div class="panel-card mt-4 reveal-card" style="animation-delay: 225ms">
+          <div class="panel-head">
+            <div class="panel-icon panel-icon-purple">
+              <v-icon size="20" color="white">mdi-car-multiple</v-icon>
+            </div>
+            <div class="panel-title-group">
+              <div class="panel-title">Vehicles &amp; gate</div>
+              <div class="panel-sub">Registered vehicles, pending approvals and gate activity</div>
+            </div>
+            <button
+              class="view-all-btn hidden-xs-only"
+              @click="goTo('/officials/vehicles')"
+            >
+              Manage
+              <v-icon size="14" class="ml-1">mdi-arrow-right</v-icon>
+            </button>
+          </div>
+
+          <div class="vehicles-stats">
+            <div class="veh-stat">
+              <div class="veh-stat-label">Active</div>
+              <div class="veh-stat-value">{{ formatNum(vehicleStats.active_vehicles) }}</div>
+            </div>
+            <div class="veh-stat" :class="{ 'veh-stat-alert': vehicleStats.pending_vehicles > 0 }">
+              <div class="veh-stat-label">Pending</div>
+              <div class="veh-stat-value">{{ formatNum(vehicleStats.pending_vehicles) }}</div>
+            </div>
+            <div class="veh-stat">
+              <div class="veh-stat-label">Active passes</div>
+              <div class="veh-stat-value">{{ formatNum(vehicleStats.active_passes) }}</div>
+            </div>
+            <div class="veh-stat">
+              <div class="veh-stat-label">Entries today</div>
+              <div class="veh-stat-value">{{ formatNum(vehicleStats.today_entries) }}</div>
+            </div>
+          </div>
+
+          <div class="vehicles-actions">
+            <button class="veh-action" @click="goTo('/officials/vehicles')">
+              <div class="veh-action-icon veh-action-purple">
+                <v-icon size="18" color="white">mdi-car-cog</v-icon>
+              </div>
+              <div class="veh-action-body">
+                <div class="veh-action-title">All vehicles</div>
+                <div class="veh-action-sub">Approve, suspend, manage</div>
+              </div>
+              <v-icon size="18" color="#8051FF">mdi-chevron-right</v-icon>
+            </button>
+
+            <button class="veh-action" @click="goTo('/officials/vehicles?tab=passes')">
+              <div class="veh-action-icon veh-action-lime">
+                <v-icon size="18" color="#0A0A14">mdi-ticket-confirmation</v-icon>
+              </div>
+              <div class="veh-action-body">
+                <div class="veh-action-title">Visitor passes</div>
+                <div class="veh-action-sub">Verify and cancel passes</div>
+              </div>
+              <v-icon size="18" color="#8051FF">mdi-chevron-right</v-icon>
+            </button>
+
+            <button class="veh-action" @click="goTo('/officials/vehicles?tab=gate')">
+              <div class="veh-action-icon veh-action-slate">
+                <v-icon size="18" color="white">mdi-gate</v-icon>
+              </div>
+              <div class="veh-action-body">
+                <div class="veh-action-title">Gate log</div>
+                <div class="veh-action-sub">Log IN / OUT for a vehicle</div>
+              </div>
+              <v-icon size="18" color="#8051FF">mdi-chevron-right</v-icon>
+            </button>
+          </div>
+
+          <button
+            v-if="nav_bars"
+            class="view-all-btn vehicles-mobile-cta"
+            @click="goTo('/officials/vehicles')"
+          >
+            Manage vehicles
+            <v-icon size="14" class="ml-1">mdi-arrow-right</v-icon>
+          </button>
+        </div>
+
+        <!-- ============================================================
              RECENT PAYMENTS
              ============================================================ -->
         <div class="panel-card mt-4 reveal-card" style="animation-delay: 250ms">
@@ -403,6 +488,12 @@ export default {
         collectedYTD: 0,
         arrears: 0,
       },
+      vehicleStats: {
+        active_vehicles: 0,
+        pending_vehicles: 0,
+        active_passes: 0,
+        today_entries: 0,
+      },
       recentPayments: [],
 
       snackbar: { show: false, text: '', color: 'success' },
@@ -420,6 +511,7 @@ export default {
         { title: 'Pending',   icon: 'mdi-account-clock',  route: '/officials/pending',   badge: this.stats.pendingApprovals },
         { title: 'Residents', icon: 'mdi-home-group',     route: '/officials/residence' },
         { title: 'Payments',  icon: 'mdi-currency-usd',   route: '/officials/payments' },
+        { title: 'Vehicles',  icon: 'mdi-car',            route: '/officials/vehicles' },
         { title: 'Charges',   icon: 'mdi-tag-multiple',   route: '/officials/charges' },
         { title: 'Team',      icon: 'mdi-account-supervisor', route: '/officials/team' },
         { title: 'Cash',      icon: 'mdi-cash-register',  route: '/officials/cash' },
@@ -449,7 +541,7 @@ export default {
           { title: 'Approve',    icon: 'mdi-account-check', route: '/officials/pending',   tone: 'primary' },
           { title: 'Add charge', icon: 'mdi-tag-plus',      route: '/officials/charges',   tone: 'lime' },
           { title: 'Residents',  icon: 'mdi-home-group',    route: '/officials/residence', tone: 'slate' },
-          { title: 'Reports',    icon: 'mdi-chart-bar',     route: '/officials/payments',  tone: 'slate' },
+          { title: 'Vehicles',   icon: 'mdi-car',           route: '/officials/vehicles',  tone: 'slate' },
         ];
       }
 
@@ -507,6 +599,7 @@ export default {
     toneForRoute(route) {
       if (route.includes('residence')) return 'lime';
       if (route.includes('charges'))   return 'primary';
+      if (route.includes('vehicles'))  return 'primary';
       if (route.includes('team'))      return 'slate';
       if (route.includes('cash'))      return 'slate';
       if (route.includes('settings'))  return 'slate';
@@ -547,6 +640,7 @@ export default {
           this.fetchEstate(),
           this.fetchStats(),
           this.fetchRecentPayments(),
+          this.fetchVehicleStats(),
         ]);
       }
       this.loading = false;
@@ -640,6 +734,24 @@ export default {
       } catch (err) {
         console.warn('Recent payments failed:', err.response?.data || err.message);
         this.recentPayments = [];
+      }
+    },
+
+    async fetchVehicleStats() {
+      if (!this.estateId) return;
+      try {
+        const { data } = await axios.get(`${API}/vehicles/estate/${this.estateId}/stats`);
+        if (data && typeof data === 'object') {
+          this.vehicleStats = {
+            active_vehicles:  Number(data.active_vehicles)  || 0,
+            pending_vehicles: Number(data.pending_vehicles) || 0,
+            active_passes:    Number(data.active_passes)    || 0,
+            today_entries:    Number(data.today_entries)    || 0,
+          };
+        }
+      } catch (err) {
+        // Silent — vehicles are additive; failing here shouldn't break the dashboard
+        console.warn('Vehicle stats failed:', err.response?.data || err.message);
       }
     },
 
@@ -998,7 +1110,7 @@ export default {
 }
 
 /* ============================================================
-   PANEL (quick actions, payments)
+   PANEL (quick actions, payments, vehicles)
    ============================================================ */
 .panel-card {
   background: #ffffff;
@@ -1142,6 +1254,111 @@ export default {
 }
 
 /* ============================================================
+   VEHICLES & GATE PANEL
+   ============================================================ */
+.vehicles-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 18px 20px 8px;
+}
+.veh-stat {
+  background: #fafbff;
+  border: 1px solid #eef1f6;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.veh-stat-alert {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border-color: #fed7aa;
+}
+.veh-stat-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+.veh-stat-alert .veh-stat-label { color: #b45309; }
+.veh-stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.6px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.veh-stat-alert .veh-stat-value { color: #b45309; }
+
+.vehicles-actions {
+  padding: 8px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.veh-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+.veh-action:hover {
+  border-color: rgba(128, 81, 255, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px -16px rgba(128, 81, 255, 0.35);
+}
+.veh-action-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.veh-action-purple {
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  box-shadow: 0 8px 16px -8px rgba(128, 81, 255, 0.8);
+}
+.veh-action-lime {
+  background: linear-gradient(135deg, #d4ff4a 0%, #b6ff00 100%);
+  box-shadow: 0 8px 16px -8px rgba(182, 255, 0, 0.6);
+}
+.veh-action-slate {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  box-shadow: 0 8px 16px -8px rgba(71, 85, 105, 0.6);
+}
+.veh-action-body { flex: 1; min-width: 0; }
+.veh-action-title {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.2px;
+}
+.veh-action-sub {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.vehicles-mobile-cta {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 0 20px 20px;
+  text-align: center;
+  justify-content: center;
+}
+
+/* ============================================================
    RECENT PAYMENTS
    ============================================================ */
 .payments-list { padding: 6px 0; }
@@ -1274,6 +1491,13 @@ export default {
     gap: 8px;
     padding: 14px 16px 18px;
   }
+
+  .vehicles-stats {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 14px 16px 6px;
+  }
+  .vehicles-actions { padding: 6px 16px 16px; }
+  .vehicles-mobile-cta { width: calc(100% - 32px); margin: 0 16px 16px; }
 }
 
 @media (max-width: 599px) {

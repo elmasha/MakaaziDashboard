@@ -1,348 +1,477 @@
 <template>
-  <div class="login-root">
-    <!-- Background image + overlay -->
-    <div class="login-bg" :style="{ backgroundImage: `url(${loginbg})` }"></div>
-    <div class="login-overlay"></div>
-
-    <!-- Top bar -->
-    <div class="login-topbar">
-      <div class="brand" @click="goTo('/')">
-        <div class="brand-avatar">
-          <v-icon color="white" size="20">mdi-shield-account</v-icon>
+  <div class="auth-root">
+    <!-- ============================================================
+         LEFT PANEL (illustrated) — hidden on mobile
+         ============================================================ -->
+    <div class="auth-left hidden-xs-only">
+      <div class="left-content">
+        <!-- Brand -->
+        <div class="brand">
+          <div class="brand-mark">
+            <v-icon color="white" size="22">mdi-shield-account</v-icon>
+          </div>
+          <span class="brand-name">Makaazi</span>
         </div>
-        <div class="brand-text">
-          <span class="brand-mk">Ma</span><span class="brand-kz">kaazi</span>
-          <span class="brand-role">Official</span>
+
+        <!-- Hero copy -->
+        <h1 class="left-title">
+          Estate living,<br />
+          <span class="left-accent">reimagined.</span>
+        </h1>
+        <p class="left-subtitle">
+          One platform for residents, officials, and estate managers.
+          Pay in seconds. Track every shilling.
+        </p>
+
+        <!-- Floating preview cards -->
+        <div class="preview-stack">
+          <div class="preview-card preview-1">
+            <div class="preview-icon green">
+              <v-icon color="white" size="16">mdi-check</v-icon>
+            </div>
+            <div class="preview-body">
+              <div class="preview-title">Payment received</div>
+              <div class="preview-sub">KES 4,000 · Security</div>
+            </div>
+            <div class="preview-time">now</div>
+          </div>
+
+          <div class="preview-card preview-2">
+            <div class="preview-icon purple">
+              <v-icon color="white" size="16">mdi-chart-line</v-icon>
+            </div>
+            <div class="preview-body">
+              <div class="preview-title">Monthly collections</div>
+              <div class="preview-sub">Up 12% this month</div>
+            </div>
+            <div class="preview-bar">
+              <span style="height: 40%"></span>
+              <span style="height: 65%"></span>
+              <span style="height: 45%"></span>
+              <span style="height: 80%"></span>
+              <span style="height: 60%"></span>
+              <span style="height: 95%"></span>
+            </div>
+          </div>
+
+          <div class="preview-card preview-3">
+            <div class="preview-icon amber">
+              <v-icon color="white" size="16">mdi-home-city</v-icon>
+            </div>
+            <div class="preview-body">
+              <div class="preview-title">12 estates onboard</div>
+              <div class="preview-sub">500+ households</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="left-footer">
+          <div class="footer-dots">
+            <span class="dot dot-active"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+          <span class="footer-text">Trusted by estate managers across Kenya</span>
         </div>
       </div>
-      <button class="back-btn" @click="goTo('/')">
-        <v-icon size="16" class="mr-1">mdi-arrow-left</v-icon>
-        Back
-      </button>
+
+      <!-- Decorative blobs -->
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
     </div>
 
-    <!-- Main card -->
-    <div class="login-wrap">
-      <div class="login-card">
-        <!-- Progress bar at the top of the card -->
-        <div v-show="progress_bar" class="login-progress">
-          <div class="login-progress-bar"></div>
+    <!-- ============================================================
+         RIGHT PANEL (form)
+         ============================================================ -->
+    <div class="auth-right">
+      <div class="form-wrap">
+        <!-- Mobile brand -->
+        <div class="mobile-brand">
+          <div class="brand-mark-sm">
+            <v-icon color="white" size="16">mdi-shield-account</v-icon>
+          </div>
+          <span class="brand-name-sm">Makaazi</span>
         </div>
 
-        <!-- Left: brand hero (desktop only) -->
-        <div class="login-hero hidden-xs-only">
-          <div class="hero-badge">
-            <v-icon size="18" color="white">mdi-shield-crown-outline</v-icon>
-            <span>Official Console</span>
+        <!-- Heading -->
+        <div class="form-head">
+          <h2 class="form-title">Welcome back</h2>
+          <p class="form-sub">Sign in to continue to your estate dashboard.</p>
+        </div>
+
+        <!-- Step indicator -->
+        <div class="steps">
+          <div class="step" :class="{ 'step-done': estate_id, 'step-active': !estate_id }">
+            <span class="step-num">
+              <v-icon v-if="estate_id" size="12" color="white">mdi-check</v-icon>
+              <template v-else>1</template>
+            </span>
+            <span class="step-label">Estate</span>
           </div>
-          <div class="hero-title">
-            Manage your estate<br />with confidence
-          </div>
-          <div class="hero-sub">
-            Approve residents, track payments, log cash, and keep your estate running smoothly.
-          </div>
-          <div class="hero-features">
-            <div class="hero-feature">
-              <v-icon size="16" color="#9b6cff">mdi-account-check-outline</v-icon>
-              <span>Approve registrations</span>
-            </div>
-            <div class="hero-feature">
-              <v-icon size="16" color="#9b6cff">mdi-cash-multiple</v-icon>
-              <span>Track collections</span>
-            </div>
-            <div class="hero-feature">
-              <v-icon size="16" color="#9b6cff">mdi-chart-line</v-icon>
-              <span>Monitor monthly trends</span>
-            </div>
-            <div class="hero-feature">
-              <v-icon size="16" color="#9b6cff">mdi-account-supervisor-outline</v-icon>
-              <span>Coordinate the team</span>
-            </div>
+          <div class="step-line" :class="{ 'step-line-done': estate_id }"></div>
+          <div class="step" :class="{ 'step-active': estate_id }">
+            <span class="step-num">2</span>
+            <span class="step-label">Credentials</span>
           </div>
         </div>
 
-        <!-- Right: form -->
-        <div class="login-form-side">
-          <div class="form-logo">
-            <v-icon size="30" color="white">mdi-shield-account</v-icon>
+        <!-- Load error -->
+        <transition name="slide-fade">
+          <div v-if="estateLoadError" class="inline-error">
+            <v-icon size="14" color="#c62828">mdi-alert-circle-outline</v-icon>
+            <span>{{ estateLoadError }}</span>
+            <a class="retry-link" @click="Fetch_PostAllEstates">Retry</a>
+          </div>
+        </transition>
+
+        <!-- Form -->
+        <v-form ref="form" v-model="valid" lazy-validation class="form-body">
+          <!-- Estate -->
+          <div class="field-block">
+            <label class="field-label">Your estate</label>
+            <v-autocomplete
+              v-model="select"
+              :loading="loading"
+              :items="items"
+              :search-input.sync="search"
+              dense
+              outlined
+              rounded
+              hide-details
+              placeholder="Search for your estate"
+              prepend-inner-icon="mdi-home-city-outline"
+              :no-data-text="estateLoadError ? 'Unavailable' : 'No matches'"
+              @change="onEstateSelected"
+            ></v-autocomplete>
           </div>
 
-          <div class="form-title">Official Sign In</div>
-          <div class="form-sub">
-            Chairman, Secretary, and Treasurer accounts only.
-          </div>
-
-          <v-form ref="form" v-model="valid" lazy-validation class="form-body">
-            <div class="field-block">
-              <label class="field-label">Email</label>
-              <div class="field-input-wrap">
-                <v-icon size="16" class="field-icon">mdi-email-outline</v-icon>
-                <input
-                  v-model="auth.email"
-                  class="field-input"
-                  type="email"
-                  placeholder="your@email.com"
-                  @keyup.enter="login"
-                />
+          <!-- Estate confirmation strip -->
+          <transition name="slide-fade">
+            <div v-if="estate_id" class="estate-confirm">
+              <div class="estate-pill">
+                <v-icon size="14" color="#4caf50">mdi-check-circle</v-icon>
+                <span>{{ estate_name }}</span>
               </div>
+              <span class="estate-loc" v-if="estate_location">{{ estate_location }}</span>
             </div>
+          </transition>
 
-            <div class="field-block">
+          <!-- Email -->
+          <div class="field-block">
+            <label class="field-label">Email</label>
+            <v-text-field
+              v-model="auth.email"
+              :rules="emailRules"
+              placeholder="you@example.com"
+              dense
+              outlined
+              rounded
+              hide-details="auto"
+              prepend-inner-icon="mdi-email-outline"
+              required
+            ></v-text-field>
+          </div>
+
+          <!-- Password -->
+          <div class="field-block">
+            <div class="field-label-row">
               <label class="field-label">Password</label>
-              <div class="field-input-wrap">
-                <v-icon size="16" class="field-icon">mdi-lock-outline</v-icon>
-                <input
-                  v-model="auth.password"
-                  class="field-input field-input-with-toggle"
-                  :type="showPassword ? 'text' : 'password'"
-                  placeholder="••••••••"
-                  @keyup.enter="login"
-                />
-                <button
-                  class="field-toggle"
-                  type="button"
-                  @click="showPassword = !showPassword"
-                >
-                  <v-icon size="16">
-                    {{ showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}
-                  </v-icon>
-                </button>
-              </div>
+              <a class="forgot-link">Forgot?</a>
             </div>
-
-            <label class="checkbox-row">
-              <input
-                v-model="checkbox"
-                type="checkbox"
-                class="checkbox-input"
-              />
-              <span class="checkbox-box">
-                <v-icon v-if="checkbox" size="14" color="white">mdi-check</v-icon>
-              </span>
-              <span class="checkbox-text">
-                I agree to the
-                <a class="checkbox-link" @click.prevent="goTo('/terms')">terms and conditions</a>
-              </span>
-            </label>
-
-            <button
-              class="submit-btn"
-              :disabled="progress_bar"
-              @click.prevent="login"
-            >
-              <v-icon v-if="progress_bar" size="16" class="spin mr-1">mdi-loading</v-icon>
-              <v-icon v-else size="16" class="mr-1">mdi-login</v-icon>
-              {{ progress_bar ? 'Signing in…' : 'Sign in' }}
-            </button>
-          </v-form>
-
-          <div class="divider">
-            <span>Or continue with</span>
+            <v-text-field
+              v-model="auth.password"
+              :rules="passwordRules"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="••••••••"
+              dense
+              outlined
+              rounded
+              hide-details="auto"
+              prepend-inner-icon="mdi-lock-outline"
+              :append-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+              @click:append="showPassword = !showPassword"
+            ></v-text-field>
           </div>
 
-          <button class="google-btn" :disabled="progress_bar" @click="signInGoogle">
-            <v-img :src="google" height="20" contain class="google-img"></v-img>
-            <span>Sign in with Google</span>
-          </button>
+          <!-- Terms -->
+          <v-checkbox
+            v-model="checkbox"
+            :rules="[(v) => !!v || 'You must accept the terms.']"
+            dense
+            hide-details
+            class="terms-box"
+          >
+            <template v-slot:label>
+              <span class="terms-text">
+                I agree to the <a class="terms-link">Terms</a> &amp;
+                <a class="terms-link">Privacy Policy</a>
+              </span>
+            </template>
+          </v-checkbox>
 
-          <div class="alt-links">
-            <div class="alt-row">
-              <span class="alt-label">Not an official?</span>
-              <a class="alt-link alt-link-purple" @click="goTo('/login')">
-                Resident sign in
-              </a>
-            </div>
-            <div class="alt-row">
-              <span class="alt-label">Need to register your estate?</span>
-              <a class="alt-link alt-link-lime" @click="goTo('/estate/register')">
-                Get started
-              </a>
-            </div>
-          </div>
+          <!-- Submit -->
+          <v-btn
+            block
+            rounded
+            large
+            depressed
+            color="#7c3aed"
+            dark
+            class="submit-btn text-capitalize"
+            :loading="progress_bar"
+            @click="login"
+          >
+            Sign in
+            <v-icon right small>mdi-arrow-right</v-icon>
+          </v-btn>
+        </v-form>
+
+        <!-- Divider -->
+        <div class="divider">
+          <span class="divider-line"></span>
+          <span class="divider-text">or</span>
+          <span class="divider-line"></span>
+        </div>
+
+        <!-- Google -->
+        <v-btn block outlined rounded large class="google-btn" @click="signUpGoogle">
+          <v-img contain :src="google" height="18" width="18" max-width="18" class="mr-2" />
+          <span class="google-text">Continue with Google</span>
+        </v-btn>
+
+        <!-- Footer -->
+        <div class="form-footer">
+          <span>Don't have an account?</span>
+          <a class="create-link">Create one</a>
         </div>
       </div>
     </div>
 
-    <v-snackbar color="white--text" :timeout="4000" v-model="snackbar" center>
-      {{ snackbarText }}
+    <!-- Snackbars -->
+    <v-snackbar v-model="snackbar" color="success" :timeout="4000" top rounded="pill" elevation="6">
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">mdi-check-circle</v-icon>
+        <span class="font-weight-medium">{{ snackbarText }}</span>
+      </div>
     </v-snackbar>
-    <v-snackbar color="red" :timeout="4000" v-model="snackbar2" outlined bottom center>
-      {{ snackbarText2 }}
+
+    <v-snackbar v-model="snackbar2" color="error" :timeout="4000" top rounded="pill" elevation="6">
+      <div class="d-flex align-center">
+        <v-icon color="white" small class="mr-2">mdi-alert-circle</v-icon>
+        <span class="font-weight-medium">{{ snackbarText2 }}</span>
+      </div>
     </v-snackbar>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+import axios from "axios";
 
-const API = 'https://makaaziserver22.up.railway.app/api';
+const API = "https://makaaziserver22.up.railway.app/api";
 
 export default {
-  name: 'OfficialLogin',
+  name: "EstateLogin",
   data() {
     return {
-      snackbar: false,
-      snackbarText: 'No error message',
-      snackbar2: false,
-      snackbarText2: '',
-
-      loginbg: require('@/assets/login_bg.png'),
-      google: require('@/assets/google.png'),
-      showPassword: false,
       checkbox: false,
       valid: true,
-      progress_bar: false,
+      showPassword: false,
+      auth: { email: "", password: "" },
+      emailRules: [
+        (v) => !!v || "Email is required",
+        (v) => /.+@.+\..+/.test(v) || "Email must be valid",
+      ],
+      passwordRules: [
+        (v) => !!v || "Password is required",
+        (v) => (v && v.length >= 6) || "Min 6 characters",
+      ],
 
-      auth: {
-        email: '',
-        password: '',
-      },
+      estates: [],
+      items: [],
+      search: null,
+      select: null,
+      loading: false,
+      estateLoadError: "",
+
+      estate_id: null,
+      estate_name: "",
+      estate_urn: "",
+      estate_location: "",
+      estate_image: "",
+      logo_url: "",
+
+      progress_bar: false,
+      snackbar: false,
+      snackbarText: "",
+      snackbar2: false,
+      snackbarText2: "",
+
+      google: null,
     };
   },
-  computed: {
-    emailRules() {
-      return [
-        (v) => !!v || 'E-mail is required',
-        (v) => /.+@.+\..+/.test(v) || 'E-mail must be valid',
-      ];
-    },
-    passwordRules() {
-      return [
-        (v) => !!v || 'Password is required',
-        (v) => (v || '').length >= 6 || 'Password must be at least 6 characters',
-      ];
-    },
-  },
   mounted() {
-    const current = this.$fire?.auth?.currentUser;
-    if (current && current.uid) {
-      this.routeBasedOnRole(current.uid);
-    }
+    this.google = require("@/assets/google.png");
+    this.Fetch_PostAllEstates();
+  },
+  watch: {
+    search(val) {
+      if (val && val !== this.select) this.querySelections(val);
+    },
   },
   methods: {
-    // =====================================================
-    // EMAIL + PASSWORD LOGIN
-    // =====================================================
-    async login() {
-      const that = this;
-
-      // Inline validation via Vuetify form ref
-      if (!that.$refs.form.validate()) {
-        that.snackbar2 = true;
-        that.snackbarText2 = 'Please fix the highlighted fields';
-        return;
-      }
-      if (!that.checkbox) {
-        that.snackbar2 = true;
-        that.snackbarText2 = 'You must agree to the terms';
-        return;
-      }
-
-      that.progress_bar = true;
-
+    // =========================================================
+    // ESTATE LOOKUP
+    // =========================================================
+    async Fetch_PostAllEstates() {
+      this.estateLoadError = "";
       try {
-        const mAuth = that.$fire.auth;
-        const { user } = await mAuth.signInWithEmailAndPassword(
-          that.auth.email,
-          that.auth.password
-        );
+        const { data, status } = await axios.get(`${API}/estates/getall`);
+        console.log("🔍 Estates response:", status);
 
-        console.log('🔵 Signed in:', user.uid);
-        await that.routeBasedOnRole(user.uid);
-      } catch (error) {
-        console.error('Login error:', error);
-        that.progress_bar = false;
-        that.snackbar2 = true;
-        that.snackbarText2 = that.friendlyError(error);
-      }
-    },
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.estates)
+          ? data.estates
+          : [];
 
-    // =====================================================
-    // GOOGLE LOGIN
-    // =====================================================
-    async signInGoogle() {
-      const that = this;
-      if (!that.checkbox) {
-        that.snackbar2 = true;
-        that.snackbarText2 = 'Check terms and conditions first';
-        return;
-      }
-
-      that.progress_bar = true;
-      try {
-        const provider = new that.$fireModule.auth.GoogleAuthProvider();
-        const { user } = await that.$fire.auth.signInWithPopup(provider);
-        console.log('🔵 Signed in with Google:', user.uid);
-        await that.routeBasedOnRole(user.uid);
-      } catch (error) {
-        console.error('Google sign-in error:', error);
-        that.progress_bar = false;
-        that.snackbar2 = true;
-        that.snackbarText2 = error.message || 'Google sign-in failed';
-      }
-    },
-
-    // =====================================================
-    // ROLE RESOLUTION
-    // =====================================================
-    async routeBasedOnRole(uid) {
-      const that = this;
-      try {
-        console.log('🔵 Resolving official for uid:', uid);
-
-        const { data, status } = await axios.get(
-          `${API}/officials/getOfficialById/${uid}`
-        );
-
-        if (status === 200 && data?.official_id) {
-          const estateId = data.estate_id;
-          console.log('🔵 Official found. Estate:', estateId);
-
-          that.snackbar = true;
-          that.snackbarText = `Welcome back, ${data.full_name || 'Official'}`;
-
-          setTimeout(() => {
-            that.goTo(`/officials/dashboard/${estateId}`);
-          }, 600);
+        if (!list.length) {
+          this.estateLoadError = "No estates are available yet.";
+          this.items = [];
           return;
         }
-      } catch (err) {
-        console.warn('Official lookup failed:', err.response?.data || err.message);
-      }
 
-      // Not an official — sign out and show the error
+        this.estates = list;
+        this.items = list.map((e) => e.estate_name).filter(Boolean);
+        console.log("✅ Estates loaded:", this.items.length, this.items);
+      } catch (error) {
+        const status = error.response?.status;
+        console.error(
+          "❌ Estates fetch:",
+          status,
+          error.response?.data || error.message
+        );
+        this.estateLoadError =
+          status === 404
+            ? "Estate service not found."
+            : status === 500
+            ? "Server error. Please try again."
+            : "Could not load estates.";
+      }
+    },
+
+    querySelections(v) {
+      this.loading = true;
+      setTimeout(() => {
+        this.items = this.estates
+          .map((e) => e.estate_name)
+          .filter((e) =>
+            (e || "").toLowerCase().includes((v || "").toLowerCase())
+          );
+        this.loading = false;
+      }, 250);
+    },
+
+    async onEstateSelected(val) {
+      if (!val) return;
+      this.estate_id = null;
+      this.estate_urn = "";
+      this.estate_location = "";
+      this.estate_image = "";
+      this.logo_url = "";
+
       try {
-        await that.$fire.auth.signOut();
-      } catch (e) {
-        /* ignore */
+        let res;
+        try {
+          res = await axios.get(
+            `${API}/estates/estateName/${encodeURIComponent(val)}`
+          );
+        } catch {
+          res = await axios.get(
+            `${API}/estates/name/${encodeURIComponent(val)}`
+          );
+        }
+        const d = res.data;
+        if (d) {
+          this.estate_id = d.estate_id;
+          this.estate_name = d.estate_name;
+          this.estate_urn = d.estate_urn;
+          this.estate_location = d.estate_location;
+          this.estate_image = d.estate_image;
+          this.logo_url = d.logo_url;
+        }
+      } catch (error) {
+        console.error("❌ Estate lookup:", error.response?.status, error.message);
+        this.showError("Could not find that estate.");
       }
-      that.progress_bar = false;
-      that.snackbar2 = true;
-      that.snackbarText2 =
-        'This account is not registered as an estate official. Please use the resident sign in.';
     },
 
-    // =====================================================
-    // HELPERS
-    // =====================================================
-    friendlyError(error) {
-      const code = error?.code || '';
-      const messages = {
-        'auth/user-not-found': 'No account found with that email.',
-        'auth/wrong-password': 'Incorrect password.',
-        'auth/invalid-email': 'Please enter a valid email.',
-        'auth/user-disabled': 'This account has been disabled.',
-        'auth/too-many-requests': 'Too many attempts. Try again later.',
-        'auth/invalid-credential': 'Invalid email or password.',
-      };
-      return messages[code] || error?.message || 'Sign in failed';
+    // =========================================================
+    // AUTH
+    // =========================================================
+    async login() {
+      if (this.$refs.form && !this.$refs.form.validate()) return;
+      if (!this.estate_id) return this.showError("Please select your estate.");
+
+      this.progress_bar = true;
+      try {
+        await this.$fire.auth.signInWithEmailAndPassword(
+          this.auth.email,
+          this.auth.password
+        );
+        this.$router.push(`/estate/${this.estate_id}`);
+      } catch (error) {
+        console.error("❌ Login failed:", error.code || error.message);
+        this.showError(this.humanizeAuthError(error));
+      } finally {
+        this.progress_bar = false;
+      }
     },
-    goTo(path) {
-      if (!path) return;
-      if (this.$router) {
-        this.$router.push(path).catch(() => {});
-      } else {
-        window.location.href = path;
+
+    async signUpGoogle() {
+      if (!this.estate_id) return this.showError("Please select your estate first.");
+      if (!this.checkbox) return this.showError("You must agree to the terms.");
+
+      this.progress_bar = true;
+      try {
+        const provider = new this.$fireModule.auth.GoogleAuthProvider();
+        await this.$fire.auth.signInWithPopup(provider);
+        this.snackbar = true;
+        this.snackbarText = "Signed in successfully.";
+        this.$router.push(`/estate/${this.estate_id}`);
+      } catch (error) {
+        console.error("❌ Google sign-in:", error.code || error.message);
+        this.showError(this.humanizeAuthError(error));
+      } finally {
+        this.progress_bar = false;
+      }
+    },
+
+    showError(msg) {
+      this.snackbar2 = true;
+      this.snackbarText2 = msg;
+    },
+
+    humanizeAuthError(error) {
+      const code = error?.code || "";
+      switch (code) {
+        case "auth/user-not-found":
+          return "No account with that email.";
+        case "auth/wrong-password":
+          return "Incorrect password.";
+        case "auth/invalid-email":
+          return "Invalid email address.";
+        case "auth/too-many-requests":
+          return "Too many attempts. Try again later.";
+        case "auth/popup-closed-by-user":
+          return "Sign-in popup was closed.";
+        case "auth/network-request-failed":
+          return "Network error.";
+        default:
+          return error?.message || "Sign in failed.";
       }
     },
   },
@@ -351,390 +480,438 @@ export default {
 
 <style scoped>
 /* ============================================================
-   ROOT + BACKGROUND
+   Root layout: split screen
    ============================================================ */
-.login-root {
-  position: relative;
+.auth-root {
+  display: flex;
   min-height: 100vh;
-  overflow: hidden;
-  background: #f6f7fb;
-}
-.login-bg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  filter: blur(2px);
-  transform: scale(1.05);
-}
-.login-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(15, 13, 36, 0.55) 0%, rgba(43, 18, 86, 0.5) 100%);
+  width: 100%;
+  background: #ffffff;
 }
 
 /* ============================================================
-   TOP BAR
+   LEFT PANEL
    ============================================================ */
-.login-topbar {
+.auth-left {
   position: relative;
-  z-index: 2;
+  flex: 1.1;
+  overflow: hidden;
+  background: linear-gradient(140deg, #1e1b4b 0%, #4c1d95 50%, #6d28d9 100%);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  gap: 12px;
+  justify-content: center;
+  padding: 48px 56px;
+  color: white;
 }
+
+.left-content {
+  position: relative;
+  z-index: 5;
+  max-width: 520px;
+  width: 100%;
+}
+
 .brand {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 12px;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
+  margin-bottom: 56px;
 }
-.brand:hover { opacity: 0.85; }
-.brand-avatar {
+
+.brand-mark {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 24px -10px rgba(128, 81, 255, 0.7);
-}
-.brand-text {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  color: #ffffff;
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-}
-.brand-mk { color: #c4b5fd; }
-.brand-kz { color: #b6ff00; }
-.brand-role {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.65);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin-left: 2px;
-}
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  font-size: 0.76rem;
+}
+
+.brand-name {
+  font-size: 1.25rem;
   font-weight: 800;
-  letter-spacing: 0.3px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
-}
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-/* ============================================================
-   CARD
-   ============================================================ */
-.login-wrap {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  justify-content: center;
-  padding: 24px 20px 60px;
-  min-height: calc(100vh - 100px);
-  align-items: flex-start;
-}
-.login-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  max-width: 900px;
-  width: 100%;
-  background: #ffffff;
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 30px 70px -30px rgba(15, 13, 36, 0.6);
-}
-@media (max-width: 767px) {
-  .login-card {
-    grid-template-columns: 1fr;
-    max-width: 440px;
-  }
-}
-
-.login-progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(128, 81, 255, 0.15);
-  overflow: hidden;
-  z-index: 5;
-}
-.login-progress-bar {
-  height: 100%;
-  width: 30%;
-  background: linear-gradient(90deg, #9b6cff 0%, #8051ff 100%);
-  border-radius: 999px;
-  animation: progressSlide 1.2s ease-in-out infinite;
-}
-@keyframes progressSlide {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
-}
-
-/* ============================================================
-   HERO (desktop)
-   ============================================================ */
-.login-hero {
-  background: linear-gradient(140deg, #0a0a14 0%, #221047 55%, #2b1256 100%);
-  padding: 40px 36px;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-.login-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 80% 20%, rgba(155, 108, 255, 0.25), transparent 55%);
-  pointer-events: none;
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  align-self: flex-start;
-  margin-bottom: 24px;
-}
-.hero-title {
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: -0.8px;
-  line-height: 1.2;
-  margin-bottom: 14px;
-}
-.hero-sub {
-  font-size: 0.88rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 28px;
-  max-width: 320px;
-}
-.hero-features {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.hero-feature {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-/* ============================================================
-   FORM SIDE
-   ============================================================ */
-.login-form-side {
-  padding: 36px 32px;
-  display: flex;
-  flex-direction: column;
-}
-@media (max-width: 767px) {
-  .login-form-side { padding: 32px 22px 28px; }
-}
-
-.form-logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 18px;
-  box-shadow: 0 12px 24px -12px rgba(128, 81, 255, 0.8);
-}
-.form-title {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: #0f0d24;
   letter-spacing: -0.5px;
 }
-.form-sub {
-  font-size: 0.82rem;
-  color: #64748b;
-  margin-top: 6px;
-  line-height: 1.5;
-}
-.form-body {
-  margin-top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
 
-/* Fields */
-.field-block {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.field-label {
-  font-size: 0.68rem;
+.left-title {
+  font-size: 2.75rem;
   font-weight: 800;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.9px;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  margin: 0 0 20px;
 }
-.field-input-wrap {
+
+.left-accent {
+  background: linear-gradient(135deg, #c4b5fd, #f0abfc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.left-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0 0 48px;
+  max-width: 440px;
+}
+
+.preview-stack {
   position: relative;
-  display: flex;
-  align-items: center;
+  height: 260px;
+  margin-bottom: 48px;
 }
-.field-icon {
-  position: absolute;
-  left: 14px;
-  color: #94a3b8;
-  pointer-events: none;
-}
-.field-input {
-  width: 100%;
-  padding: 12px 14px 12px 42px;
-  border-radius: 12px;
-  border: 1.5px solid #eef1f6;
-  background: #f8fafc;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #0f0d24;
-  outline: none;
-  font-family: inherit;
-  transition: all 0.2s ease;
-}
-.field-input:focus {
-  border-color: #8051ff;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(128, 81, 255, 0.1);
-}
-.field-input::placeholder { color: #94a3b8; font-weight: 500; }
-.field-input-with-toggle { padding-right: 42px; }
 
-.field-toggle {
+.preview-card {
   position: absolute;
-  right: 10px;
-  background: none;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: color 0.2s ease;
+  gap: 12px;
+  width: 340px;
+  animation: floatIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
-.field-toggle:hover { color: #0f0d24; }
 
-/* Checkbox */
-.checkbox-row {
+.preview-1 { top: 0; left: 0; animation-delay: 0.1s; }
+.preview-2 { top: 88px; left: 40px; animation-delay: 0.25s; }
+.preview-3 { top: 176px; left: 8px; animation-delay: 0.4s; }
+
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.preview-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  user-select: none;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #475569;
-}
-.checkbox-input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.checkbox-box {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  border: 1.5px solid #cbd5e1;
-  background: #ffffff;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.2s ease;
 }
-.checkbox-input:checked + .checkbox-box {
-  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
-  border-color: transparent;
-  box-shadow: 0 6px 14px -6px rgba(128, 81, 255, 0.6);
+.preview-icon.green { background: #10b981; }
+.preview-icon.purple { background: #8b5cf6; }
+.preview-icon.amber { background: #f59e0b; }
+
+.preview-body { flex: 1; min-width: 0; }
+
+.preview-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1.2;
 }
-.checkbox-text {
-  display: inline;
-  line-height: 1.4;
+
+.preview-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 2px;
 }
-.checkbox-link {
-  color: #8051ff;
+
+.preview-time {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.preview-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+}
+
+.preview-bar span {
+  width: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 2px;
+}
+
+.left-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.footer-dots { display: flex; gap: 6px; }
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+.dot-active { background: white; width: 20px; border-radius: 3px; }
+
+.footer-text {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.blob-1 { width: 400px; height: 400px; background: #a78bfa; top: -100px; right: -100px; }
+.blob-2 { width: 300px; height: 300px; background: #ec4899; bottom: -80px; right: 15%; }
+.blob-3 { width: 240px; height: 240px; background: #60a5fa; bottom: 20%; left: -60px; }
+
+/* ============================================================
+   RIGHT PANEL
+   ============================================================ */
+.auth-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  background: #fafafc;
+}
+
+.form-wrap { width: 100%; max-width: 420px; }
+
+.mobile-brand {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 959px) {
+  .mobile-brand { display: flex; }
+}
+
+.brand-mark-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-name-sm {
+  font-size: 1.1rem;
   font-weight: 800;
+  color: #1e1b4b;
+  letter-spacing: -0.4px;
+}
+
+.form-head { margin-bottom: 28px; }
+
+.form-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: #1e1b4b;
+  margin: 0 0 6px;
+}
+
+.form-sub {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Step indicator */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.step { display: flex; align-items: center; gap: 8px; }
+
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+}
+
+.step-active .step-num {
+  background: #7c3aed;
+  color: white;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+}
+
+.step-done .step-num {
+  background: #10b981;
+  color: white;
+}
+
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  transition: color 0.25s ease;
+}
+
+.step-active .step-label,
+.step-done .step-label { color: #1e1b4b; }
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  border-radius: 1px;
+  transition: background 0.3s ease;
+}
+
+.step-line-done { background: #10b981; }
+
+/* Inline error */
+.inline-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  color: #991b1b;
+}
+
+.retry-link {
+  margin-left: auto;
+  color: #7c3aed;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.retry-link:hover { text-decoration: underline; }
+
+/* Form */
+.form-body { margin-top: 4px; }
+
+.field-block { margin-bottom: 16px; }
+
+.field-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.forgot-link {
+  font-size: 0.75rem;
+  color: #7c3aed;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  margin-left: 2px;
 }
-.checkbox-link:hover { text-decoration: underline; }
+
+.forgot-link:hover { text-decoration: underline; }
+
+::v-deep .theme--light.v-text-field--outlined fieldset,
+::v-deep .theme--light.v-select.v-text-field--outlined fieldset {
+  border-radius: 12px !important;
+  border-color: #e5e7eb !important;
+}
+
+::v-deep .theme--light.v-text-field--outlined:not(.v-input--is-focused):hover fieldset {
+  border-color: #c4b5fd !important;
+}
+
+::v-deep .theme--light.v-text-field--outlined.v-input--is-focused fieldset {
+  border-color: #7c3aed !important;
+  border-width: 2px !important;
+}
+
+::v-deep .v-input__slot { min-height: 46px !important; }
+
+/* Estate confirmation strip */
+.estate-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: -8px 0 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+}
+
+.estate-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.estate-loc {
+  font-size: 0.72rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Terms */
+.terms-box { margin-top: 0; margin-bottom: 8px; }
+.terms-box ::v-deep .v-label { font-size: 0.8rem; }
+
+.terms-text { color: #4b5563; font-size: 0.8rem; }
+
+.terms-link {
+  color: #7c3aed;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.terms-link:hover { text-decoration: underline; }
 
 /* Submit */
 .submit-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 18px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
-  color: #ffffff;
-  font-size: 0.86rem;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
-  box-shadow: 0 14px 28px -14px rgba(128, 81, 255, 0.85);
-  margin-top: 4px;
+  height: 48px !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2px;
+  box-shadow: 0 8px 20px -6px rgba(124, 58, 237, 0.5) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  margin-top: 8px;
 }
-.submit-btn:hover:not(:disabled) {
+
+.submit-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 18px 34px -14px rgba(128, 81, 255, 1);
-}
-.submit-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
+  box-shadow: 0 12px 26px -6px rgba(124, 58, 237, 0.7) !important;
 }
 
 /* Divider */
@@ -742,93 +919,82 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 20px 0 16px;
-  color: #94a3b8;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-.divider::before,
-.divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: #eef1f6;
+  margin: 24px 0;
 }
 
-/* Google */
+.divider-line { flex: 1; height: 1px; background: #e5e7eb; }
+
+.divider-text {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* Google button */
 .google-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 18px;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1.5px solid #eef1f6;
-  color: #0f0d24;
-  font-size: 0.82rem;
-  font-weight: 800;
-  cursor: pointer;
-  font-family: inherit;
+  height: 46px !important;
+  border-color: #e5e7eb !important;
+  text-transform: none !important;
   transition: all 0.2s ease;
 }
-.google-btn:hover:not(:disabled) {
-  border-color: rgba(128, 81, 255, 0.4);
-  background: rgba(128, 81, 255, 0.03);
-}
-.google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.google-img { width: 20px; }
 
-/* Alt links */
-.alt-links {
-  margin-top: auto;
-  padding-top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-top: 1px solid #f1f5f9;
+.google-btn:hover {
+  border-color: #7c3aed !important;
+  background: #faf5ff !important;
 }
-.alt-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: 0.78rem;
+
+.google-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+  text-transform: none;
 }
-.alt-label { color: #64748b; font-weight: 600; }
-.alt-link {
-  font-weight: 800;
+
+/* Footer */
+.form-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.create-link {
+  color: #7c3aed;
+  font-weight: 700;
+  margin-left: 4px;
+  text-decoration: none;
   cursor: pointer;
-  transition: opacity 0.2s ease;
 }
-.alt-link:hover { opacity: 0.75; text-decoration: underline; }
-.alt-link-purple { color: #8051ff; }
-.alt-link-lime { color: #7cb300; }
 
-/* ============================================================
-   SPIN
-   ============================================================ */
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.create-link:hover { text-decoration: underline; }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+/* Transitions */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-fade-enter,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* Responsive */
+@media (max-width: 959px) {
+  .auth-root { flex-direction: column; }
+  .auth-right {
+    padding: 32px 24px;
+    align-items: flex-start;
+    padding-top: 48px;
+    min-height: 100vh;
+  }
+  .form-wrap { max-width: 100%; }
+}
+
 @media (max-width: 599px) {
-  .login-topbar { padding: 14px 16px; }
-  .brand-role { display: none; }
-  .brand-avatar { width: 36px; height: 36px; }
-  .brand-text { font-size: 0.98rem; }
-  .back-btn { padding: 7px 12px; font-size: 0.72rem; }
-
-  .login-wrap { padding: 12px 12px 40px; }
-  .login-card { border-radius: 20px; }
-  .login-form-side { padding: 26px 18px 22px; }
-  .form-logo { width: 48px; height: 48px; margin-bottom: 14px; }
-  .form-title { font-size: 1.2rem; }
-  .form-sub { font-size: 0.78rem; }
-  .form-body { margin-top: 20px; gap: 14px; }
+  .form-title { font-size: 1.5rem; }
+  .auth-right { padding: 24px 20px; padding-top: 32px; }
 }
 </style>

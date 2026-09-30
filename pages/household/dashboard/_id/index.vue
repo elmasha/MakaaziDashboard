@@ -272,6 +272,93 @@
           </v-col>
         </v-row>
 
+        <!-- ============================================================
+             VEHICLES (NEW)
+             ============================================================ -->
+        <v-row class="mb-5 reveal-card" style="animation-delay: 175ms">
+          <v-col cols="12">
+            <div class="vehicles-card">
+              <div class="vehicles-head">
+                <div class="vehicles-head-left">
+                  <div class="vehicles-icon">
+                    <v-icon size="20" color="#8051FF">mdi-car</v-icon>
+                  </div>
+                  <div>
+                    <div class="vehicles-title">My vehicles</div>
+                    <div class="vehicles-sub">
+                      {{ vehicles.length ? `${vehicles.length} registered` : 'None yet' }}
+                    </div>
+                  </div>
+                </div>
+                <button class="vehicles-action" @click="goTo('/household/vehicles')">
+                  Manage
+                  <v-icon size="14" class="ml-1">mdi-arrow-right</v-icon>
+                </button>
+              </div>
+
+              <div v-if="vehicles.length" class="vehicles-mini-list">
+                <div
+                  v-for="v in vehicles.slice(0, 3)"
+                  :key="v.vehicle_id"
+                  class="vehicle-mini"
+                >
+                  <div class="vehicle-mini-icon">
+                    <v-icon size="16" color="white">{{ iconFor(v.vehicle_type) }}</v-icon>
+                  </div>
+                  <div class="vehicle-mini-body">
+                    <div class="vehicle-mini-plate">{{ v.plate_number }}</div>
+                    <div class="vehicle-mini-sub">
+                      {{ [v.make, v.model].filter(Boolean).join(' ') || '—' }}
+                    </div>
+                  </div>
+                  <v-chip
+                    x-small label class="status-chip"
+                    :color="statusColorFor(v.status)"
+                    :style="statusStyleFor(v.status)"
+                  >{{ v.status }}</v-chip>
+                </div>
+
+                <div v-if="vehicles.length > 3" class="vehicles-more">
+                  + {{ vehicles.length - 3 }} more
+                </div>
+              </div>
+
+              <div v-else class="vehicles-empty">
+                <v-icon size="32" color="#cbd5e1">mdi-car-off</v-icon>
+                <div class="vehicles-empty-title">No vehicles registered</div>
+                <div class="vehicles-empty-sub">
+                  Add your cars, bikes, or vans so the gate recognises them.
+                </div>
+                <button class="vehicles-empty-btn" @click="goTo('/household/vehicles')">
+                  Add a vehicle
+                </button>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+
+        <!-- ============================================================
+             VISITORS / VISITOR PASSES (NEW)
+             ============================================================ -->
+        <v-row class="mb-5 reveal-card" style="animation-delay: 185ms">
+          <v-col cols="12">
+            <button class="visitors-cta" @click="goTo('/household/visitor_passes')">
+              <div class="visitors-icon">
+                <v-icon size="22" color="#8051FF">mdi-ticket-confirmation-outline</v-icon>
+              </div>
+              <div class="visitors-body">
+                <div class="visitors-title">Visitor passes</div>
+                <div class="visitors-sub">
+                  {{ activePassCount > 0
+                     ? `${activePassCount} active pass${activePassCount > 1 ? 'es' : ''}`
+                     : 'Invite a visitor and share a code' }}
+                </div>
+              </div>
+              <v-icon size="22" color="#8051FF" class="visitors-chevron">mdi-chevron-right</v-icon>
+            </button>
+          </v-col>
+        </v-row>
+
         <!-- Recent payments -->
         <v-row class="reveal-card" style="animation-delay: 200ms">
           <v-col cols="12">
@@ -393,6 +480,8 @@ export default {
         status: 'Paid',
       },
       payments: [],
+      vehicles: [],
+      activePassCount: 0,
       search: '',
       snackbar: { show: false, text: '', color: 'success' },
     };
@@ -406,9 +495,10 @@ export default {
     menuItems() {
       return [
         { title: 'Dashboard', icon: 'mdi-view-dashboard', route: this.dashboardRoute },
+        { title: 'Vehicles',  icon: 'mdi-car',            route: '/household/vehicles' },
+        { title: 'Visitors',  icon: 'mdi-ticket-confirmation-outline', route: '/household/visitor_passes' },
         { title: 'Payments',  icon: 'mdi-currency-usd',   route: '/household/payment_summary' },
         { title: 'Profile',   icon: 'mdi-account',        route: '/household/profile' },
-        { title: 'Alerts',    icon: 'mdi-bell',           route: '/household/notifications' },
       ];
     },
     avatarUrl() {
@@ -513,6 +603,8 @@ export default {
       await Promise.allSettled([
         this.Fetch_Dashboard(),
         this.Fetch_RecentPayments(),
+        this.Fetch_Vehicles(),
+        this.Fetch_VisitorPasses(),
       ]);
       this.loading = false;
     },
@@ -565,6 +657,54 @@ export default {
       } catch (error) {
         that.payments = [];
       }
+    },
+
+    async Fetch_Vehicles() {
+      try {
+        const { data } = await axios.get(`${API}/vehicles/mine`);
+        this.vehicles = Array.isArray(data) ? data : [];
+      } catch (error) {
+        // Silent fail — vehicle card is additive to the dashboard
+        this.vehicles = [];
+      }
+    },
+
+    async Fetch_VisitorPasses() {
+      try {
+        const { data } = await axios.get(`${API}/visitor-passes/mine`);
+        const list = Array.isArray(data) ? data : [];
+        const now = Date.now();
+        this.activePassCount = list.filter(
+          (p) => p.status === 'Active' && new Date(p.valid_until).getTime() > now
+        ).length;
+      } catch (error) {
+        this.activePassCount = 0;
+      }
+    },
+
+    iconFor(type) {
+      return {
+        car:       'mdi-car',
+        motorbike: 'mdi-motorbike',
+        truck:     'mdi-truck',
+        van:       'mdi-van-utility',
+      }[type] || 'mdi-car-estate';
+    },
+    statusColorFor(status) {
+      return {
+        Active:    '#d1fae5',
+        Pending:   '#fef3c7',
+        Suspended: '#fee2e2',
+        Removed:   '#e5e7eb',
+      }[status] || '#e5e7eb';
+    },
+    statusStyleFor(status) {
+      return {
+        Active:    'color:#065f46;',
+        Pending:   'color:#92400e;',
+        Suspended: 'color:#991b1b;',
+        Removed:   'color:#374151;',
+      }[status] || 'color:#374151;';
     },
 
     formatNum(n) {
@@ -644,12 +784,8 @@ export default {
 .help-title { font-size: 0.82rem; font-weight: 800; color: #0f0d24; }
 .help-sub { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
 
-.signout-btn {
-  transition: all 0.2s ease;
-}
-.signout-btn:hover {
-  background: rgba(128, 81, 255, 0.06);
-}
+.signout-btn { transition: all 0.2s ease; }
+.signout-btn:hover { background: rgba(128, 81, 255, 0.06); }
 
 /* ============================================================
    HEADER
@@ -757,27 +893,19 @@ export default {
   justify-content: space-between;
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s ease;
 }
-.kpi-card:hover {
-  transform: translateY(-3px);
-}
-
+.kpi-card:hover { transform: translateY(-3px); }
 .kpi-card-light {
   background: #ffffff;
   border: 1px solid #eef1f6;
   box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
 }
-.kpi-card-light:hover {
-  box-shadow: 0 22px 40px -20px rgba(15, 13, 36, 0.15);
-}
-
+.kpi-card-light:hover { box-shadow: 0 22px 40px -20px rgba(15, 13, 36, 0.15); }
 .kpi-card-dark {
   background: linear-gradient(140deg, #0a0a14 0%, #221047 55%, #2b1256 100%);
   border: none;
   box-shadow: 0 22px 44px -22px rgba(34, 16, 71, 0.55);
 }
-.kpi-card-dark:hover {
-  box-shadow: 0 26px 50px -22px rgba(34, 16, 71, 0.7);
-}
+.kpi-card-dark:hover { box-shadow: 0 26px 50px -22px rgba(34, 16, 71, 0.7); }
 
 .kpi-head {
   display: flex;
@@ -990,6 +1118,157 @@ export default {
 }
 
 /* ============================================================
+   VEHICLES CARD (new)
+   ============================================================ */
+.vehicles-card {
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.vehicles-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+.vehicles-head-left { display: flex; align-items: center; gap: 12px; }
+.vehicles-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: rgba(128, 81, 255, 0.1);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.vehicles-title {
+  font-size: 0.95rem; font-weight: 800; color: #0f0d24; letter-spacing: -0.3px;
+}
+.vehicles-sub {
+  font-size: 0.72rem; color: #94a3b8; margin-top: 1px; font-weight: 500;
+}
+.vehicles-action {
+  display: inline-flex; align-items: center;
+  padding: 8px 14px; border-radius: 999px;
+  background: rgba(128, 81, 255, 0.08);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  color: #8051ff; font-size: 0.72rem; font-weight: 800;
+  letter-spacing: 0.3px; cursor: pointer; font-family: inherit;
+  transition: all 0.2s ease;
+}
+.vehicles-action:hover {
+  background: rgba(128, 81, 255, 0.14);
+  border-color: rgba(128, 81, 255, 0.35);
+}
+
+.vehicles-mini-list { padding: 6px 0; }
+.vehicle-mini {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 22px;
+  transition: background 0.15s ease;
+}
+.vehicle-mini:hover { background: #fafbff; }
+.vehicle-mini-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.vehicle-mini-body { flex: 1; min-width: 0; }
+.vehicle-mini-plate {
+  font-size: 0.85rem; font-weight: 800; color: #0f0d24;
+  letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vehicle-mini-sub {
+  font-size: 0.7rem; color: #94a3b8; margin-top: 2px; font-weight: 500;
+}
+.status-chip { font-weight: 700; }
+
+.vehicles-more {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8051ff;
+  padding: 6px 22px 10px;
+}
+
+.vehicles-empty {
+  padding: 36px 24px; text-align: center;
+}
+.vehicles-empty-title {
+  font-size: 0.85rem; font-weight: 700; color: #475569;
+  margin-top: 8px;
+}
+.vehicles-empty-sub {
+  font-size: 0.75rem; color: #94a3b8;
+  margin-top: 4px; max-width: 300px;
+  margin-left: auto; margin-right: auto; line-height: 1.5;
+}
+.vehicles-empty-btn {
+  margin-top: 14px;
+  padding: 8px 18px; border-radius: 999px;
+  background: #8051FF; color: #fff; border: none;
+  font-size: 0.76rem; font-weight: 800;
+  cursor: pointer; font-family: inherit;
+  transition: transform 0.15s ease;
+}
+.vehicles-empty-btn:hover { transform: translateY(-1px); }
+
+/* ============================================================
+   VISITORS CTA (new)
+   ============================================================ */
+.visitors-cta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #eef1f6;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(15, 13, 36, 0.03);
+}
+.visitors-cta:hover {
+  transform: translateY(-2px);
+  border-color: rgba(128, 81, 255, 0.4);
+  box-shadow: 0 20px 40px -20px rgba(128, 81, 255, 0.35);
+}
+.visitors-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(128, 81, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.visitors-body { flex: 1; min-width: 0; }
+.visitors-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.visitors-sub {
+  font-size: 0.76rem;
+  color: #64748b;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.visitors-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.visitors-cta:hover .visitors-chevron {
+  transform: translateX(4px);
+}
+
+/* ============================================================
    PAYMENTS CARD
    ============================================================ */
 .payments-card {
@@ -1159,5 +1438,8 @@ export default {
   .overdue-btn { width: 100%; justify-content: center; }
   .payment-row { padding: 12px 16px; }
   .payments-head { padding: 16px; }
+  .vehicles-head { padding: 16px; }
+  .vehicle-mini { padding: 12px 16px; }
+  .vehicles-more { padding: 6px 16px 10px; }
 }
 </style>

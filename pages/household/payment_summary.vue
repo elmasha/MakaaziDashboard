@@ -584,6 +584,8 @@ export default {
     menuItems() {
       return [
         { title: "Dashboard", icon: "mdi-view-dashboard", route: this.dashboardRoute },
+        { title: "Vehicles",  icon: "mdi-car",            route: "/household/vehicles" },
+        { title: "Visitors",  icon: "mdi-ticket-confirmation-outline", route: "/household/visitor_passes" }, 
         { title: "Payments", icon: "mdi-currency-usd", route: "/household/payment_summary" },
         { title: "Profile", icon: "mdi-account", route: "/household/profile" },
         { title: "Alerts", icon: "mdi-bell", route: "/household/notifications" },

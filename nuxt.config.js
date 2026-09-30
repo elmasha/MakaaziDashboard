@@ -35,10 +35,10 @@ export default {
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: ["@/plugins/mapGoogle.client.js","@/plugins/directionsRenderer.js",'@/plugins/chart.js'],
+  plugins: ["@/plugins/mapGoogle.client.js","@/plugins/directionsRenderer.js",'@/plugins/chart.js','@/plugins/axios-auth.js'],
 
   router: {
-    middleware: ["auth" ]
+    // middleware: ["auth" ]
   },
 
   env: {
@@ -103,23 +103,31 @@ export default {
 
   // Vuetify module configuration: https://go.nuxtjs.dev/config-vuetify
   vuetify: {
-    customVariables: ['~/assets/variables.scss'],
-    theme: {
-      dark: false,
-      themes: {
-        dark: {
-          green: "#66CC33",
-          primary: "#B6FF00",
-          accent: "#8051FF",
-          secondary: colors.amber.darken3,
-          info: colors.teal.lighten1,
-          warning: colors.amber.base,
-          error: colors.deepOrange.accent4,
-          success: colors.green.accent3
-        }
-      }
-    }
+  customVariables: ['~/assets/variables.scss'],
+  theme: {
+    dark: false,
+    themes: {
+      light: {
+        primary:   '#8051FF',
+        accent:    '#9B6CFF',
+        secondary: '#0F0D24',
+        info:      '#3B82F6',
+        warning:   '#F59E0B',
+        error:     '#DC2626',
+        success:   '#10B981',
+      },
+      dark: {
+        primary:   '#B6FF00',
+        accent:    '#8051FF',
+        secondary: '#0F0D24',
+        info:      '#3B82F6',
+        warning:   '#F59E0B',
+        error:     '#DC2626',
+        success:   '#10B981',
+      },
+    },
   },
+},
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
