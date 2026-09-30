@@ -139,7 +139,7 @@
               <v-chip color="#ede9fe" text-color="#8051FF" small label
                 class="mb-4 font-weight-bold px-4 py-1">
                 <span class="live-dot"></span>
-                Trusted by 200+ estates across Kenya
+                200+ estates across Kenya
               </v-chip>
 
               <h1 class="text-h4 text-sm-h3 text-md-h2 font-weight-black mb-4 hero-title">
@@ -148,8 +148,7 @@
               </h1>
 
               <p class="text-body-1 text-sm-h6 grey--text text--darken-1 mb-8 hero-sub">
-                Service charges, household records, M-Pesa payments, visitors, and reports — 
-                all in one place. Sign in and choose your role below.
+                Service charges, records, M-Pesa payments, visitors, and reports — all in one console.
               </p>
 
               <div class="hero-cta-row">
@@ -164,7 +163,7 @@
                   class="px-6 font-weight-medium text-capitalize"
                   @click="scrollToSection('how')">
                   <v-icon left color="#8051FF">mdi-play-circle</v-icon>
-                  See how it works
+                  See how
                 </v-btn>
               </div>
 
@@ -195,7 +194,7 @@
               <div class="hero-preview">
                 <div class="floating-badge floating-badge-1">
                   <v-icon size="16" color="#10b981">mdi-check-circle</v-icon>
-                  <span>Payment received · KES 3,500</span>
+                  <span>Payment · KES 3,500</span>
                 </div>
 
                 <div class="floating-badge floating-badge-2">
@@ -205,7 +204,7 @@
 
                 <div class="floating-badge floating-badge-3">
                   <v-icon size="16" color="#f59e0b">mdi-bell-ring</v-icon>
-                  <span>12 new registrations</span>
+                  <span>12 new sign-ups</span>
                 </div>
 
                 <div class="preview-card">
@@ -288,7 +287,7 @@
       <!-- ============================== LOGO STRIP ============================== -->
       <section class="logo-strip">
         <v-container>
-          <div class="logo-strip-label">Trusted by forward-thinking estates</div>
+          <div class="logo-strip-label">Trusted by estates across Kenya</div>
           <div class="logo-strip-row">
             <div v-for="n in 6" :key="n" class="logo-pill">
               <v-icon size="18" color="#94a3b8">mdi-home-city</v-icon>
@@ -308,9 +307,6 @@
             <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
               Get running in 3 steps
             </h2>
-            <p class="text-body-1 grey--text text--darken-1" style="max-width: 560px; margin: 0 auto;">
-              No installations, no training required. Just sign up and start collecting.
-            </p>
           </div>
 
           <div class="how-grid">
@@ -326,90 +322,6 @@
               </div>
               <h3 class="how-title">{{ step.title }}</h3>
               <p class="how-desc">{{ step.desc }}</p>
-            </div>
-          </div>
-        </v-container>
-      </section>
-
-      <!-- ============================== SHOWCASE ============================== -->
-      <section class="showcase-section py-14 py-sm-18 grey lighten-5">
-        <v-container>
-          <div class="text-center mb-12">
-            <v-chip color="#ede9fe" text-color="#8051FF" label class="mb-3 px-4 font-weight-bold">
-              A closer look
-            </v-chip>
-            <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
-              Built for how estates actually work
-            </h2>
-          </div>
-
-          <div
-            v-for="(row, i) in showcase"
-            :key="row.title"
-            class="showcase-row reveal-card"
-            :class="{ 'showcase-row-reverse': i % 2 === 1 }"
-          >
-            <div class="showcase-copy">
-              <div class="showcase-tag" :style="`background: ${row.bg}; color: ${row.color};`">
-                {{ row.tag }}
-              </div>
-              <h3 class="showcase-title">{{ row.title }}</h3>
-              <p class="showcase-desc">{{ row.desc }}</p>
-              <ul class="showcase-list">
-                <li v-for="b in row.bullets" :key="b">
-                  <v-icon size="16" color="#10b981">mdi-check-circle</v-icon>
-                  <span>{{ b }}</span>
-                </li>
-              </ul>
-            </div>
-
-            <div class="showcase-visual" :style="`background: ${row.bg};`">
-              <div class="showcase-mock" :class="`showcase-mock-${row.mock}`">
-                <template v-if="row.mock === 'households'">
-                  <div class="mock-row" v-for="n in 4" :key="n">
-                    <div class="mock-avatar">{{ ['GK','SM','MC','AO'][n-1] }}</div>
-                    <div class="mock-body">
-                      <div class="mock-line mock-line-lg"></div>
-                      <div class="mock-line mock-line-sm"></div>
-                    </div>
-                    <div class="mock-pill">Paid</div>
-                  </div>
-                </template>
-
-                <template v-else-if="row.mock === 'payment'">
-                  <div class="mock-payment">
-                    <div class="mock-payment-label">Amount</div>
-                    <div class="mock-payment-amount">KES 3,500</div>
-                    <div class="mock-payment-btn">
-                      <v-icon size="14" color="white">mdi-cellphone-wireless</v-icon>
-                      <span>Pay with M-Pesa</span>
-                    </div>
-                    <div class="mock-payment-note">
-                      <v-icon size="12" color="#10b981">mdi-check-circle</v-icon>
-                      STK push sent to 2547XXXX
-                    </div>
-                  </div>
-                </template>
-
-                <template v-else-if="row.mock === 'reports'">
-                  <div class="mock-report">
-                    <div class="mock-report-head">
-                      <div class="mock-report-title">Q3 Summary</div>
-                      <div class="mock-report-pill">+18%</div>
-                    </div>
-                    <div class="mock-report-bars">
-                      <div class="mock-bar" style="height: 45%;"></div>
-                      <div class="mock-bar" style="height: 70%;"></div>
-                      <div class="mock-bar" style="height: 58%;"></div>
-                      <div class="mock-bar" style="height: 88%;"></div>
-                      <div class="mock-bar" style="height: 76%;"></div>
-                    </div>
-                    <div class="mock-report-foot">
-                      <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span>
-                    </div>
-                  </div>
-                </template>
-              </div>
             </div>
           </div>
         </v-container>
@@ -440,7 +352,7 @@
               Who are you?
             </h2>
             <p class="text-body-1 grey--text text--darken-1" style="max-width: 560px; margin: 0 auto;">
-              Choose how you'll use Makaazi. Your role determines what you can see and do.
+              Your role determines what you can see and do.
             </p>
           </div>
 
@@ -503,7 +415,7 @@
               What you get
             </v-chip>
             <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
-              Everything you need to run your estate
+              Everything you need
             </h2>
           </div>
 
@@ -533,7 +445,7 @@
               Loved by officials
             </v-chip>
             <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
-              What estate officials are saying
+              What officials are saying
             </h2>
           </div>
 
@@ -567,21 +479,19 @@
               Simple pricing
             </v-chip>
             <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
-              Pay only for the size you need
+              Pay for the size you need
             </h2>
             <p class="text-body-1 grey--text text--darken-1" style="max-width: 560px; margin: 0 auto;">
-              Billed monthly. No setup fees. Cancel anytime.
+              Billed monthly. Cancel anytime.
             </p>
           </div>
 
-          <!-- Loading skeletons -->
           <div v-if="plansLoading" class="pricing-grid">
             <div v-for="n in 4" :key="n" class="pricing-card pricing-card-skeleton">
               <v-skeleton-loader type="article, button" />
             </div>
           </div>
 
-          <!-- Loaded plans -->
           <v-row v-else-if="pricing.length" justify="center">
             <v-col v-for="(p, i) in pricing" :key="p.name" cols="12" sm="6" md="3">
               <div class="pricing-card"
@@ -604,12 +514,11 @@
             </v-col>
           </v-row>
 
-          <!-- Empty state -->
           <div v-else class="pricing-empty">
             <v-icon size="42" color="#8051FF">mdi-credit-card-off-outline</v-icon>
             <div class="pricing-empty-title">No plans available</div>
             <div class="pricing-empty-text">
-              Subscription plans haven't been configured yet.
+              Plans haven't been configured yet.
             </div>
           </div>
 
@@ -628,7 +537,7 @@
         <v-container>
           <div class="text-center mb-10">
             <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
-              Frequently asked questions
+              FAQ
             </h2>
           </div>
 
@@ -657,14 +566,14 @@
             <div class="cta-band-content">
               <h2 class="cta-band-title">Ready to modernize your estate?</h2>
               <p class="cta-band-sub">
-                Join hundreds of estates already collecting smarter. Set up takes less than 5 minutes.
+                Set up takes less than 5 minutes.
               </p>
               <div class="cta-band-actions">
                 <v-btn large rounded depressed color="white" 
                   class="text-capitalize font-weight-bold" style="color: #0f0d24 !important;"
                   @click="scrollToSection('roles')">
                   <v-icon left color="#0f0d24">mdi-rocket-launch</v-icon>
-                  Get started free
+                  Get started
                 </v-btn>
                 <v-btn large rounded text color="white" class="text-capitalize font-weight-medium"
                   href="mailto:support@makaazi.co.ke">
@@ -684,11 +593,9 @@
       <!-- ============================== FOOTER ============================== -->
       <v-footer color="transparent" class="py-0 site-footer">
         <v-container class="pa-0">
-          <!-- Top band: brand + links -->
           <div class="footer-main">
             <v-container>
               <v-row class="py-10">
-                <!-- Brand column -->
                 <v-col cols="12" md="5" class="mb-8 mb-md-0">
                   <div class="d-flex align-center mb-4">
                     <v-avatar color="#8051FF" size="40" class="mr-3 footer-brand-avatar">
@@ -699,23 +606,9 @@
                     </span>
                   </div>
                   <p class="footer-brand-desc">
-                    The all-in-one platform for modern Kenyan estate management 
-                    service charges, M-Pesa payments, and household records in one clean console.
+                    The all-in-one platform for modern Kenyan estate management.
                   </p>
 
-                  <!-- Contact chips -->
-                  <!-- <div class="footer-contact">
-                    <a href="mailto:support@makaazi.co.ke" class="footer-contact-chip">
-                      <v-icon size="14" color="#a78bfa">mdi-email-outline</v-icon>
-                      <span>support@makaazi.co.ke</span>
-                    </a>
-                    <div class="footer-contact-chip footer-contact-chip-static">
-                      <v-icon size="14" color="#a78bfa">mdi-map-marker-outline</v-icon>
-                      <span>Nairobi, Kenya</span>
-                    </div>
-                  </div> -->
-
-                  <!-- Social -->
                   <div class="footer-social">
                     <button class="footer-social-btn" aria-label="Twitter">
                       <v-icon size="16">mdi-twitter</v-icon>
@@ -729,10 +622,8 @@
                   </div>
                 </v-col>
 
-                <!-- Spacer on mobile -->
                 <v-col cols="12" md="1" class="d-none d-md-block"></v-col>
 
-                <!-- Product -->
                 <v-col cols="6" md="2" class="mb-6 mb-md-0">
                   <div class="footer-head">Product</div>
                   <a class="footer-link" @click="scrollToSection('how')">
@@ -746,7 +637,6 @@
                   </a>
                 </v-col>
 
-                <!-- Support -->
                 <v-col cols="6" md="2" class="mb-6 mb-md-0">
                   <div class="footer-head">Support</div>
                   <a class="footer-link" @click="scrollToSection('faq')">
@@ -757,15 +647,12 @@
                   </a>
                 </v-col>
 
-                <!-- Legal -->
                 <v-col cols="12" md="2" class="mt-6 mt-md-0">
                   <div class="footer-head">Legal</div>
                   <a class="footer-link" @click="_push('/privacy')">
                     <span class="footer-link-arrow">→</span> Privacy Policy
                   </a>
-                  
                   <a class="footer-link" @click="_push('/terms')">
-                    
                     <span class="footer-link-arrow">→</span> Terms of Service
                   </a>
                 </v-col>
@@ -773,7 +660,6 @@
             </v-container>
           </div>
 
-          <!-- Bottom strip -->
           <div class="footer-bottom-strip">
             <v-container>
               <div class="footer-bottom">
@@ -853,7 +739,6 @@ export default {
       userEmail: '',
       userPhone: '',
 
-      // Animated stats
       displayStats: { estates: 0, households: 0, collected: 0 },
       targetStats: { estates: 200, households: 12000, collected: 40000000 },
       displayBigStats: { estates: 0, households: 0, collected: 0, uptime: 0 },
@@ -871,90 +756,45 @@ export default {
 
       steps: [
         {
-          title: 'Create your estate account',
-          desc: 'Sign in with Google, email, or phone. Verify your estate in under a minute.',
+          title: 'Create your account',
+          desc: 'Sign in and verify your estate in under a minute.',
           icon: 'mdi-account-plus',
           color: '#8051FF',
           bg: '#ede9fe',
         },
         {
           title: 'Invite households & officials',
-          desc: 'Share your URN. Residents register, you approve. Chairmen, Secretaries, and Treasurers get elevated access.',
+          desc: 'Share your URN. Residents register, you approve.',
           icon: 'mdi-account-multiple-plus',
           color: '#7cb300',
           bg: '#f3ffd9',
         },
         {
           title: 'Collect and track payments',
-          desc: 'Set service charges, send M-Pesa STK pushes, and watch your dashboard update in real time.',
+          desc: 'Set charges, send M-Pesa STK pushes, watch it live.',
           icon: 'mdi-chart-timeline-variant',
           color: '#0277bd',
           bg: '#e1f5fe',
         },
       ],
 
-      showcase: [
-        {
-          tag: 'Household Register',
-          title: 'Every unit, every detail — in one place',
-          desc: 'Track owners, spouses, caretakers, contacts, and addresses. Filter by section, court, or street. Approve new registrations in one tap.',
-          bullets: [
-            'Bulk import from CSV',
-            'Sections, courts & streets',
-            'Caretaker & spouse info',
-            'Full-text search',
-          ],
-          mock: 'households',
-          bg: '#f5f3ff',
-          color: '#8051FF',
-        },
-        {
-          tag: 'M-Pesa Payments',
-          title: 'One-tap payments with auto-reconciliation',
-          desc: 'Residents pay service charges directly to your Paybill. Every transaction is verified against Safaricom\'s Daraja API and matched to the right household.',
-          bullets: [
-            'STK push to any phone',
-            'Automatic receipt matching',
-            'Failed & cancelled tracking',
-            'SMS receipts to residents',
-          ],
-          mock: 'payment',
-          bg: '#f3ffd9',
-          color: '#7cb300',
-        },
-        {
-          tag: 'Reports & Insights',
-          title: 'Month-by-month clarity for every household',
-          desc: 'See who paid, who\'s behind, and how much has been collected — per month, per section, per court. Export for committee meetings.',
-          bullets: [
-            'Monthly trend charts',
-            'Arrears calculation',
-            'CSV exports',
-            'Cash routing audit',
-          ],
-          mock: 'reports',
-          bg: '#e1f5fe',
-          color: '#0277bd',
-        },
-      ],
-
       testimonials: [
         {
-          quote: 'We went from WhatsApp chaos to a proper system in a weekend. Collections are up 40% and everyone can see where they stand.',
+          quote: 'We went from WhatsApp chaos to a real system in a weekend. Collections are up 40%.',
           name: 'Mercy Kamau',
           role: 'Chairman · Galilie Estate',
           initials: 'MK',
           color: 'linear-gradient(135deg, #8051FF, #a855f7)',
         },
         {
-          quote: 'The M-Pesa integration is flawless. Residents pay from home, receipts land in their SMS, and our treasurer doesn\'t chase anyone anymore.',
+          quote: 'M-Pesa integration is flawless. Residents pay from home and receipts land automatically.',
           name: 'Sam Maina',
           role: 'Treasurer · Vaal Estate',
           initials: 'SM',
           color: 'linear-gradient(135deg, #7cb300, #a3e635)',
         },
         {
-          quote: 'Approving new households used to take days. Now it\'s a 30-second review on my phone during my commute.',
+          quote: 'Approving new households used to take days. Now it\'s a 30-second review.',
           name: 'Magret Karimi',
           role: 'Secretary · Ngong Hills',
           initials: 'MG',
@@ -962,7 +802,6 @@ export default {
         },
       ],
 
-      // ✅ Pricing fetched from backend
       pricing: [],
       plansLoading: false,
 
@@ -971,7 +810,7 @@ export default {
           key: 'household',
           tag: 'Resident',
           title: 'I am a Household',
-          description: 'Access your payment records, view service charges, and make M-Pesa payments for your unit.',
+          description: 'Access payment records, view charges, and pay via M-Pesa.',
           icon: 'mdi-home-account',
           color: '#8051FF',
           bg: '#ede9fe',
@@ -979,17 +818,17 @@ export default {
           ctaIcon: 'mdi-account-arrow-right',
           loginHint: 'You\'ll be taken to your household dashboard.',
           bullets: [
-            'View your monthly payment summary',
-            'Pay service charges via M-Pesa',
-            'See your outstanding balance',
-            'Receive payment notifications',
+            'View payment summary',
+            'Pay via M-Pesa',
+            'See outstanding balance',
+            'Payment notifications',
           ],
         },
         {
           key: 'official',
           tag: 'Estate Official',
           title: 'I am an Estate Official',
-          description: 'Chairman, Secretary, or Treasurer. Manage households, approve registrations, and set up your estate.',
+          description: 'Chairman, Secretary, or Treasurer. Manage households and set up your estate.',
           icon: 'mdi-shield-account',
           color: '#7cb300',
           bg: '#f3ffd9',
@@ -997,17 +836,17 @@ export default {
           ctaIcon: 'mdi-shield-key',
           loginHint: 'You\'ll be taken to your official dashboard.',
           bullets: [
-            'Approve new household registrations',
-            'Set and update service charges',
-            'View estate-wide payment reports',
-            'Manage workers and cash routing',
+            'Approve registrations',
+            'Update charges',
+            'View payment reports',
+            'Manage workers & cash',
           ],
         },
         {
           key: 'manager',
           tag: 'Estate Manager',
           title: 'I am an Estate Manager',
-          description: 'Run operations across multiple estates. Full control of subscriptions, users, and finances.',
+          description: 'Run operations across multiple estates.',
           icon: 'mdi-briefcase-account',
           color: '#d32f2f',
           bg: '#ffebee',
@@ -1016,27 +855,27 @@ export default {
           loginHint: 'You\'ll be taken to the management console.',
           bullets: [
             'Manage multiple estates',
-            'Oversee subscriptions and billing',
-            'Audit and financial reports',
-            'Manage admins and permissions',
+            'Subscriptions & billing',
+            'Audit reports',
+            'Manage admins',
           ],
         },
       ],
 
       features: [
-        { title: 'Household Register', desc: 'A single source of truth for every unit, owner, caretaker, and contact.', icon: 'mdi-home-group', color: '#8051FF', bg: '#ede9fe' },
-        { title: 'Service Charges', desc: 'Set charges per estate, track payments month-by-month, and auto-calculate arrears.', icon: 'mdi-cash-multiple', color: '#7cb300', bg: '#f3ffd9' },
-        { title: 'M-Pesa Payments', desc: 'Integrated STK push so residents pay in one tap. Automatic reconciliation.', icon: 'mdi-cellphone-wireless', color: '#0277bd', bg: '#e1f5fe' },
-        { title: 'Visitor Management', desc: 'Log entries and exits at the gate. Approve, deny, and audit at any time.', icon: 'mdi-gate', color: '#ef6c00', bg: '#fff3e0' },
-        { title: 'Reports & Exports', desc: 'Section, court, street, and cash-routing reports. Download as CSV.', icon: 'mdi-chart-bar', color: '#6a1b9a', bg: '#f3e5f5' },
-        { title: 'Notifications', desc: 'Push alerts for payments, approvals, and important estate updates.', icon: 'mdi-bell-ring', color: '#c62828', bg: '#ffebee' },
+        { title: 'Household Register', desc: 'One source of truth for every unit, owner, and contact.', icon: 'mdi-home-group', color: '#8051FF', bg: '#ede9fe' },
+        { title: 'Service Charges', desc: 'Set charges, track payments, auto-calculate arrears.', icon: 'mdi-cash-multiple', color: '#7cb300', bg: '#f3ffd9' },
+        { title: 'M-Pesa Payments', desc: 'STK push payments with automatic reconciliation.', icon: 'mdi-cellphone-wireless', color: '#0277bd', bg: '#e1f5fe' },
+        { title: 'Visitor Management', desc: 'Log entries and exits. Approve, deny, audit.', icon: 'mdi-gate', color: '#ef6c00', bg: '#fff3e0' },
+        { title: 'Reports & Exports', desc: 'Section, court, and cash-routing reports. Download as CSV.', icon: 'mdi-chart-bar', color: '#6a1b9a', bg: '#f3e5f5' },
+        { title: 'Notifications', desc: 'Push alerts for payments and approvals.', icon: 'mdi-bell-ring', color: '#c62828', bg: '#ffebee' },
       ],
 
       faqs: [
-        { q: 'What is the difference between an Official and a Manager?', a: 'An Official (Chairman, Secretary, Treasurer) manages a single estate. A Manager runs operations across multiple estates and administers subscriptions and user permissions.' },
-        { q: 'Can I be both a household and an official?', a: 'Yes. Officials are also households — they live in the estate. Use the Official login to access both your own records and estate-wide management tools.' },
-        { q: 'I don\'t know my estate. What should I do?', a: 'Contact your estate office or check with your caretaker for the estate name or URN. When you sign in as a Resident, you\'ll be able to select your estate from a list.' },
-        { q: 'Is my payment information secure?', a: 'Yes. All M-Pesa transactions go through Safaricom\'s Daraja API, and your payment history is stored against your household record with encryption in transit.' },
+        { q: 'Official vs. Manager — what\'s the difference?', a: 'An Official manages a single estate. A Manager runs multiple estates and administers billing and permissions.' },
+        { q: 'Can I be both a household and an official?', a: 'Yes. Officials are also residents. Use the Official login for both your records and estate management.' },
+        { q: 'I don\'t know my estate.', a: 'Contact your estate office or caretaker for the name or URN.' },
+        { q: 'Is my payment info secure?', a: 'Yes. All M-Pesa transactions run through Safaricom\'s Daraja API with encryption in transit.' },
       ],
     };
   },
@@ -1083,9 +922,6 @@ export default {
       return (Number(n) || 0).toLocaleString('en-US');
     },
 
-    // =====================================================
-    // FETCH PRICING FROM BACKEND
-    // =====================================================
     async fetchPricing() {
       this.plansLoading = true;
       try {
@@ -1126,9 +962,6 @@ export default {
       }
     },
 
-    // =====================================================
-    // SCROLL-BASED ANIMATIONS
-    // =====================================================
     setupStatsObserver() {
       const trigger = this.$refs.roles || this.$refs.features;
       if (!trigger) return;
@@ -1192,9 +1025,6 @@ export default {
       });
     },
 
-    // =====================================================
-    // AUTH
-    // =====================================================
     checkAuth() {
       const that = this;
       const current = that.$fire?.auth?.currentUser;
@@ -1224,9 +1054,6 @@ export default {
       this.userPhone = user.phoneNumber || '';
     },
 
-    // =====================================================
-    // SCROLL LOCK CLEANUP
-    // =====================================================
     _forceCloseMenus() {
       document.querySelectorAll('.v-menu__content').forEach((el) => {
         el.style.display = 'none';
@@ -1252,9 +1079,6 @@ export default {
       }, 300);
     },
 
-    // =====================================================
-    // MENU HANDLERS
-    // =====================================================
     onMenuDashboard() {
       this.userMenu = false;
       this.$nextTick(() => {
@@ -1283,9 +1107,6 @@ export default {
       });
     },
 
-    // =====================================================
-    // ROLE CHOICE
-    // =====================================================
     async chooseRole(key) {
       const role = this.roles.find((r) => r.key === key);
       if (!role) return;
@@ -1483,7 +1304,6 @@ export default {
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-/* Trust strip */
 .trust-strip {
   display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
   padding: 16px 20px;
@@ -1505,7 +1325,6 @@ export default {
 }
 .trust-divider { width: 1px; height: 30px; background: #e9e7f2; }
 
-/* Hero preview */
 .hero-preview-col { padding-top: 24px; padding-bottom: 24px; }
 .hero-preview { position: relative; max-width: 480px; margin: 0 auto; }
 
@@ -1578,7 +1397,6 @@ export default {
 .preview-foot-name { font-size: 0.76rem; font-weight: 800; color: #0f0d24; }
 .preview-foot-sub { font-size: 0.64rem; color: #94a3b8; font-weight: 600; }
 
-/* Floating badges */
 .floating-badge {
   position: absolute; display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 14px; background: #ffffff;
@@ -1660,133 +1478,6 @@ export default {
 .how-desc {
   font-size: 0.85rem; color: #64748b;
   line-height: 1.65; margin: 0;
-}
-
-/* ============================================================
-   SHOWCASE
-   ============================================================ */
-.showcase-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  align-items: center;
-  margin-bottom: 64px;
-}
-.showcase-row:last-child { margin-bottom: 0; }
-.showcase-row-reverse { direction: rtl; }
-.showcase-row-reverse > * { direction: ltr; }
-
-.showcase-tag {
-  display: inline-block;
-  padding: 5px 12px; border-radius: 999px;
-  font-size: 0.68rem; font-weight: 800;
-  text-transform: uppercase; letter-spacing: 0.6px;
-  margin-bottom: 14px;
-}
-.showcase-title {
-  font-size: 1.35rem; font-weight: 800; color: #0f0d24;
-  letter-spacing: -0.5px; line-height: 1.25; margin-bottom: 12px;
-}
-.showcase-desc {
-  font-size: 0.9rem; color: #64748b;
-  line-height: 1.7; margin-bottom: 18px;
-}
-.showcase-list {
-  list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.showcase-list li {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 0.85rem; color: #334155; font-weight: 600;
-}
-
-.showcase-visual {
-  border-radius: 20px;
-  padding: 32px;
-  min-height: 340px;
-  display: flex; align-items: center; justify-content: center;
-  position: relative; overflow: hidden;
-}
-.showcase-visual::before {
-  content: ""; position: absolute; inset: 0;
-  background: radial-gradient(circle at 70% 20%, rgba(255,255,255,0.6), transparent 60%);
-  pointer-events: none;
-}
-
-.showcase-mock {
-  position: relative; z-index: 2;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 18px;
-  width: 100%; max-width: 320px;
-  box-shadow: 0 30px 60px -30px rgba(15, 13, 36, 0.35);
-}
-
-.mock-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-.mock-row:last-child { border-bottom: none; padding-bottom: 0; }
-.mock-row:first-child { padding-top: 0; }
-.mock-avatar {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: linear-gradient(135deg, #8051FF, #a855f7);
-  color: white; display: flex; align-items: center; justify-content: center;
-  font-size: 0.62rem; font-weight: 800; flex-shrink: 0;
-}
-.mock-body { flex: 1; min-width: 0; }
-.mock-line { height: 6px; border-radius: 3px; background: #e2e8f0; margin-bottom: 4px; }
-.mock-line-lg { width: 70%; background: #cbd5e1; }
-.mock-line-sm { width: 45%; height: 5px; }
-.mock-pill {
-  font-size: 0.6rem; font-weight: 800;
-  padding: 3px 8px; border-radius: 999px;
-  background: #d1fae5; color: #065f46;
-  letter-spacing: 0.3px; text-transform: uppercase;
-}
-
-.mock-payment { text-align: center; padding: 8px 0; }
-.mock-payment-label {
-  font-size: 0.68rem; font-weight: 800; color: #94a3b8;
-  text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;
-}
-.mock-payment-amount {
-  font-size: 1.6rem; font-weight: 900; color: #0f0d24;
-  letter-spacing: -1px; margin-bottom: 18px;
-}
-.mock-payment-btn {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 12px; border-radius: 12px;
-  background: linear-gradient(135deg, #8051FF, #a855f7);
-  color: white; font-size: 0.82rem; font-weight: 800;
-  box-shadow: 0 12px 24px -10px rgba(128, 81, 255, 0.7);
-  margin-bottom: 12px;
-}
-.mock-payment-note {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.7rem; color: #10b981; font-weight: 700;
-}
-
-.mock-report-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.mock-report-title { font-size: 0.82rem; font-weight: 800; color: #0f0d24; }
-.mock-report-pill {
-  font-size: 0.62rem; font-weight: 800;
-  padding: 3px 8px; border-radius: 999px;
-  background: #d1fae5; color: #065f46;
-}
-.mock-report-bars {
-  display: flex; align-items: flex-end; gap: 8px;
-  height: 80px; margin-bottom: 8px;
-}
-.mock-bar {
-  flex: 1; border-radius: 4px 4px 2px 2px;
-  background: linear-gradient(180deg, #38bdf8, #0284c7);
-  opacity: 0.9;
-}
-.mock-report-foot {
-  display: flex; justify-content: space-between;
-  font-size: 0.6rem; color: #94a3b8; font-weight: 700;
 }
 
 /* ============================================================
@@ -1941,7 +1632,6 @@ export default {
   font-size: 0.8rem; color: #4b5563;
 }
 
-/* Pricing skeleton + empty */
 .pricing-card-skeleton {
   min-height: 300px;
   animation: none;
@@ -2006,7 +1696,7 @@ export default {
 .cta-shape-2 { width: 250px; height: 250px; background: #7cb300; bottom: -80px; right: 30%; }
 
 /* ============================================================
-   FOOTER (redesigned)
+   FOOTER
    ============================================================ */
 .site-footer {
   background: linear-gradient(180deg, #0a0a14 0%, #14102b 60%, #1a1533 100%) !important;
@@ -2056,44 +1746,6 @@ export default {
   color: rgba(255, 255, 255, 0.55);
   max-width: 380px;
   margin: 0 0 20px;
-}
-
-.footer-contact {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 22px;
-}
-
-.footer-contact-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-  text-decoration: none;
-  transition: all 0.2s ease;
-  width: fit-content;
-  max-width: 100%;
-}
-.footer-contact-chip span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-a.footer-contact-chip:hover {
-  background: rgba(128, 81, 255, 0.12);
-  border-color: rgba(128, 81, 255, 0.4);
-  color: #ffffff;
-  transform: translateX(2px);
-}
-.footer-contact-chip-static {
-  cursor: default;
 }
 
 .footer-social {
@@ -2271,18 +1923,9 @@ a.footer-contact-chip:hover {
   .floating-badge-2 { right: 8px; }
   .floating-badge-3 { right: 8px; }
 
-  .showcase-row,
-  .showcase-row-reverse {
-    grid-template-columns: 1fr;
-    gap: 32px;
-    margin-bottom: 48px;
-    direction: ltr;
-  }
-
   .cta-band-inner { justify-content: center; text-align: center; }
   .cta-band-actions { justify-content: center; }
 
-  /* Footer responsive */
   .footer-brand-desc { max-width: 100%; }
   .footer-bottom {
     flex-direction: column;
@@ -2307,10 +1950,7 @@ a.footer-contact-chip:hover {
   .stats-band-value { font-size: 1.6rem; }
   .cta-band-title { font-size: 1.35rem; }
   .pricing-card { padding: 22px 18px; }
-  .showcase-visual { padding: 20px; min-height: 280px; }
-  .showcase-mock { padding: 14px; }
 
-  /* Footer mobile tweaks */
   .footer-brand-text { font-size: 1.15rem !important; }
   .footer-social-btn { width: 34px; height: 34px; }
   .footer-head {
