@@ -1,8 +1,6 @@
 <template>
   <div class="landing-root">
-    <!-- ============================================================
-         TOP BAR
-         ============================================================ -->
+    <!-- TOP BAR -->
     <v-app-bar
       app
       flat
@@ -30,20 +28,13 @@
         <v-btn text class="mx-1 text-capitalize font-weight-medium" @click="scrollToSection('faq')">FAQ</v-btn>
       </div>
 
-      <!-- Auth-aware -->
       <div v-if="isAuthenticated" class="d-flex align-center ml-2 ml-sm-4">
         <v-btn text class="text-capitalize font-weight-medium mr-2 d-none d-sm-flex"
           :loading="resolvingDashboard" @click="goToMyDashboard">
           Dashboard
         </v-btn>
 
-        <v-menu
-          v-model="userMenu"
-          offset-y
-          transition="slide-y-transition"
-          bottom
-          :close-on-content-click="false"
-        >
+        <v-menu v-model="userMenu" offset-y transition="slide-y-transition" bottom :close-on-content-click="false">
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-avatar color="#8051FF" size="36">
@@ -62,7 +53,7 @@
               <v-list-item-icon class="mr-3">
                 <v-icon small color="#8051FF">mdi-view-dashboard</v-icon>
               </v-list-item-icon>
-              <v-list-item-title class="text-body-2">My Dashboard</v-list-item-title>
+              <v-list-item-title class="text-body-2">Dashboard</v-list-item-title>
             </v-list-item>
             <v-list-item @click="onMenuSignOut">
               <v-list-item-icon class="mr-3">
@@ -101,7 +92,7 @@
             <v-list-item-icon class="mr-3">
               <v-icon small color="#8051FF">mdi-view-dashboard</v-icon>
             </v-list-item-icon>
-            <v-list-item-title class="font-weight-medium">My Dashboard</v-list-item-title>
+            <v-list-item-title class="font-weight-medium">Dashboard</v-list-item-title>
           </v-list-item>
           <v-list-item @click="scrollToSection('how'); mobileMenu = false">
             <v-list-item-title>How it works</v-list-item-title>
@@ -124,7 +115,7 @@
     </v-navigation-drawer>
 
     <v-main class="pa-0">
-      <!-- ============================== HERO ============================== -->
+      <!-- HERO -->
       <section class="hero-section" ref="hero">
         <div class="hero-bg-shapes">
           <div class="shape shape-1"></div>
@@ -136,10 +127,9 @@
         <v-container class="hero-content py-8 py-sm-12 py-md-14">
           <v-row align="center" class="hero-grid">
             <v-col cols="12" md="6" lg="6" class="hero-copy-col">
-              <v-chip color="#ede9fe" text-color="#8051FF" small label
-                class="mb-4 font-weight-bold px-4 py-1">
+              <v-chip color="#ede9fe" text-color="#8051FF" small label class="mb-4 font-weight-bold px-4 py-1">
                 <span class="live-dot"></span>
-                200+ estates across Kenya
+                Estate management, simplified
               </v-chip>
 
               <h1 class="text-h4 text-sm-h3 text-md-h2 font-weight-black mb-4 hero-title">
@@ -148,7 +138,7 @@
               </h1>
 
               <p class="text-body-1 text-sm-h6 grey--text text--darken-1 mb-8 hero-sub">
-                Service charges, records, M-Pesa payments, visitors, and reports — all in one console.
+                Household records, service charges, M-Pesa payments and reports — in one console.
               </p>
 
               <div class="hero-cta-row">
@@ -169,23 +159,13 @@
 
               <div class="trust-strip">
                 <div class="trust-item">
-                  <div class="trust-value">{{ fmtCount(displayStats.estates) }}+</div>
+                  <div class="trust-value">{{ fmtCount(displayStats.estates) }}</div>
                   <div class="trust-label">Estates</div>
                 </div>
                 <div class="trust-divider"></div>
                 <div class="trust-item">
-                  <div class="trust-value">{{ fmtCount(displayStats.households) }}+</div>
+                  <div class="trust-value">{{ fmtCount(displayStats.households) }}</div>
                   <div class="trust-label">Households</div>
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-item">
-                  <div class="trust-value">KES {{ fmtCount(displayStats.collected) }}</div>
-                  <div class="trust-label">Processed</div>
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-item">
-                  <div class="trust-value">99.9%</div>
-                  <div class="trust-label">Uptime</div>
                 </div>
               </div>
             </v-col>
@@ -194,7 +174,7 @@
               <div class="hero-preview">
                 <div class="floating-badge floating-badge-1">
                   <v-icon size="16" color="#10b981">mdi-check-circle</v-icon>
-                  <span>Payment · KES 3,500</span>
+                  <span>Payment received</span>
                 </div>
 
                 <div class="floating-badge floating-badge-2">
@@ -224,14 +204,7 @@
                     </div>
                   </div>
 
-                  <div class="preview-stats">
-                    <div class="preview-stat">
-                      <div class="preview-stat-icon" style="background:#ede9fe;">
-                        <v-icon size="16" color="#8051FF">mdi-cash-multiple</v-icon>
-                      </div>
-                      <div class="preview-stat-label">Collected</div>
-                      <div class="preview-stat-value">KES 284k</div>
-                    </div>
+                  <div class="preview-stats preview-stats-2">
                     <div class="preview-stat">
                       <div class="preview-stat-icon" style="background:#f3ffd9;">
                         <v-icon size="16" color="#7cb300">mdi-home-group</v-icon>
@@ -250,7 +223,7 @@
 
                   <div class="preview-chart">
                     <div class="preview-chart-head">
-                      <div class="preview-chart-title">Monthly collections</div>
+                      <div class="preview-chart-title">Monthly activity</div>
                       <div class="preview-chart-range">2026</div>
                     </div>
                     <div class="preview-chart-bars">
@@ -284,20 +257,7 @@
         </v-container>
       </section>
 
-      <!-- ============================== LOGO STRIP ============================== -->
-      <section class="logo-strip">
-        <v-container>
-          <div class="logo-strip-label">Trusted by estates across Kenya</div>
-          <div class="logo-strip-row">
-            <div v-for="n in 6" :key="n" class="logo-pill">
-              <v-icon size="18" color="#94a3b8">mdi-home-city</v-icon>
-              <span>Estate {{ n }}</span>
-            </div>
-          </div>
-        </v-container>
-      </section>
-
-      <!-- ============================== HOW IT WORKS ============================== -->
+      <!-- HOW IT WORKS -->
       <section id="how" ref="how" class="how-section py-14 py-sm-18">
         <v-container>
           <div class="text-center mb-12">
@@ -310,12 +270,8 @@
           </div>
 
           <div class="how-grid">
-            <div
-              v-for="(step, i) in steps"
-              :key="step.title"
-              class="how-card reveal-card"
-              :style="{ animationDelay: i * 100 + 'ms' }"
-            >
+            <div v-for="(step, i) in steps" :key="step.title"
+              class="how-card reveal-card" :style="{ animationDelay: i * 100 + 'ms' }">
               <div class="how-num">{{ String(i + 1).padStart(2, '0') }}</div>
               <div class="how-icon" :style="`background: ${step.bg};`">
                 <v-icon :color="step.color" size="26">{{ step.icon }}</v-icon>
@@ -327,10 +283,10 @@
         </v-container>
       </section>
 
-      <!-- ============================== STATS BAND ============================== -->
+      <!-- STATS BAND -->
       <section class="stats-band">
         <v-container>
-          <div class="stats-band-grid">
+          <div class="stats-band-grid stats-band-grid-2">
             <div v-for="s in bigStats" :key="s.label" class="stats-band-item">
               <div class="stats-band-value">
                 {{ s.prefix }}{{ fmtCount(displayBigStats[s.key]) }}{{ s.suffix }}
@@ -341,7 +297,7 @@
         </v-container>
       </section>
 
-      <!-- ============================== ROLE SELECT ============================== -->
+      <!-- ROLE SELECT -->
       <section id="roles" ref="roles" class="roles-section py-14 py-sm-18">
         <v-container>
           <div class="text-center mb-10">
@@ -351,9 +307,6 @@
             <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
               Who are you?
             </h2>
-            <p class="text-body-1 grey--text text--darken-1" style="max-width: 560px; margin: 0 auto;">
-              Your role determines what you can see and do.
-            </p>
           </div>
 
           <v-row justify="center" align="stretch">
@@ -407,7 +360,7 @@
         </v-container>
       </section>
 
-      <!-- ============================== FEATURES ============================== -->
+      <!-- FEATURES -->
       <section id="features" ref="features" class="features-section py-14 py-sm-18 grey lighten-5">
         <v-container>
           <div class="text-center mb-10">
@@ -437,41 +390,7 @@
         </v-container>
       </section>
 
-      <!-- ============================== TESTIMONIALS ============================== -->
-      <section class="testimonials-section py-14 py-sm-18">
-        <v-container>
-          <div class="text-center mb-12">
-            <v-chip color="#ede9fe" text-color="#8051FF" label class="mb-3 px-4 font-weight-bold">
-              Loved by officials
-            </v-chip>
-            <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
-              What officials are saying
-            </h2>
-          </div>
-
-          <v-row>
-            <v-col v-for="(t, i) in testimonials" :key="i" cols="12" md="4">
-              <div class="testimonial-card reveal-card" :style="{ animationDelay: i * 100 + 'ms' }">
-                <div class="testimonial-quote-icon">
-                  <v-icon size="28" color="#8051FF">mdi-format-quote-open</v-icon>
-                </div>
-                <p class="testimonial-text">"{{ t.quote }}"</p>
-                <div class="testimonial-author">
-                  <div class="testimonial-avatar" :style="`background: ${t.color};`">
-                    {{ t.initials }}
-                  </div>
-                  <div>
-                    <div class="testimonial-name">{{ t.name }}</div>
-                    <div class="testimonial-role">{{ t.role }}</div>
-                  </div>
-                </div>
-              </div>
-            </v-col>
-          </v-row>
-        </v-container>
-      </section>
-
-      <!-- ============================== PRICING ============================== -->
+      <!-- PRICING -->
       <section id="pricing" ref="pricing" class="pricing-section py-14 py-sm-18 grey lighten-5">
         <v-container>
           <div class="text-center mb-12">
@@ -494,8 +413,7 @@
 
           <v-row v-else-if="pricing.length" justify="center">
             <v-col v-for="(p, i) in pricing" :key="p.name" cols="12" sm="6" md="3">
-              <div class="pricing-card"
-                :class="{ 'pricing-card-featured': p.featured }">
+              <div class="pricing-card" :class="{ 'pricing-card-featured': p.featured }">
                 <div v-if="p.featured" class="pricing-badge">Most popular</div>
                 <div class="pricing-name">{{ p.name }}</div>
                 <div class="pricing-range">{{ p.range }}</div>
@@ -517,9 +435,7 @@
           <div v-else class="pricing-empty">
             <v-icon size="42" color="#8051FF">mdi-credit-card-off-outline</v-icon>
             <div class="pricing-empty-title">No plans available</div>
-            <div class="pricing-empty-text">
-              Plans haven't been configured yet.
-            </div>
+            <div class="pricing-empty-text">Plans haven't been configured yet.</div>
           </div>
 
           <div class="text-center mt-8">
@@ -532,13 +448,11 @@
         </v-container>
       </section>
 
-      <!-- ============================== FAQ ============================== -->
+      <!-- FAQ -->
       <section id="faq" ref="faq" class="faq-section py-14 py-sm-18">
         <v-container>
           <div class="text-center mb-10">
-            <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">
-              FAQ
-            </h2>
+            <h2 class="text-h5 text-sm-h4 font-weight-black grey--text text--darken-3 mb-3">FAQ</h2>
           </div>
 
           <v-row justify="center">
@@ -559,17 +473,15 @@
         </v-container>
       </section>
 
-      <!-- ============================== CTA BAND ============================== -->
+      <!-- CTA BAND -->
       <section class="cta-band">
         <v-container>
           <div class="cta-band-inner">
             <div class="cta-band-content">
               <h2 class="cta-band-title">Ready to modernize your estate?</h2>
-              <p class="cta-band-sub">
-                Set up takes less than 5 minutes.
-              </p>
+              <p class="cta-band-sub">Set up takes less than 5 minutes.</p>
               <div class="cta-band-actions">
-                <v-btn large rounded depressed color="white" 
+                <v-btn large rounded depressed color="white"
                   class="text-capitalize font-weight-bold" style="color: #0f0d24 !important;"
                   @click="scrollToSection('roles')">
                   <v-icon left color="#0f0d24">mdi-rocket-launch</v-icon>
@@ -590,7 +502,7 @@
         </v-container>
       </section>
 
-      <!-- ============================== FOOTER ============================== -->
+      <!-- FOOTER -->
       <v-footer color="transparent" class="py-0 site-footer">
         <v-container class="pa-0">
           <div class="footer-main">
@@ -610,15 +522,9 @@
                   </p>
 
                   <div class="footer-social">
-                    <button class="footer-social-btn" aria-label="Twitter">
-                      <v-icon size="16">mdi-twitter</v-icon>
-                    </button>
-                    <button class="footer-social-btn" aria-label="LinkedIn">
-                      <v-icon size="16">mdi-linkedin</v-icon>
-                    </button>
-                    <button class="footer-social-btn" aria-label="WhatsApp">
-                      <v-icon size="16">mdi-whatsapp</v-icon>
-                    </button>
+                    <button class="footer-social-btn" aria-label="Twitter"><v-icon size="16">mdi-twitter</v-icon></button>
+                    <button class="footer-social-btn" aria-label="LinkedIn"><v-icon size="16">mdi-linkedin</v-icon></button>
+                    <button class="footer-social-btn" aria-label="WhatsApp"><v-icon size="16">mdi-whatsapp</v-icon></button>
                   </div>
                 </v-col>
 
@@ -626,35 +532,21 @@
 
                 <v-col cols="6" md="2" class="mb-6 mb-md-0">
                   <div class="footer-head">Product</div>
-                  <a class="footer-link" @click="scrollToSection('how')">
-                    <span class="footer-link-arrow">→</span> How it works
-                  </a>
-                  <a class="footer-link" @click="scrollToSection('features')">
-                    <span class="footer-link-arrow">→</span> Features
-                  </a>
-                  <a class="footer-link" @click="scrollToSection('pricing')">
-                    <span class="footer-link-arrow">→</span> Pricing
-                  </a>
+                  <a class="footer-link" @click="scrollToSection('how')"><span class="footer-link-arrow">→</span> How it works</a>
+                  <a class="footer-link" @click="scrollToSection('features')"><span class="footer-link-arrow">→</span> Features</a>
+                  <a class="footer-link" @click="scrollToSection('pricing')"><span class="footer-link-arrow">→</span> Pricing</a>
                 </v-col>
 
                 <v-col cols="6" md="2" class="mb-6 mb-md-0">
                   <div class="footer-head">Support</div>
-                  <a class="footer-link" @click="scrollToSection('faq')">
-                    <span class="footer-link-arrow">→</span> FAQ
-                  </a>
-                  <a class="footer-link" href="mailto:support@makaazi.co.ke">
-                    <span class="footer-link-arrow">→</span> Contact us
-                  </a>
+                  <a class="footer-link" @click="scrollToSection('faq')"><span class="footer-link-arrow">→</span> FAQ</a>
+                  <a class="footer-link" href="mailto:support@makaazi.co.ke"><span class="footer-link-arrow">→</span> Contact</a>
                 </v-col>
 
                 <v-col cols="12" md="2" class="mt-6 mt-md-0">
                   <div class="footer-head">Legal</div>
-                  <a class="footer-link" @click="_push('/privacy')">
-                    <span class="footer-link-arrow">→</span> Privacy Policy
-                  </a>
-                  <a class="footer-link" @click="_push('/terms')">
-                    <span class="footer-link-arrow">→</span> Terms of Service
-                  </a>
+                  <a class="footer-link" @click="_push('/privacy')"><span class="footer-link-arrow">→</span> Privacy</a>
+                  <a class="footer-link" @click="_push('/terms')"><span class="footer-link-arrow">→</span> Terms</a>
                 </v-col>
               </v-row>
             </v-container>
@@ -664,9 +556,7 @@
             <v-container>
               <div class="footer-bottom">
                 <div class="footer-bottom-left">
-                  <span class="footer-copy">
-                    © {{ new Date().getFullYear() }} Makaazi Technologies Ltd.
-                  </span>
+                  <span class="footer-copy">© {{ new Date().getFullYear() }} Makaazi Technologies Ltd.</span>
                   <span class="footer-sep">·</span>
                   <span class="footer-copy footer-copy-muted">All rights reserved</span>
                 </div>
@@ -704,9 +594,7 @@
           Continue
         </v-btn>
 
-        <v-btn block text class="text-capitalize" @click="roleDialog = false">
-          Cancel
-        </v-btn>
+        <v-btn block text class="text-capitalize" @click="roleDialog = false">Cancel</v-btn>
       </v-card>
     </v-dialog>
   </div>
@@ -739,19 +627,19 @@ export default {
       userEmail: '',
       userPhone: '',
 
-      displayStats: { estates: 0, households: 0, collected: 0 },
-      targetStats: { estates: 200, households: 12000, collected: 40000000 },
-      displayBigStats: { estates: 0, households: 0, collected: 0, uptime: 0 },
-      targetBigStats: { estates: 200, households: 12000, collected: 40, uptime: 99.9 },
+      displayStats: { estates: 0, households: 0 },
+      targetStats: { estates: 0, households: 0 },
+
+      displayBigStats: { estates: 0, households: 0 },
+      targetBigStats: { estates: 0, households: 0 },
+
       statsAnimated: false,
       _statsObserver: null,
       _revealObserver: null,
 
       bigStats: [
-        { key: 'estates', label: 'Estates onboarded', prefix: '', suffix: '+' },
-        { key: 'households', label: 'Households managed', prefix: '', suffix: '+' },
-        { key: 'collected', label: 'KES collected (M)', prefix: 'KES ', suffix: 'M+' },
-        { key: 'uptime', label: 'Platform uptime', prefix: '', suffix: '%' },
+        { key: 'estates',    label: 'Estates onboarded',  prefix: '', suffix: '' },
+        { key: 'households', label: 'Households managed', prefix: '', suffix: '' },
       ],
 
       steps: [
@@ -770,7 +658,7 @@ export default {
           bg: '#f3ffd9',
         },
         {
-          title: 'Collect and track payments',
+          title: 'Collect payments',
           desc: 'Set charges, send M-Pesa STK pushes, watch it live.',
           icon: 'mdi-chart-timeline-variant',
           color: '#0277bd',
@@ -780,21 +668,21 @@ export default {
 
       testimonials: [
         {
-          quote: 'We went from WhatsApp chaos to a real system in a weekend. Collections are up 40%.',
+          quote: 'Approvals that used to take days now take seconds.',
           name: 'Mercy Kamau',
           role: 'Chairman · Galilie Estate',
           initials: 'MK',
           color: 'linear-gradient(135deg, #8051FF, #a855f7)',
         },
         {
-          quote: 'M-Pesa integration is flawless. Residents pay from home and receipts land automatically.',
+          quote: 'Residents pay from home and receipts land automatically.',
           name: 'Sam Maina',
           role: 'Treasurer · Vaal Estate',
           initials: 'SM',
           color: 'linear-gradient(135deg, #7cb300, #a3e635)',
         },
         {
-          quote: 'Approving new households used to take days. Now it\'s a 30-second review.',
+          quote: 'Our estate records are finally in one place.',
           name: 'Magret Karimi',
           role: 'Secretary · Ngong Hills',
           initials: 'MG',
@@ -810,52 +698,52 @@ export default {
           key: 'household',
           tag: 'Resident',
           title: 'I am a Household',
-          description: 'Access payment records, view charges, and pay via M-Pesa.',
+          description: 'See your charges and pay via M-Pesa.',
           icon: 'mdi-home-account',
           color: '#8051FF',
           bg: '#ede9fe',
           cta: 'Sign in / Register',
           ctaIcon: 'mdi-account-arrow-right',
-          loginHint: 'You\'ll be taken to your household dashboard.',
+          loginHint: 'Goes to your household dashboard.',
           bullets: [
-            'View payment summary',
+            'Payment summary',
             'Pay via M-Pesa',
-            'See outstanding balance',
-            'Payment notifications',
+            'Outstanding balance',
+            'SMS receipts',
           ],
         },
         {
           key: 'official',
           tag: 'Estate Official',
           title: 'I am an Estate Official',
-          description: 'Chairman, Secretary, or Treasurer. Manage households and set up your estate.',
+          description: 'Chairman, Secretary, or Treasurer.',
           icon: 'mdi-shield-account',
           color: '#7cb300',
           bg: '#f3ffd9',
           cta: 'Sign in as Official',
           ctaIcon: 'mdi-shield-key',
-          loginHint: 'You\'ll be taken to your official dashboard.',
+          loginHint: 'Goes to your official dashboard.',
           bullets: [
             'Approve registrations',
             'Update charges',
-            'View payment reports',
-            'Manage workers & cash',
+            'Payment reports',
+            'Workers & cash',
           ],
         },
         {
           key: 'manager',
           tag: 'Estate Manager',
           title: 'I am an Estate Manager',
-          description: 'Run operations across multiple estates.',
+          description: 'Run multiple estates.',
           icon: 'mdi-briefcase-account',
           color: '#d32f2f',
           bg: '#ffebee',
           cta: 'Sign in as Manager',
           ctaIcon: 'mdi-crown',
-          loginHint: 'You\'ll be taken to the management console.',
+          loginHint: 'Goes to the management console.',
           bullets: [
-            'Manage multiple estates',
-            'Subscriptions & billing',
+            'Multiple estates',
+            'Subscriptions',
             'Audit reports',
             'Manage admins',
           ],
@@ -863,19 +751,19 @@ export default {
       ],
 
       features: [
-        { title: 'Household Register', desc: 'One source of truth for every unit, owner, and contact.', icon: 'mdi-home-group', color: '#8051FF', bg: '#ede9fe' },
+        { title: 'Household Register', desc: 'One source of truth for every unit and owner.', icon: 'mdi-home-group', color: '#8051FF', bg: '#ede9fe' },
         { title: 'Service Charges', desc: 'Set charges, track payments, auto-calculate arrears.', icon: 'mdi-cash-multiple', color: '#7cb300', bg: '#f3ffd9' },
-        { title: 'M-Pesa Payments', desc: 'STK push payments with automatic reconciliation.', icon: 'mdi-cellphone-wireless', color: '#0277bd', bg: '#e1f5fe' },
+        { title: 'M-Pesa Payments', desc: 'STK push payments with automatic matching.', icon: 'mdi-cellphone-wireless', color: '#0277bd', bg: '#e1f5fe' },
         { title: 'Visitor Management', desc: 'Log entries and exits. Approve, deny, audit.', icon: 'mdi-gate', color: '#ef6c00', bg: '#fff3e0' },
-        { title: 'Reports & Exports', desc: 'Section, court, and cash-routing reports. Download as CSV.', icon: 'mdi-chart-bar', color: '#6a1b9a', bg: '#f3e5f5' },
+        { title: 'Reports & Exports', desc: 'Section, court, and cash-routing reports.', icon: 'mdi-chart-bar', color: '#6a1b9a', bg: '#f3e5f5' },
         { title: 'Notifications', desc: 'Push alerts for payments and approvals.', icon: 'mdi-bell-ring', color: '#c62828', bg: '#ffebee' },
       ],
 
       faqs: [
-        { q: 'Official vs. Manager — what\'s the difference?', a: 'An Official manages a single estate. A Manager runs multiple estates and administers billing and permissions.' },
-        { q: 'Can I be both a household and an official?', a: 'Yes. Officials are also residents. Use the Official login for both your records and estate management.' },
+        { q: 'Official vs. Manager — what\'s the difference?', a: 'An Official manages one estate. A Manager runs multiple estates and handles billing.' },
+        { q: 'Can I be both a household and an official?', a: 'Yes. Use the Official login for both your records and estate management.' },
         { q: 'I don\'t know my estate.', a: 'Contact your estate office or caretaker for the name or URN.' },
-        { q: 'Is my payment info secure?', a: 'Yes. All M-Pesa transactions run through Safaricom\'s Daraja API with encryption in transit.' },
+        { q: 'Is my data secure?', a: 'Yes. All M-Pesa transactions run through Safaricom\'s Daraja API with encryption in transit.' },
       ],
     };
   },
@@ -887,10 +775,13 @@ export default {
     },
   },
 
-  mounted() {
+  async mounted() {
     window.addEventListener('scroll', this.handleScroll);
     this.checkAuth();
+
+    await this.fetchPublicStats();
     this.fetchPricing();
+
     this.$nextTick(() => {
       this.setupStatsObserver();
       this.setupRevealObserver();
@@ -922,11 +813,24 @@ export default {
       return (Number(n) || 0).toLocaleString('en-US');
     },
 
+    async fetchPublicStats() {
+      try {
+        const { data } = await axios.get(`${API}/admin/public-stats`);
+
+        const estates    = Number(data.total_estates)    || 0;
+        const households = Number(data.total_households) || 0;
+
+        this.targetStats = { estates, households };
+        this.targetBigStats = { estates, households };
+      } catch (err) {
+        console.warn('[public-stats] fetch failed:', err.message);
+      }
+    },
+
     async fetchPricing() {
       this.plansLoading = true;
       try {
         const { data } = await axios.get(`${API}/estates/subscription-plans`);
-        console.log('[pricing] raw response:', data);
 
         if (!Array.isArray(data) || !data.length) {
           this.pricing = [];
@@ -952,10 +856,8 @@ export default {
           featured: i === featuredIndex,
           features: featuresByTier[i % featuresByTier.length],
         }));
-
-        console.log('[pricing] mapped:', this.pricing);
       } catch (err) {
-        console.error('[pricing] fetch failed:', err.response?.data || err.message);
+        console.warn('[pricing] fetch failed:', err.message);
         this.pricing = [];
       } finally {
         this.plansLoading = false;
@@ -993,13 +895,10 @@ export default {
         this.displayStats = {
           estates: Math.round(fromSmall.estates + (toSmall.estates - fromSmall.estates) * ease),
           households: Math.round(fromSmall.households + (toSmall.households - fromSmall.households) * ease),
-          collected: Math.round(fromSmall.collected + (toSmall.collected - fromSmall.collected) * ease),
         };
         this.displayBigStats = {
           estates: Math.round(fromBig.estates + (toBig.estates - fromBig.estates) * ease),
           households: Math.round(fromBig.households + (toBig.households - fromBig.households) * ease),
-          collected: Math.round(fromBig.collected + (toBig.collected - fromBig.collected) * ease),
-          uptime: +(fromBig.uptime + (toBig.uptime - fromBig.uptime) * ease).toFixed(1),
         };
         if (t < 1) requestAnimationFrame(step);
       };
@@ -1081,30 +980,22 @@ export default {
 
     onMenuDashboard() {
       this.userMenu = false;
-      this.$nextTick(() => {
-        setTimeout(() => this.goToMyDashboard(), 50);
-      });
+      this.$nextTick(() => { setTimeout(() => this.goToMyDashboard(), 50); });
     },
 
     onMenuSignOut() {
       this.userMenu = false;
-      this.$nextTick(() => {
-        setTimeout(() => this.signOut(), 50);
-      });
+      this.$nextTick(() => { setTimeout(() => this.signOut(), 50); });
     },
 
     onMobileDashboard() {
       this.mobileMenu = false;
-      this.$nextTick(() => {
-        setTimeout(() => this.goToMyDashboard(), 50);
-      });
+      this.$nextTick(() => { setTimeout(() => this.goToMyDashboard(), 50); });
     },
 
     onMobileSignOut() {
       this.mobileMenu = false;
-      this.$nextTick(() => {
-        setTimeout(() => this.signOut(), 50);
-      });
+      this.$nextTick(() => { setTimeout(() => this.signOut(), 50); });
     },
 
     async chooseRole(key) {
@@ -1144,9 +1035,7 @@ export default {
           }
           this._push('/officials/login');
         })
-        .catch(() => {
-          this._push('/officials/login');
-        });
+        .catch(() => { this._push('/officials/login'); });
     },
 
     proceedAsRole() {
@@ -1231,9 +1120,7 @@ export default {
       this.userName = '';
       this.userEmail = '';
       this.userPhone = '';
-      this.$nextTick(() => {
-        this._unlockScroll();
-      });
+      this.$nextTick(() => { this._unlockScroll(); });
     },
   },
 };
@@ -1358,6 +1245,7 @@ export default {
 .preview-status-dot { width: 5px; height: 5px; border-radius: 50%; background: #10b981; }
 
 .preview-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+.preview-stats-2 { grid-template-columns: repeat(2, 1fr); }
 .preview-stat { background: #fafaff; border: 1px solid #f0eef8; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px; }
 .preview-stat-icon { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
 .preview-stat-label { font-size: 0.55rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -1412,31 +1300,6 @@ export default {
 @keyframes floatY {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-6px); }
-}
-
-/* ============================================================
-   LOGO STRIP
-   ============================================================ */
-.logo-strip {
-  background: #ffffff;
-  border-top: 1px solid #f1f5f9;
-  border-bottom: 1px solid #f1f5f9;
-  padding: 28px 0;
-}
-.logo-strip-label {
-  text-align: center; font-size: 0.7rem; font-weight: 800;
-  color: #94a3b8; text-transform: uppercase; letter-spacing: 1.2px;
-  margin-bottom: 16px;
-}
-.logo-strip-row {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12px; flex-wrap: wrap;
-}
-.logo-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; background: #f8fafc;
-  border: 1px solid #e2e8f0; border-radius: 999px;
-  font-size: 0.78rem; font-weight: 700; color: #94a3b8;
 }
 
 /* ============================================================
@@ -1498,6 +1361,11 @@ export default {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 32px;
   position: relative; z-index: 2;
+}
+.stats-band-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  max-width: 720px;
+  margin: 0 auto;
 }
 .stats-band-item { text-align: center; }
 .stats-band-value {
