@@ -41,9 +41,36 @@
     </div>
 
     <!-- ============================================================
+         PENDING APPROVALS BANNER (super admin only)
+         ============================================================ -->
+    <transition name="banner-fade">
+      <div
+        v-if="isSuperAdmin && pendingApprovals > 0"
+        class="approval-banner"
+        @click="$router.push('/admin/approvals')"
+      >
+        <div class="approval-banner-icon">
+          <v-icon size="22" color="white">mdi-shield-alert</v-icon>
+        </div>
+        <div class="approval-banner-body">
+          <div class="approval-banner-title">
+            {{ pendingApprovals }} pending approval{{ pendingApprovals === 1 ? '' : 's' }}
+          </div>
+          <div class="approval-banner-text">
+            Support admins are waiting for you to review their requests.
+          </div>
+        </div>
+        <div class="approval-banner-cta">
+          Review
+          <v-icon size="16" class="ml-1">mdi-arrow-right</v-icon>
+        </div>
+      </div>
+    </transition>
+
+    <!-- ============================================================
          KPI CARDS
          ============================================================ -->
-    <div class="kpi-grid">
+    <div class="kpi-grid" :class="{ 'kpi-grid-5': isSuperAdmin }">
       <!-- Estates -->
       <div class="kpi-card">
         <div class="kpi-top">
@@ -114,6 +141,34 @@
           <span>{{ stats.active_subscriptions }} active subscriptions</span>
         </div>
       </div>
+
+      <!-- Pending approvals (super admin only) -->
+      <div
+        v-if="isSuperAdmin"
+        class="kpi-card kpi-card-approvals"
+        :class="{ 'kpi-card-approvals-active': pendingApprovals > 0 }"
+        @click="$router.push('/admin/approvals')"
+      >
+        <div class="kpi-top">
+          <div class="kpi-icon kpi-icon-amber">
+            <v-icon size="18" color="white">mdi-shield-alert</v-icon>
+          </div>
+          <div v-if="pendingApprovals > 0" class="kpi-trend kpi-trend-warn">
+            <v-icon size="10">mdi-alert</v-icon>
+            Action needed
+          </div>
+          <div v-else class="kpi-trend kpi-trend-up">
+            <v-icon size="10">mdi-check</v-icon>
+            All clear
+          </div>
+        </div>
+        <div class="kpi-label">Pending approvals</div>
+        <div class="kpi-value">{{ formatNum(pendingApprovals) }}</div>
+        <div class="kpi-footer">
+          <span v-if="pendingApprovals > 0">Tap to review →</span>
+          <span v-else>Nothing to review</span>
+        </div>
+      </div>
     </div>
 
     <!-- ============================================================
@@ -161,7 +216,7 @@
           depressed
           color="#B6FF00"
           class="mt-4 text-capitalize"
-          @click="$router.push('/admin/estates/new')"
+          @click="$router.push('/admin/new')"
         >
           <v-icon left small color="#0A0A14">mdi-plus</v-icon>
           <span style="color:#0A0A14; font-weight:700;">Create estate</span>
@@ -217,7 +272,29 @@
          QUICK ACTIONS
          ============================================================ -->
     <div class="quick-grid">
-      <div class="quick-card" @click="$router.push('/admin/estates/new')">
+      <!-- Approvals (super admin only) -->
+      <div
+        v-if="isSuperAdmin"
+        class="quick-card quick-card-approvals"
+        :class="{ 'quick-card-approvals-alert': pendingApprovals > 0 }"
+        @click="$router.push('/admin/approvals')"
+      >
+        <div class="quick-icon quick-icon-amber">
+          <v-icon size="20" color="white">mdi-shield-check-outline</v-icon>
+        </div>
+        <div class="quick-title">Approvals</div>
+        <div class="quick-sub">
+          <span v-if="pendingApprovals > 0">
+            {{ pendingApprovals }} waiting for you
+          </span>
+          <span v-else>Nothing to review</span>
+        </div>
+        <span v-if="pendingApprovals > 0" class="quick-badge">
+          {{ pendingApprovals > 99 ? '99+' : pendingApprovals }}
+        </span>
+      </div>
+
+      <div class="quick-card" @click="$router.push('/admin/new')">
         <div class="quick-icon quick-icon-lime">
           <v-icon size="20" color="#0A0A14">mdi-plus-circle-outline</v-icon>
         </div>
@@ -233,7 +310,7 @@
         <div class="quick-sub">View, edit, archive</div>
       </div>
 
-      <div class="quick-card" @click="$router.push('/admin/audit-logs')">
+      <div class="quick-card" @click="$router.push('/admin/audit')">
         <div class="quick-icon quick-icon-purple">
           <v-icon size="20" color="white">mdi-history</v-icon>
         </div>
@@ -283,7 +360,11 @@ export default {
       loading: false,
       adminEmail: '',
       adminName: '',
+      adminRole: null,
       authReady: false,
+
+      pendingApprovals: 0,
+      _approvalPoll: null,
 
       stats: {
         total_estates: 0,
@@ -311,17 +392,20 @@ export default {
         day: 'numeric',
       });
     },
+    isSuperAdmin() {
+      return this.adminRole === 'super';
+    },
   },
 
   mounted() {
     try {
       this.adminEmail = localStorage.getItem('admin_email') || '';
       this.adminName = localStorage.getItem('admin_name') || '';
+      this.adminRole = localStorage.getItem('admin_role') || null;
     } catch (e) {
       console.warn(e.message);
     }
 
-    // Wait for Firebase to expose currentUser before firing the API.
     const auth = this.$fire?.auth;
     if (!auth) {
       console.error('[AdminDashboard] Firebase auth not available on this.$fire.auth');
@@ -331,14 +415,39 @@ export default {
     }
 
     const unsub = auth.onAuthStateChanged(async (user) => {
-      unsub(); // one-shot
+      unsub();
       if (!user) {
         this.$router.push('/admin/login');
         return;
       }
       this.authReady = true;
+
+      // If role is missing, resolve it once from the backend
+      if (!this.adminRole) {
+        try {
+          const headers = await this.getAuthHeaders();
+          const { data } = await axios.get(`${API}/admin/me`, { headers });
+          const role = data?.admin?.role;
+          if (role) {
+            this.adminRole = role;
+            localStorage.setItem('admin_role', role);
+          }
+        } catch (e) {
+          console.warn('[AdminDashboard] Could not resolve admin role:', e.message);
+        }
+      }
+
       await this.refreshAll();
+
+      // Start polling for approval count (super admin only)
+      if (this.isSuperAdmin) {
+        this._approvalPoll = setInterval(this.fetchPendingApprovals, 60_000);
+      }
     });
+  },
+
+  beforeDestroy() {
+    if (this._approvalPoll) clearInterval(this._approvalPoll);
   },
 
   methods: {
@@ -363,7 +472,6 @@ export default {
         .toUpperCase();
     },
 
-    // Build a fresh Bearer token for the current Firebase user.
     async getAuthHeaders() {
       try {
         const user = this.$fire?.auth?.currentUser;
@@ -379,10 +487,11 @@ export default {
     async refreshAll() {
       if (!this.authReady) return;
       this.loading = true;
-      await Promise.allSettled([
-        this.fetchStats(),
-        this.fetchRecentEstates(),
-      ]);
+
+      const tasks = [this.fetchStats(), this.fetchRecentEstates()];
+      if (this.isSuperAdmin) tasks.push(this.fetchPendingApprovals());
+
+      await Promise.allSettled(tasks);
       this.loading = false;
     },
 
@@ -396,9 +505,6 @@ export default {
       } catch (err) {
         const status = err.response?.status;
 
-        // Only redirect when Firebase confirms the user is signed out.
-        // A 401 while a user IS logged in means the server rejected the token —
-        // stay on the page and show a message.
         if (status === 401 || status === 403) {
           const stillLoggedIn = !!this.$fire?.auth?.currentUser;
           if (!stillLoggedIn) {
@@ -435,12 +541,28 @@ export default {
       }
     },
 
+    async fetchPendingApprovals() {
+      if (!this.isSuperAdmin) {
+        this.pendingApprovals = 0;
+        return;
+      }
+      try {
+        const headers = await this.getAuthHeaders();
+        const { data } = await axios.get(`${API}/admin/approvals/count`, { headers });
+        this.pendingApprovals = Number(data?.pending || 0);
+      } catch (err) {
+        // Silent — badge just stays at the last known value
+        console.warn('[AdminDashboard] approvals count failed:', err.message);
+      }
+    },
+
     showSnackbar(text, color = 'success') {
       this.snackbar = { show: true, text, color };
     },
   },
 };
 </script>
+
 <style scoped>
 /* ============================================================
    ROOT
@@ -552,12 +674,113 @@ export default {
 }
 
 /* ============================================================
+   PENDING APPROVALS BANNER
+   ============================================================ */
+.approval-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #7F1D1D 0%, #B91C1C 55%, #DC2626 100%);
+  border-radius: 18px;
+  cursor: pointer;
+  box-shadow: 0 16px 36px -18px rgba(220, 38, 38, 0.65);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.approval-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.12), transparent 55%);
+  pointer-events: none;
+}
+
+.approval-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 44px -18px rgba(220, 38, 38, 0.85);
+}
+
+.approval-banner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.approval-banner-body {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.approval-banner-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.approval-banner-text {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.approval-banner-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #B91C1C;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  transition: all 0.2s ease;
+}
+
+.approval-banner:hover .approval-banner-cta {
+  background: #ffffff;
+  transform: translateX(2px);
+}
+
+.banner-fade-enter-active,
+.banner-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.banner-fade-enter,
+.banner-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ============================================================
    KPI GRID
    ============================================================ */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
+}
+
+.kpi-grid-5 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
 .kpi-card {
@@ -599,6 +822,26 @@ export default {
   color: #FFFFFF;
 }
 
+/* Approvals KPI — clickable */
+.kpi-card-approvals {
+  cursor: pointer;
+}
+
+.kpi-card-approvals-active {
+  border-color: #FCA5A5;
+  background: linear-gradient(160deg, #FEF2F2 0%, #FFFFFF 60%);
+  box-shadow: 0 10px 26px -18px rgba(220, 38, 38, 0.5);
+}
+
+.kpi-card-approvals-active:hover {
+  border-color: #EF4444;
+  box-shadow: 0 22px 44px -20px rgba(220, 38, 38, 0.65);
+}
+
+.kpi-card-approvals-active .kpi-value {
+  color: #B91C1C;
+}
+
 .kpi-top {
   display: flex;
   align-items: center;
@@ -625,6 +868,11 @@ export default {
 .kpi-icon-purple {
   background: linear-gradient(135deg, #9B6CFF 0%, #8051FF 100%);
   box-shadow: 0 8px 20px -8px rgba(128, 81, 255, 0.65);
+}
+
+.kpi-icon-amber {
+  background: linear-gradient(135deg, #F97316 0%, #DC2626 100%);
+  box-shadow: 0 8px 20px -8px rgba(220, 38, 38, 0.65);
 }
 
 .kpi-trend {
@@ -750,12 +998,10 @@ export default {
   background: rgba(128, 81, 255, 0.06) !important;
 }
 
-/* Loading */
 .section-loading {
   padding: 14px 24px;
 }
 
-/* Empty */
 .section-empty {
   padding: 56px 24px;
   text-align: center;
@@ -775,7 +1021,6 @@ export default {
   margin-top: 4px;
 }
 
-/* Estate list */
 .estate-list {
   display: flex;
   flex-direction: column;
@@ -966,6 +1211,40 @@ export default {
   opacity: 1;
 }
 
+/* Approvals quick card */
+.quick-card-approvals-alert {
+  border-color: #FCA5A5;
+  background: linear-gradient(160deg, #FEF2F2 0%, #FFFFFF 65%);
+}
+
+.quick-card-approvals-alert::after {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.06), transparent 60%);
+}
+
+.quick-card-approvals-alert:hover {
+  border-color: #EF4444;
+  box-shadow: 0 20px 40px -20px rgba(220, 38, 38, 0.45);
+}
+
+.quick-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #DC2626;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 14px -4px rgba(220, 38, 38, 0.7);
+}
+
 .quick-icon {
   width: 44px;
   height: 44px;
@@ -984,6 +1263,11 @@ export default {
 .quick-icon-purple {
   background: linear-gradient(135deg, #9B6CFF 0%, #8051FF 100%);
   box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.6);
+}
+
+.quick-icon-amber {
+  background: linear-gradient(135deg, #F97316 0%, #DC2626 100%);
+  box-shadow: 0 10px 22px -10px rgba(220, 38, 38, 0.65);
 }
 
 .quick-title {
@@ -1034,6 +1318,20 @@ export default {
     flex: 1;
   }
 
+  .approval-banner {
+    padding: 16px 18px;
+    gap: 12px;
+  }
+
+  .approval-banner-cta {
+    padding: 8px 12px;
+    font-size: 0.7rem;
+  }
+
+  .approval-banner-text {
+    display: none;
+  }
+
   .kpi-grid {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 12px;
@@ -1072,6 +1370,11 @@ export default {
 
   .quick-card {
     padding: 18px 20px;
+  }
+
+  .quick-badge {
+    top: 12px;
+    right: 12px;
   }
 }
 </style>

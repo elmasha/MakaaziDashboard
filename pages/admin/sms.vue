@@ -29,10 +29,9 @@
     </div>
 
     <!-- ============================================================
-         SUMMARY CARDS — balance + sent + delivered + today + failed
+         SUMMARY CARDS
          ============================================================ -->
     <div class="summary-grid">
-      <!-- 1. SMS Balance (live from Advanta) -->
       <div class="summary-card summary-card-highlight">
         <div class="summary-icon summary-icon-white">
           <v-icon size="18" color="#0A0A14">mdi-wallet-outline</v-icon>
@@ -53,18 +52,16 @@
         </div>
       </div>
 
-      <!-- 2. Total sent (all rows) -->
       <div class="summary-card">
         <div class="summary-icon summary-icon-purple">
           <v-icon size="18" color="white">mdi-send-outline</v-icon>
         </div>
         <div class="summary-body">
-          <div class="summary-label">Total sent</div>
-          <div class="summary-value">{{ sentCount }}</div>
+          <div class="summary-label">Total attempts</div>
+          <div class="summary-value">{{ logs.length }}</div>
         </div>
       </div>
 
-      <!-- 3. Delivered -->
       <div class="summary-card">
         <div class="summary-icon summary-icon-lime">
           <v-icon size="18" color="#0A0A14">mdi-check-circle-outline</v-icon>
@@ -75,7 +72,6 @@
         </div>
       </div>
 
-      <!-- 4. Today -->
       <div class="summary-card">
         <div class="summary-icon summary-icon-amber">
           <v-icon size="18" color="white">mdi-calendar-today</v-icon>
@@ -86,7 +82,6 @@
         </div>
       </div>
 
-      <!-- 5. Failed -->
       <div class="summary-card">
         <div class="summary-icon summary-icon-red">
           <v-icon size="18" color="white">mdi-alert-circle-outline</v-icon>
@@ -108,12 +103,20 @@
           v-model="search"
           class="search-input"
           type="text"
-          placeholder="Search by phone, message, or estate"
+          placeholder="Search by phone, message, estate, or reference"
         />
         <button v-if="search" class="search-clear" @click="search = ''">
           <v-icon size="16">mdi-close-circle</v-icon>
         </button>
       </div>
+
+      <select v-model="kindFilter" class="filter-select">
+        <option value="">All categories</option>
+        <option value="__approval__">Approval requests</option>
+        <option v-for="k in kindOptions" :key="k.value" :value="k.value">
+          {{ k.label }}
+        </option>
+      </select>
 
       <select v-model="estateFilter" class="filter-select">
         <option value="">All estates</option>
@@ -187,23 +190,30 @@
               <span class="status-dot"></span>
               {{ log.status }}
             </span>
-            <span v-if="log.category && log.category !== 'generic'" class="category-tag">
-              {{ prettyKind(log.category) }}
+            <span
+              v-if="log.kind && log.kind !== 'generic'"
+              class="category-tag"
+              :class="kindTagClass(log.kind)"
+            >
+              <v-icon size="10" class="mr-1">{{ kindIcon(log.kind) }}</v-icon>
+              {{ prettyKind(log.kind) }}
             </span>
           </div>
-          <div class="sms-message">{{ truncate(log.message, 120) }}</div>
+          <div class="sms-message">{{ truncate(log.message, 140) }}</div>
           <div class="sms-meta">
             <span class="meta-item">
               <v-icon size="12">mdi-office-building-outline</v-icon>
               {{ log.estate_name || '—' }}
             </span>
-            <span v-if="log.provider_ref" class="meta-dot">·</span>
-            <span v-if="log.provider_ref" class="meta-item">
-              <v-icon size="12">mdi-identifier</v-icon>
-              {{ log.provider_ref }}
-            </span>
+            <template v-if="log.provider_ref">
+              <span class="meta-dot">·</span>
+              <span class="meta-item">
+                <v-icon size="12">mdi-identifier</v-icon>
+                {{ log.provider_ref }}
+              </span>
+            </template>
           </div>
-          <div v-if="!log.ok && log.error" class="sms-error">
+          <div v-if="log.status === 'Failed' && log.error" class="sms-error">
             <v-icon size="12">mdi-alert-circle-outline</v-icon>
             {{ log.error }}
           </div>
@@ -212,12 +222,82 @@
         <!-- Right -->
         <div class="sms-right">
           <div class="sms-stat">
-            <div class="stat-value-sm">{{ fmtDateTime(log.created_at) }}</div>
-            <div class="stat-label">Sent</div>
+            <div class="stat-value-sm">{{ relativeTime(log.created_at) }}</div>
+            <div class="stat-label">{{ fmtDateTime(log.created_at) }}</div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- ============================================================
+         DETAIL DIALOG
+         ============================================================ -->
+    <v-dialog v-model="detailDialog" max-width="560" content-class="sms-dialog-content">
+      <div class="detail-shell" v-if="selected">
+        <div class="detail-head">
+          <div class="detail-head-left">
+            <div class="sms-icon" :class="statusIconClass(selected.status)">
+              <v-icon size="20">{{ statusIcon(selected.status) }}</v-icon>
+            </div>
+            <div>
+              <div class="detail-title">{{ selected.phone_number }}</div>
+              <div class="detail-sub">{{ prettyKind(selected.kind) || 'Generic' }}</div>
+            </div>
+          </div>
+          <button class="detail-close" @click="detailDialog = false">
+            <v-icon size="20">mdi-close</v-icon>
+          </button>
+        </div>
+
+        <div class="detail-body">
+          <div class="detail-row">
+            <div class="detail-key">Status</div>
+            <div class="detail-val">
+              <span class="status-pill" :class="statusClass(selected.status)">
+                <span class="status-dot"></span>
+                {{ selected.status }}
+              </span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Estate</div>
+            <div class="detail-val">{{ selected.estate_name || '—' }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Category</div>
+            <div class="detail-val mono">{{ selected.kind || 'generic' }}</div>
+          </div>
+          <div v-if="selected.provider_ref" class="detail-row">
+            <div class="detail-key">Provider ref</div>
+            <div class="detail-val mono">{{ selected.provider_ref }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Sent at</div>
+            <div class="detail-val">{{ fmtDateTimeFull(selected.created_at) }}</div>
+          </div>
+
+          <div class="detail-message-block">
+            <div class="detail-key">Message</div>
+            <div class="detail-message">{{ selected.message }}</div>
+          </div>
+
+          <div v-if="selected.status === 'Failed' && selected.error" class="detail-error-block">
+            <div class="detail-key">Error</div>
+            <div class="detail-error">{{ selected.error }}</div>
+          </div>
+        </div>
+
+        <div class="detail-foot">
+          <button class="detail-btn detail-btn-ghost" @click="copyMessage">
+            <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+            Copy message
+          </button>
+          <button class="detail-btn detail-btn-primary" @click="detailDialog = false">
+            Close
+          </button>
+        </div>
+      </div>
+    </v-dialog>
 
     <v-snackbar
       v-model="snackbar.show"
@@ -253,6 +333,9 @@ export default {
       search: '',
       estateFilter: '',
       statusFilter: '',
+      kindFilter: '',
+      selected: null,
+      detailDialog: false,
       balance: {
         loading: false,
         ok: false,
@@ -273,24 +356,30 @@ export default {
       ];
     },
 
+    // Every known SMS kind in the platform
+    kindOptions() {
+      return [
+        { label: 'Payment receipts',      value: 'payment_successful' },
+        { label: 'Registration received', value: 'registration_successful' },
+        { label: 'Household approved',    value: 'household_approved' },
+        { label: 'Official assigned',     value: 'official_assigned' },
+        { label: 'Official promoted',     value: 'official_promoted' },
+        { label: 'Visitor pass created',  value: 'visitor_pass_created' },
+        { label: 'Visitor arrived',       value: 'visitor_arrived' },
+        { label: 'Generic',               value: 'generic' },
+      ];
+    },
+
     /* ---- Summary counts ---- */
-
-    // Total rows sent (any status — every attempt)
     sentCount() {
-      return this.logs.length;
+      return this.logs.filter((l) => l.status === 'Sent').length;
     },
-
-    // Successfully delivered — ok = 1
     deliveredCount() {
-      return this.logs.filter((l) => l.ok === 1 || l.ok === true).length;
+      return this.logs.filter((l) => l.status === 'Sent').length;
     },
-
-    // Failed — ok = 0
     failedCount() {
-      return this.logs.filter((l) => l.ok === 0 || l.ok === false).length;
+      return this.logs.filter((l) => l.status === 'Failed').length;
     },
-
-    // Sent today
     todayCount() {
       const today = new Date().toDateString();
       return this.logs.filter(
@@ -299,21 +388,28 @@ export default {
     },
 
     /* ---- Filters ---- */
-
     hasActiveFilters() {
-      return !!(this.search || this.estateFilter || this.statusFilter);
+      return !!(this.search || this.estateFilter || this.statusFilter || this.kindFilter);
     },
-
     filteredLogs() {
       const q = this.search.trim().toLowerCase();
       return this.logs.filter((l) => {
         if (this.estateFilter && l.estate_id !== this.estateFilter) return false;
         if (this.statusFilter && l.status !== this.statusFilter) return false;
+
+        // kind filter supports a magic value "__approval__" matching all admin_approval_*
+        if (this.kindFilter === '__approval__') {
+          if (!(l.kind || '').startsWith('admin_approval')) return false;
+        } else if (this.kindFilter && l.kind !== this.kindFilter) {
+          return false;
+        }
+
         if (!q) return true;
         return (
           (l.phone_number || '').toLowerCase().includes(q) ||
           (l.message || '').toLowerCase().includes(q) ||
-          (l.estate_name || '').toLowerCase().includes(q)
+          (l.estate_name || '').toLowerCase().includes(q) ||
+          (l.provider_ref || '').toLowerCase().includes(q)
         );
       });
     },
@@ -418,6 +514,7 @@ export default {
       this.search = '';
       this.estateFilter = '';
       this.statusFilter = '';
+      this.kindFilter = '';
     },
 
     fmtBalance(n) {
@@ -442,9 +539,54 @@ export default {
       } catch { return '—'; }
     },
 
+    fmtDateTimeFull(d) {
+      if (!d) return '—';
+      try {
+        return new Date(d).toLocaleString('en-GB', {
+          weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+        });
+      } catch { return '—'; }
+    },
+
+    relativeTime(d) {
+      if (!d) return '—';
+      const diff = Math.max(0, Date.now() - new Date(d).getTime());
+      const sec = Math.floor(diff / 1000);
+      if (sec < 60) return 'just now';
+      const min = Math.floor(sec / 60);
+      if (min < 60) return `${min}m ago`;
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return `${hr}h ago`;
+      const day = Math.floor(hr / 24);
+      if (day < 7) return `${day}d ago`;
+      return `${Math.floor(day / 7)}w ago`;
+    },
+
     prettyKind(kind) {
       if (!kind) return '';
       return kind.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    },
+
+    kindIcon(kind) {
+      const k = (kind || '').toLowerCase();
+      if (k.startsWith('admin_approval')) return 'mdi-shield-check-outline';
+      if (k === 'payment_successful')    return 'mdi-cash-multiple';
+      if (k === 'household_approved')    return 'mdi-account-check-outline';
+      if (k === 'registration_successful') return 'mdi-account-plus-outline';
+      if (k.startsWith('official_'))     return 'mdi-badge-account-outline';
+      if (k.startsWith('visitor_'))      return 'mdi-gate';
+      return 'mdi-message-text-outline';
+    },
+
+    kindTagClass(kind) {
+      const k = (kind || '').toLowerCase();
+      if (k.startsWith('admin_approval')) return 'cat-approval';
+      if (k === 'payment_successful')     return 'cat-payment';
+      if (k.startsWith('official_'))      return 'cat-official';
+      if (k.startsWith('visitor_'))       return 'cat-visitor';
+      if (k.startsWith('household_') || k.startsWith('registration_')) return 'cat-household';
+      return 'cat-default';
     },
 
     statusClass(status) {
@@ -463,6 +605,21 @@ export default {
       if (s === 'sent' || s === 'delivered') return 'icon-green';
       if (s === 'failed') return 'icon-red';
       return 'icon-purple';
+    },
+
+    openLog(log) {
+      this.selected = log;
+      this.detailDialog = true;
+    },
+
+    async copyMessage() {
+      if (!this.selected) return;
+      try {
+        await navigator.clipboard.writeText(this.selected.message || '');
+        this.showSnackbar('Message copied', 'success');
+      } catch {
+        this.showSnackbar('Could not copy', 'error');
+      }
     },
 
     showSnackbar(text, color = 'success') {
@@ -507,7 +664,7 @@ export default {
   color: #0f0d24 !important; background: rgba(15, 13, 36, 0.05) !important;
 }
 
-/* Summary grid — 5 cards */
+/* Summary grid */
 .summary-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
@@ -670,7 +827,7 @@ export default {
 .sms-row {
   position: relative; display: flex; align-items: center; gap: 16px;
   padding: 16px 22px; border-bottom: 1px solid #f1f5f9;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease; cursor: pointer;
 }
 .sms-row:last-child { border-bottom: none; }
 .sms-row:hover { background: #fafbff; }
@@ -693,7 +850,7 @@ export default {
 .sms-recipient {
   font-size: 0.92rem; font-weight: 800; color: #0f0d24;
   letter-spacing: -0.3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
 }
 .status-pill {
   display: inline-flex; align-items: center; gap: 5px;
@@ -709,10 +866,15 @@ export default {
 .category-tag {
   display: inline-flex; align-items: center;
   padding: 3px 8px; border-radius: 999px;
-  background: rgba(128, 81, 255, 0.12); color: #5b21b6;
   font-size: 0.6rem; font-weight: 800;
   letter-spacing: 0.4px; text-transform: uppercase;
 }
+.cat-approval  { background: rgba(245, 158, 11, 0.16); color: #b45309; }
+.cat-payment   { background: rgba(122, 184, 0, 0.14); color: #3f6b00; }
+.cat-official  { background: rgba(128, 81, 255, 0.12); color: #5b21b6; }
+.cat-visitor   { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
+.cat-household { background: rgba(20, 184, 166, 0.12); color: #0f766e; }
+.cat-default   { background: #f1f5f9; color: #475569; }
 
 .sms-message {
   font-size: 0.78rem; color: #64748b; line-height: 1.45;
@@ -749,6 +911,147 @@ export default {
   text-transform: uppercase; letter-spacing: 0.7px; margin-top: 2px;
 }
 
+/* ============================================================
+   DETAIL DIALOG
+   ============================================================ */
+::v-deep .sms-dialog-content {
+  border-radius: 20px !important;
+  overflow: visible !important;
+  margin: 16px auto !important;
+  width: calc(100% - 32px) !important;
+  max-height: calc(100vh - 32px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.detail-shell {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #0f0d24 0%, #2b1256 100%);
+  color: #fff;
+  flex-shrink: 0;
+}
+.detail-head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.detail-title {
+  font-size: 1rem; font-weight: 800; letter-spacing: -0.3px;
+}
+.detail-sub {
+  font-size: 0.72rem; color: rgba(255, 255, 255, 0.65);
+  margin-top: 2px;
+}
+.detail-close {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none; cursor: pointer; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.detail-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+.detail-body {
+  padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.detail-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.detail-key {
+  font-size: 0.68rem; font-weight: 800; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.detail-val {
+  font-size: 0.85rem; font-weight: 700; color: #0f0d24;
+  text-align: right;
+  word-break: break-all;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.detail-val.mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.78rem; }
+
+.detail-message-block,
+.detail-error-block {
+  display: flex; flex-direction: column; gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+.detail-message {
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: #0f0d24;
+  line-height: 1.6;
+  font-weight: 500;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.detail-error {
+  padding: 14px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  color: #b91c1c;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.detail-foot {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #f1f5f9;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.detail-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 10px 18px; border-radius: 11px;
+  border: none; font-family: inherit;
+  font-size: 0.8rem; font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.detail-btn-ghost {
+  background: transparent; color: #64748b; border: 1px solid #eef1f6;
+}
+.detail-btn-ghost:hover { background: #f1f5f9; color: #0f0d24; }
+.detail-btn-primary {
+  background: linear-gradient(135deg, #8051ff 0%, #9b6cff 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.detail-btn-primary:hover { transform: translateY(-1px); }
+
 /* Responsive */
 @media (max-width: 900px) { .sms-stat { display: none; } }
 @media (max-width: 767px) {
@@ -765,5 +1068,7 @@ export default {
   .filter-select { min-width: 0; }
   .sms-row { padding: 14px 16px; gap: 14px; }
   .sms-recipient { max-width: 180px; }
+  .detail-row { flex-direction: column; gap: 6px; }
+  .detail-val { justify-content: flex-start; text-align: left; }
 }
 </style>

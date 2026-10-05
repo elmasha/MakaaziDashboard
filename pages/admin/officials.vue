@@ -39,6 +39,18 @@
     </div>
 
     <!-- ============================================================
+         SUPPORT NOTICE
+         ============================================================ -->
+    <div v-if="isSupportAdmin" class="support-notice">
+      <div class="support-notice-icon">
+        <v-icon size="16" color="#8051FF">mdi-shield-alert-outline</v-icon>
+      </div>
+      <div class="support-notice-text">
+        Creating, updating, or removing officials will be sent to a super admin for approval.
+      </div>
+    </div>
+
+    <!-- ============================================================
          SUMMARY CARDS
          ============================================================ -->
     <div class="summary-grid">
@@ -217,6 +229,7 @@
               <button class="row-menu-item" @click="editOfficial(o)">
                 <v-icon size="16" class="mr-2">mdi-pencil-outline</v-icon>
                 Edit
+                <span v-if="isSupportAdmin" class="menu-tag">Approval</span>
               </button>
               <button class="row-menu-item" @click="callOfficial(o)">
                 <v-icon size="16" class="mr-2">mdi-phone-outline</v-icon>
@@ -233,10 +246,11 @@
               <div class="row-menu-divider"></div>
               <button
                 class="row-menu-item row-menu-item-danger"
-                @click="removeOfficial(o)"
+                @click="askRemoveOfficial(o)"
               >
                 <v-icon size="16" class="mr-2">mdi-delete-outline</v-icon>
                 Remove
+                <span v-if="isSupportAdmin" class="menu-tag menu-tag-danger">Approval</span>
               </button>
             </div>
           </transition>
@@ -259,10 +273,16 @@
         <div class="off-dialog-header">
           <div>
             <div class="off-dialog-title">
-              {{ editing ? 'Edit official' : 'New official' }}
+              {{ isSupportAdmin
+                ? (editing ? 'Request official update' : 'Request new official')
+                : (editing ? 'Edit official' : 'New official')
+              }}
             </div>
             <div class="off-dialog-sub">
-              {{ editing ? 'Update the official\'s details' : 'Add an official to an estate' }}
+              {{ isSupportAdmin
+                ? 'This will be sent to a super admin for approval'
+                : (editing ? 'Update the official\'s details' : 'Add an official to an estate')
+              }}
             </div>
           </div>
           <button class="off-dialog-close" @click="closeDialog">
@@ -324,6 +344,11 @@
               placeholder="Paste the Firebase UID if known"
             />
           </div>
+
+          <div v-if="isSupportAdmin" class="form-hint form-hint-info">
+            <v-icon size="14">mdi-information-outline</v-icon>
+            Submitting will send this to a super admin for approval.
+          </div>
         </div>
 
         <div class="off-dialog-footer">
@@ -337,8 +362,11 @@
           >
             <v-icon v-if="submitting" size="16" class="mr-2 spin">mdi-loading</v-icon>
             {{ submitting
-              ? (editing ? 'Saving…' : 'Creating…')
-              : (editing ? 'Save changes' : 'Create official') }}
+              ? 'Submitting…'
+              : (isSupportAdmin
+                  ? 'Send for approval'
+                  : (editing ? 'Save changes' : 'Create official'))
+            }}
           </button>
         </div>
       </div>
@@ -386,10 +414,73 @@
       </div>
     </v-dialog>
 
+    <!-- ============================================================
+         REMOVE CONFIRM DIALOG
+         ============================================================ -->
+    <v-dialog v-model="confirmDialog" max-width="440" persistent>
+      <div class="confirm-card">
+        <div class="confirm-icon confirm-icon-danger">
+          <v-icon size="24" color="white">mdi-account-remove</v-icon>
+        </div>
+
+        <div class="confirm-title">
+          {{ isSupportAdmin ? 'Request official removal?' : 'Remove this official?' }}
+        </div>
+
+        <div class="confirm-text">
+          <span v-if="isSupportAdmin">
+            This will send a request to a super admin for approval.
+            The official stays in place until they approve.
+          </span>
+          <span v-else>
+            <strong>{{ officialToRemove?.full_name }}</strong> will be removed from
+            <strong>{{ officialToRemove?.estate_name || 'their estate' }}</strong>.
+            This cannot be undone.
+          </span>
+        </div>
+
+        <div v-if="officialToRemove" class="confirm-official-preview">
+          <div class="confirm-official-avatar" :class="avatarClass(officialToRemove.role)">
+            {{ initialsOf(officialToRemove.full_name) }}
+          </div>
+          <div class="confirm-official-info">
+            <div class="confirm-official-name">{{ officialToRemove.full_name }}</div>
+            <div class="confirm-official-meta">
+              {{ officialToRemove.role || 'Official' }} ·
+              {{ officialToRemove.estate_name || '—' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="confirm-actions">
+          <button
+            class="action-btn action-btn-ghost"
+            :disabled="removing"
+            @click="confirmDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="action-btn action-btn-danger"
+            :disabled="removing"
+            @click="confirmRemove"
+          >
+            <v-icon size="14" class="mr-1">
+              {{ removing ? 'mdi-loading' : (isSupportAdmin ? 'mdi-send' : 'mdi-delete') }}
+            </v-icon>
+            {{ removing
+              ? 'Working…'
+              : (isSupportAdmin ? 'Send for approval' : 'Remove official')
+            }}
+          </button>
+        </div>
+      </div>
+    </v-dialog>
+
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
-      :timeout="3000"
+      :timeout="3500"
       top
       rounded="pill"
     >
@@ -425,6 +516,8 @@ export default {
       estateFilter: '',
       openMenuId: null,
 
+      adminRole: null,
+
       dialog: false,
       editing: false,
       editingId: null,
@@ -439,11 +532,22 @@ export default {
       linkDialog: false,
       generatedLink: '',
 
+      // Remove confirmation
+      confirmDialog: false,
+      officialToRemove: null,
+      removing: false,
+
       snackbar: { show: false, text: '', color: 'success' },
     };
   },
 
   computed: {
+    isSupportAdmin() {
+      return this.adminRole === 'support';
+    },
+    isSuperAdmin() {
+      return this.adminRole === 'super';
+    },
     roleOptions() {
       return [
         { label: 'All', value: '' },
@@ -487,6 +591,12 @@ export default {
   },
 
   mounted() {
+    try {
+      this.adminRole = localStorage.getItem('admin_role') || null;
+    } catch (e) {
+      console.warn(e.message);
+    }
+
     this.load();
     this.loadEstates();
     document.addEventListener('click', this.closeMenuOnClickOutside);
@@ -643,20 +753,54 @@ export default {
       this.openMenuId = null;
     },
 
-    async removeOfficial(o) {
+    /* ============================================================
+       REMOVE — confirm dialog + dual response
+       ============================================================ */
+    askRemoveOfficial(o) {
       this.openMenuId = null;
-      const ok = window.confirm(
-        `Remove ${o.full_name} from ${o.estate_name || 'this estate'}?`
-      );
-      if (!ok) return;
+      this.officialToRemove = o;
+      this.confirmDialog = true;
+    },
+
+    async confirmRemove() {
+      if (!this.officialToRemove) return;
+      const o = this.officialToRemove;
+      this.removing = true;
+
       try {
         const headers = await this.getAuthHeaders();
-        await axios.delete(`${API}/admin/officials/${o.official_id}`, { headers });
-        this.officials = this.officials.filter((x) => x.official_id !== o.official_id);
-        this.showSnackbar('Official removed', 'success');
+        const { data, status } = await axios.delete(
+          `${API}/admin/officials/${o.official_id}`,
+          { headers }
+        );
+
+        // Super admin: deleted
+        if (data?.direct === true || (status >= 200 && status < 300 && !data?.queued)) {
+          this.officials = this.officials.filter((x) => x.official_id !== o.official_id);
+          this.showSnackbar(`"${o.full_name}" removed`, 'success');
+        }
+        // Support admin: queued
+        else if (data?.queued === true || status === 202) {
+          this.showSnackbar(
+            `Request #${data.request_id} sent to super admins`,
+            'success'
+          );
+        }
+        // Fallback for plain 200
+        else if (status === 200) {
+          this.officials = this.officials.filter((x) => x.official_id !== o.official_id);
+          this.showSnackbar(`"${o.full_name}" removed`, 'success');
+        }
       } catch (err) {
         console.warn('removeOfficial failed:', err.message);
-        this.showSnackbar('Could not remove official', 'error');
+        this.showSnackbar(
+          err.response?.data?.error || 'Could not remove official',
+          'error'
+        );
+      } finally {
+        this.removing = false;
+        this.confirmDialog = false;
+        this.officialToRemove = null;
       }
     },
 
@@ -687,14 +831,18 @@ export default {
       this.dialog = false;
     },
 
+    /* ============================================================
+       SUBMIT — dual response (create or update)
+       ============================================================ */
     async submit() {
       if (!this.canSubmit || this.submitting) return;
       this.submitting = true;
       try {
         const headers = await this.getAuthHeaders();
+        let data, status;
 
         if (this.editing) {
-          await axios.patch(
+          ({ data, status } = await axios.patch(
             `${API}/admin/officials/${this.editingId}`,
             {
               full_name: this.form.full_name,
@@ -703,9 +851,9 @@ export default {
               uid: this.form.uid || null,
             },
             { headers }
-          );
+          ));
         } else {
-          await axios.post(
+          ({ data, status } = await axios.post(
             `${API}/admin/estates/${this.form.estate_id}/first-official`,
             {
               full_name: this.form.full_name,
@@ -714,15 +862,28 @@ export default {
               uid: this.form.uid || null,
             },
             { headers }
-          );
+          ));
         }
 
-        const message = this.editing ? 'Official updated' : 'Official created';
-        this.closeDialog();
-        this.$nextTick(() => {
-          this.showSnackbar(message, 'success');
-        });
-        await this.load();
+        // Super admin: applied directly
+        if (data?.direct === true || (status >= 200 && status < 300 && !data?.queued)) {
+          const message = this.editing ? 'Official updated' : 'Official created';
+          this.closeDialog();
+          this.$nextTick(() => {
+            this.showSnackbar(message, 'success');
+          });
+          await this.load();
+        }
+        // Support admin: queued
+        else if (data?.queued === true || status === 202) {
+          this.closeDialog();
+          this.$nextTick(() => {
+            this.showSnackbar(
+              `Request #${data.request_id} sent to super admins`,
+              'success'
+            );
+          });
+        }
       } catch (err) {
         console.warn('submit failed:', err.message);
         this.showSnackbar(
@@ -830,6 +991,37 @@ export default {
 .new-official-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 28px -8px rgba(182, 255, 0, 0.8);
+}
+
+/* ============================================================
+   SUPPORT NOTICE
+   ============================================================ */
+.support-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(155, 108, 255, 0.08) 0%, rgba(128, 81, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  border-radius: 14px;
+}
+
+.support-notice-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(128, 81, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.support-notice-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.5;
 }
 
 /* ============================================================
@@ -1334,7 +1526,7 @@ export default {
   top: 100%;
   right: 0;
   margin-top: 6px;
-  min-width: 200px;
+  min-width: 220px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -1364,6 +1556,23 @@ export default {
 
 .row-menu-item-danger:hover {
   background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+}
+
+.menu-tag {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(128, 81, 255, 0.12);
+  color: #6d28d9;
+}
+
+.menu-tag-danger {
+  background: rgba(220, 38, 38, 0.12);
   color: #b91c1c;
 }
 
@@ -1519,6 +1728,24 @@ export default {
   cursor: not-allowed;
 }
 
+.form-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.form-hint-info {
+  color: #6d28d9;
+  background: rgba(128, 81, 255, 0.06);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 4px;
+}
+
 .off-dialog-footer {
   display: flex;
   justify-content: flex-end;
@@ -1595,6 +1822,137 @@ export default {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ============================================================
+   CONFIRM DIALOG
+   ============================================================ */
+.confirm-card {
+  padding: 28px 26px 22px;
+  background: #ffffff;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.confirm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.confirm-icon-danger {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  box-shadow: 0 12px 26px -12px rgba(220, 38, 38, 0.7);
+}
+
+.confirm-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.confirm-text {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.confirm-official-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fafaff;
+  border: 1px solid #f0eef8;
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+
+.confirm-official-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.confirm-official-info { min-width: 0; }
+
+.confirm-official-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f0d24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.confirm-official-meta {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-btn-ghost {
+  background: #f6f7fb;
+  color: #475569;
+  border: 1px solid #eef1f6;
+}
+
+.action-btn-ghost:hover:not(:disabled) {
+  background: #eef1f6;
+}
+
+.action-btn-danger {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 12px 26px -14px rgba(220, 38, 38, 0.8);
+}
+
+.action-btn-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px -14px rgba(220, 38, 38, 1);
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
@@ -1606,6 +1964,12 @@ export default {
   .page-title { font-size: 1.35rem; }
   .page-actions { width: 100%; }
   .refresh-btn, .new-official-btn { flex: 1; }
+
+  .support-notice {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .support-notice-text { font-size: 0.76rem; }
 
   .summary-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1626,5 +1990,7 @@ export default {
   .official-row { padding: 14px 16px; gap: 14px; }
   .official-name { max-width: 160px; }
   .official-avatar { width: 42px; height: 42px; }
+
+  .confirm-card { padding: 22px 20px 18px; }
 }
 </style>

@@ -1,470 +1,478 @@
 <template>
   <div class="admins-page">
     <!-- ============================================================
-         PAGE HEADER
+         ACCESS GATE — only super admins may manage other admins
          ============================================================ -->
-    <div class="page-header">
-      <div>
-        <div class="page-title-row">
-          <h1 class="page-title">Admin Users</h1>
-          <div class="count-pill">{{ filteredAdmins.length }}</div>
-        </div>
-        <p class="page-sub">
-          {{ admins.length }} total · {{ superCount }} super ·
-          {{ supportCount }} support · {{ readonlyCount }} readonly
-        </p>
+    <div v-if="!roleReady" class="gate-state">
+      <v-progress-circular indeterminate color="#8051FF" size="42" />
+      <div class="gate-sub">Checking access…</div>
+    </div>
+
+    <div v-else-if="!isSuperAdmin" class="no-access">
+      <div class="no-access-icon">
+        <v-icon size="48" color="#8051FF">mdi-lock-outline</v-icon>
       </div>
-      <div class="page-actions">
-        <v-btn
-          text
-          rounded
-          class="text-capitalize refresh-btn"
-          :loading="loading"
-          @click="load"
+      <div class="no-access-title">Super admin access required</div>
+      <div class="no-access-text">
+        You don't have permission to manage admin accounts. Ask a super admin
+        if you think this is a mistake.
+      </div>
+      <button class="no-access-btn" @click="$router.push('/admin')">
+        <v-icon size="16" class="mr-1">mdi-arrow-left</v-icon>
+        Back to dashboard
+      </button>
+    </div>
+
+    <!-- ============================================================
+         FULL PAGE — visible only to super admins
+         ============================================================ -->
+    <template v-else>
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div>
+          <div class="page-title-row">
+            <h1 class="page-title">Admin Users</h1>
+            <div class="count-pill">{{ filteredAdmins.length }}</div>
+          </div>
+          <p class="page-sub">
+            {{ admins.length }} total · {{ superCount }} super ·
+            {{ supportCount }} support · {{ readonlyCount }} readonly
+          </p>
+        </div>
+        <div class="page-actions">
+          <v-btn
+            text
+            rounded
+            class="text-capitalize refresh-btn"
+            :loading="loading"
+            @click="load"
+          >
+            <v-icon left small>mdi-refresh</v-icon>
+            Refresh
+          </v-btn>
+          <v-btn
+            rounded
+            depressed
+            class="text-capitalize add-btn"
+            @click="openAdd"
+          >
+            <v-icon left small>mdi-plus</v-icon>
+            Add admin
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- SUMMARY CARDS -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-icon summary-icon-purple">
+            <v-icon size="18" color="white">mdi-account-group-outline</v-icon>
+          </div>
+          <div class="summary-body">
+            <div class="summary-label">Total admins</div>
+            <div class="summary-value">{{ admins.length }}</div>
+          </div>
+        </div>
+
+        <div class="summary-card summary-card-highlight">
+          <div class="summary-icon summary-icon-white">
+            <v-icon size="18" color="#0A0A14">mdi-shield-crown-outline</v-icon>
+          </div>
+          <div class="summary-body">
+            <div class="summary-label">Super admins</div>
+            <div class="summary-value">{{ superCount }}</div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-icon summary-icon-lime">
+            <v-icon size="18" color="#0A0A14">mdi-account-check-outline</v-icon>
+          </div>
+          <div class="summary-body">
+            <div class="summary-label">Active</div>
+            <div class="summary-value">{{ activeCount }}</div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-icon summary-icon-amber">
+            <v-icon size="18" color="white">mdi-account-off-outline</v-icon>
+          </div>
+          <div class="summary-body">
+            <div class="summary-label">Disabled</div>
+            <div class="summary-value">{{ disabledCount }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filters-card">
+        <div class="search-wrap">
+          <v-icon size="18" class="search-icon">mdi-magnify</v-icon>
+          <input
+            v-model="search"
+            class="search-input"
+            type="text"
+            placeholder="Search by name or email"
+          />
+          <button v-if="search" class="search-clear" @click="search = ''">
+            <v-icon size="16">mdi-close-circle</v-icon>
+          </button>
+        </div>
+
+        <div class="filter-chips">
+          <button
+            v-for="s in roleOptions"
+            :key="s.value"
+            class="filter-chip"
+            :class="{ 'filter-chip-active': roleFilter === s.value }"
+            @click="roleFilter = s.value"
+          >
+            {{ s.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- LOADING / EMPTY / LIST -->
+      <div v-if="loading && !admins.length" class="loading-block">
+        <v-skeleton-loader
+          type="list-item-avatar-three-line, list-item-avatar-three-line, list-item-avatar-three-line"
+        />
+      </div>
+
+      <div v-else-if="!filteredAdmins.length" class="empty-card">
+        <div class="empty-icon">
+          <v-icon size="44" color="#8051FF">
+            {{ hasActiveFilters ? 'mdi-filter-off' : 'mdi-account-group-outline' }}
+          </v-icon>
+        </div>
+        <div class="empty-title">
+          {{ hasActiveFilters ? 'No matching admins' : 'No admin accounts yet' }}
+        </div>
+        <div class="empty-text">
+          {{ hasActiveFilters
+            ? 'Try clearing the filters or searching for something else.'
+            : 'Add the first admin to get started.' }}
+        </div>
+        <button
+          v-if="hasActiveFilters"
+          class="empty-clear-btn"
+          @click="clearFilters"
         >
-          <v-icon left small>mdi-refresh</v-icon>
-          Refresh
-        </v-btn>
-        <v-btn
-          rounded
-          depressed
-          class="text-capitalize add-btn"
+          <v-icon size="16" class="mr-1">mdi-close</v-icon>
+          Clear filters
+        </button>
+        <button
+          v-else
+          class="empty-clear-btn"
           @click="openAdd"
         >
-          <v-icon left small>mdi-plus</v-icon>
+          <v-icon size="16" class="mr-1">mdi-plus</v-icon>
           Add admin
-        </v-btn>
-      </div>
-    </div>
-
-    <!-- ============================================================
-         SUMMARY CARDS
-         ============================================================ -->
-    <div class="summary-grid">
-      <div class="summary-card">
-        <div class="summary-icon summary-icon-purple">
-          <v-icon size="18" color="white">mdi-account-group-outline</v-icon>
-        </div>
-        <div class="summary-body">
-          <div class="summary-label">Total admins</div>
-          <div class="summary-value">{{ admins.length }}</div>
-        </div>
-      </div>
-
-      <div class="summary-card summary-card-highlight">
-        <div class="summary-icon summary-icon-white">
-          <v-icon size="18" color="#0A0A14">mdi-shield-crown-outline</v-icon>
-        </div>
-        <div class="summary-body">
-          <div class="summary-label">Super admins</div>
-          <div class="summary-value">{{ superCount }}</div>
-        </div>
-      </div>
-
-      <div class="summary-card">
-        <div class="summary-icon summary-icon-lime">
-          <v-icon size="18" color="#0A0A14">mdi-account-check-outline</v-icon>
-        </div>
-        <div class="summary-body">
-          <div class="summary-label">Active</div>
-          <div class="summary-value">{{ activeCount }}</div>
-        </div>
-      </div>
-
-      <div class="summary-card">
-        <div class="summary-icon summary-icon-amber">
-          <v-icon size="18" color="white">mdi-account-off-outline</v-icon>
-        </div>
-        <div class="summary-body">
-          <div class="summary-label">Disabled</div>
-          <div class="summary-value">{{ disabledCount }}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================================
-         FILTERS
-         ============================================================ -->
-    <div class="filters-card">
-      <div class="search-wrap">
-        <v-icon size="18" class="search-icon">mdi-magnify</v-icon>
-        <input
-          v-model="search"
-          class="search-input"
-          type="text"
-          placeholder="Search by name or email"
-        />
-        <button v-if="search" class="search-clear" @click="search = ''">
-          <v-icon size="16">mdi-close-circle</v-icon>
         </button>
       </div>
 
-      <div class="filter-chips">
-        <button
-          v-for="s in roleOptions"
-          :key="s.value"
-          class="filter-chip"
-          :class="{ 'filter-chip-active': roleFilter === s.value }"
-          @click="roleFilter = s.value"
+      <div v-else class="admins-card">
+        <div
+          v-for="admin in filteredAdmins"
+          :key="admin.id"
+          class="admin-row"
         >
-          {{ s.label }}
-        </button>
-      </div>
-    </div>
-
-    <!-- ============================================================
-         LOADING / EMPTY / LIST
-         ============================================================ -->
-    <div v-if="loading && !admins.length" class="loading-block">
-      <v-skeleton-loader
-        type="list-item-avatar-three-line, list-item-avatar-three-line, list-item-avatar-three-line"
-      />
-    </div>
-
-    <div v-else-if="!filteredAdmins.length" class="empty-card">
-      <div class="empty-icon">
-        <v-icon size="44" color="#8051FF">
-          {{ hasActiveFilters ? 'mdi-filter-off' : 'mdi-account-group-outline' }}
-        </v-icon>
-      </div>
-      <div class="empty-title">
-        {{ hasActiveFilters ? 'No matching admins' : 'No admin accounts yet' }}
-      </div>
-      <div class="empty-text">
-        {{ hasActiveFilters
-          ? 'Try clearing the filters or searching for something else.'
-          : 'Add the first admin to get started.' }}
-      </div>
-      <button
-        v-if="hasActiveFilters"
-        class="empty-clear-btn"
-        @click="clearFilters"
-      >
-        <v-icon size="16" class="mr-1">mdi-close</v-icon>
-        Clear filters
-      </button>
-      <button
-        v-else
-        class="empty-clear-btn"
-        @click="openAdd"
-      >
-        <v-icon size="16" class="mr-1">mdi-plus</v-icon>
-        Add admin
-      </button>
-    </div>
-
-    <div v-else class="admins-card">
-      <div
-        v-for="admin in filteredAdmins"
-        :key="admin.id"
-        class="admin-row"
-      >
-        <!-- Avatar -->
-        <div class="admin-avatar" :class="avatarClass(admin)">
-          <span>{{ initialsOf(admin.full_name || admin.email) }}</span>
-        </div>
-
-        <!-- Body -->
-        <div class="admin-body">
-          <div class="admin-title-row">
-            <span class="admin-name">{{ admin.full_name || '(no name)' }}</span>
-            <span class="role-pill" :class="roleClass(admin.role)">
-              {{ roleLabel(admin.role) }}
-            </span>
-            <span v-if="!admin.active" class="disabled-tag">
-              <v-icon size="11">mdi-account-off-outline</v-icon>
-              Disabled
-            </span>
-            <span v-if="isSelf(admin)" class="self-tag">You</span>
+          <div class="admin-avatar" :class="avatarClass(admin)">
+            <span>{{ initialsOf(admin.full_name || admin.email) }}</span>
           </div>
-          <div class="admin-meta">
-            <span class="meta-item">
-              <v-icon size="12">mdi-email-outline</v-icon>
-              {{ admin.email }}
-            </span>
-            <span v-if="admin.last_login_at" class="meta-dot">·</span>
-            <span v-if="admin.last_login_at" class="meta-item">
-              <v-icon size="12">mdi-login-variant</v-icon>
-              Last login {{ fmtDate(admin.last_login_at) }}
-            </span>
-            <span class="meta-dot">·</span>
-            <span class="meta-item">
-              <v-icon size="12">mdi-calendar-plus-outline</v-icon>
-              Added {{ fmtDate(admin.created_at) }}
-            </span>
-          </div>
-        </div>
 
-        <!-- Right -->
-        <div class="admin-right">
-          <button class="icon-btn" @click.stop="toggleMenu(admin.id)">
-            <v-icon size="18">mdi-dots-vertical</v-icon>
-          </button>
-          <transition name="menu-fade">
-            <div v-if="openMenuId === admin.id" class="row-menu">
-              <button class="row-menu-item" @click="editAdmin(admin)">
-                <v-icon size="16" class="mr-2">mdi-pencil-outline</v-icon>
-                Edit
-              </button>
-              <button
-                class="row-menu-item"
-                @click="toggleActive(admin)"
-              >
-                <v-icon size="16" class="mr-2">
-                  {{ admin.active ? 'mdi-account-off-outline' : 'mdi-account-check-outline' }}
-                </v-icon>
-                {{ admin.active ? 'Disable' : 'Enable' }}
-              </button>
-              <button
-                class="row-menu-item row-menu-item-danger"
-                :disabled="isSelf(admin)"
-                @click="confirmRemove(admin)"
-              >
-                <v-icon size="16" class="mr-2">mdi-trash-can-outline</v-icon>
-                Remove
-              </button>
+          <div class="admin-body">
+            <div class="admin-title-row">
+              <span class="admin-name">{{ admin.full_name || '(no name)' }}</span>
+              <span class="role-pill" :class="roleClass(admin.role)">
+                {{ roleLabel(admin.role) }}
+              </span>
+              <span v-if="!admin.active" class="disabled-tag">
+                <v-icon size="11">mdi-account-off-outline</v-icon>
+                Disabled
+              </span>
+              <span v-if="isSelf(admin)" class="self-tag">You</span>
             </div>
-          </transition>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================================
-         ADD / EDIT DIALOG
-         ============================================================ -->
-    <v-dialog v-model="editDialog.show" max-width="560" persistent>
-      <div class="dialog-card">
-        <div class="dialog-header">
-          <div class="dialog-icon dialog-icon-purple">
-            <v-icon size="20" color="white">
-              {{ editDialog.mode === 'add' ? 'mdi-account-plus-outline' : 'mdi-account-edit-outline' }}
-            </v-icon>
-          </div>
-          <div>
-            <div class="dialog-title">
-              {{ editDialog.mode === 'add' ? 'Add admin' : 'Edit admin' }}
-            </div>
-            <div class="dialog-sub">
-              {{ editDialog.mode === 'add'
-                ? 'Pick an existing user or enter one manually'
-                : 'Update role, name, or status' }}
-            </div>
-          </div>
-        </div>
-
-        <!-- TABS (only in add mode) -->
-        <div v-if="editDialog.mode === 'add'" class="dialog-tabs">
-          <button
-            class="dialog-tab"
-            :class="{ 'dialog-tab-active': editDialog.tab === 'existing' }"
-            @click="editDialog.tab = 'existing'"
-          >
-            <v-icon size="16">mdi-account-search-outline</v-icon>
-            From existing users
-          </button>
-          <button
-            class="dialog-tab"
-            :class="{ 'dialog-tab-active': editDialog.tab === 'manual' }"
-            @click="editDialog.tab = 'manual'"
-          >
-            <v-icon size="16">mdi-pencil-outline</v-icon>
-            Manual entry
-          </button>
-        </div>
-
-        <!-- TAB 1 — EXISTING USERS -->
-        <div v-if="editDialog.mode === 'add' && editDialog.tab === 'existing'">
-          <div class="picker-search">
-            <v-icon size="18" class="picker-search-icon">mdi-magnify</v-icon>
-            <input
-              v-model="editDialog.userSearch"
-              class="picker-search-input"
-              type="text"
-              placeholder="Search by name, phone, or estate"
-            />
-          </div>
-
-          <div v-if="editDialog.usersLoading" class="picker-loading">
-            <v-progress-circular indeterminate size="22" color="#8051ff" />
-            <span>Loading users…</span>
-          </div>
-
-          <div v-else-if="!eligibleUsersFiltered.length" class="picker-empty">
-            <v-icon size="28" color="#cbd5e1">mdi-account-off-outline</v-icon>
-            <div>No eligible users found</div>
-            <div class="picker-empty-sub">
-              All existing users may already be admins, or none match your search.
+            <div class="admin-meta">
+              <span class="meta-item">
+                <v-icon size="12">mdi-email-outline</v-icon>
+                {{ admin.email }}
+              </span>
+              <span v-if="admin.last_login_at" class="meta-dot">·</span>
+              <span v-if="admin.last_login_at" class="meta-item">
+                <v-icon size="12">mdi-login-variant</v-icon>
+                Last login {{ fmtDate(admin.last_login_at) }}
+              </span>
+              <span class="meta-dot">·</span>
+              <span class="meta-item">
+                <v-icon size="12">mdi-calendar-plus-outline</v-icon>
+                Added {{ fmtDate(admin.created_at) }}
+              </span>
             </div>
           </div>
 
-          <div v-else class="picker-list">
-            <button
-              v-for="u in eligibleUsersFiltered"
-              :key="u.uid"
-              class="picker-item"
-              :class="{ 'picker-item-selected': editDialog.selectedUid === u.uid }"
-              @click="pickExistingUser(u)"
-            >
-              <div class="picker-avatar">
-                {{ initialsOf(u.full_name || u.phone) }}
+          <div class="admin-right">
+            <button class="icon-btn" @click.stop="toggleMenu(admin.id)">
+              <v-icon size="18">mdi-dots-vertical</v-icon>
+            </button>
+            <transition name="menu-fade">
+              <div v-if="openMenuId === admin.id" class="row-menu">
+                <button class="row-menu-item" @click="editAdmin(admin)">
+                  <v-icon size="16" class="mr-2">mdi-pencil-outline</v-icon>
+                  Edit
+                </button>
+                <button
+                  class="row-menu-item"
+                  @click="toggleActive(admin)"
+                >
+                  <v-icon size="16" class="mr-2">
+                    {{ admin.active ? 'mdi-account-off-outline' : 'mdi-account-check-outline' }}
+                  </v-icon>
+                  {{ admin.active ? 'Disable' : 'Enable' }}
+                </button>
+                <button
+                  class="row-menu-item row-menu-item-danger"
+                  :disabled="isSelf(admin)"
+                  @click="confirmRemove(admin)"
+                >
+                  <v-icon size="16" class="mr-2">mdi-trash-can-outline</v-icon>
+                  Remove
+                </button>
               </div>
-              <div class="picker-body">
-                <div class="picker-name-row">
-                  <span class="picker-name">{{ u.full_name || '(unnamed)' }}</span>
-                  <span class="picker-source" :class="`picker-source-${u.source}`">
-                    {{ u.source }}
-                  </span>
-                </div>
-                <div class="picker-meta">
-                  <span v-if="u.email">
-                    <v-icon size="11">mdi-email-outline</v-icon>
-                    {{ u.email }}
-                  </span>
-                  <span v-else class="picker-no-email">no email on file</span>
-                  <span v-if="u.phone" class="meta-dot">·</span>
-                  <span v-if="u.phone">
-                    <v-icon size="11">mdi-phone-outline</v-icon>
-                    {{ u.phone }}
-                  </span>
-                  <span v-if="u.estate_name" class="meta-dot">·</span>
-                  <span v-if="u.estate_name">
-                    <v-icon size="11">mdi-office-building-outline</v-icon>
-                    {{ u.estate_name }}
-                  </span>
-                </div>
-              </div>
-              <v-icon v-if="editDialog.selectedUid === u.uid" size="20" color="#8051ff">
-                mdi-check-circle
+            </transition>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADD / EDIT DIALOG -->
+      <v-dialog v-model="editDialog.show" max-width="560" persistent>
+        <div class="dialog-card">
+          <div class="dialog-header">
+            <div class="dialog-icon dialog-icon-purple">
+              <v-icon size="20" color="white">
+                {{ editDialog.mode === 'add' ? 'mdi-account-plus-outline' : 'mdi-account-edit-outline' }}
               </v-icon>
+            </div>
+            <div>
+              <div class="dialog-title">
+                {{ editDialog.mode === 'add' ? 'Add admin' : 'Edit admin' }}
+              </div>
+              <div class="dialog-sub">
+                {{ editDialog.mode === 'add'
+                  ? 'Pick an existing user or enter one manually'
+                  : 'Update role, name, or status' }}
+              </div>
+            </div>
+          </div>
+
+          <div v-if="editDialog.mode === 'add'" class="dialog-tabs">
+            <button
+              class="dialog-tab"
+              :class="{ 'dialog-tab-active': editDialog.tab === 'existing' }"
+              @click="editDialog.tab = 'existing'"
+            >
+              <v-icon size="16">mdi-account-search-outline</v-icon>
+              From existing users
+            </button>
+            <button
+              class="dialog-tab"
+              :class="{ 'dialog-tab-active': editDialog.tab === 'manual' }"
+              @click="editDialog.tab = 'manual'"
+            >
+              <v-icon size="16">mdi-pencil-outline</v-icon>
+              Manual entry
             </button>
           </div>
 
-          <!-- Role picker for the selected user -->
-          <div v-if="editDialog.selectedUid" class="picker-role">
-            <label class="field-label">Assign role</label>
-            <select v-model="editDialog.form.role" class="field-input">
-              <option value="super">Super admin</option>
-              <option value="support">Support</option>
-              <option value="readonly">Read-only</option>
-            </select>
-          </div>
-        </div>
+          <div v-if="editDialog.mode === 'add' && editDialog.tab === 'existing'">
+            <div class="picker-search">
+              <v-icon size="18" class="picker-search-icon">mdi-magnify</v-icon>
+              <input
+                v-model="editDialog.userSearch"
+                class="picker-search-input"
+                type="text"
+                placeholder="Search by name, phone, or estate"
+              />
+            </div>
 
-        <!-- TAB 2 — MANUAL ENTRY -->
-        <div v-if="editDialog.mode === 'add' && editDialog.tab === 'manual'" class="dialog-fields">
-          <div class="field">
-            <label class="field-label">Email</label>
-            <input
-              v-model="editDialog.form.email"
-              class="field-input"
-              type="email"
-              placeholder="name@example.com"
-            />
-          </div>
-          <div class="field">
-            <label class="field-label">Full name</label>
-            <input
-              v-model="editDialog.form.full_name"
-              class="field-input"
-              type="text"
-              placeholder="Jane Doe"
-            />
-          </div>
-          <div class="field">
-            <label class="field-label">Role</label>
-            <select v-model="editDialog.form.role" class="field-input">
-              <option value="super">Super admin</option>
-              <option value="support">Support</option>
-              <option value="readonly">Read-only</option>
-            </select>
-          </div>
-        </div>
+            <div v-if="editDialog.usersLoading" class="picker-loading">
+              <v-progress-circular indeterminate size="22" color="#8051ff" />
+              <span>Loading users…</span>
+            </div>
 
-        <!-- EDIT MODE FORM -->
-        <div v-if="editDialog.mode === 'edit'" class="dialog-fields">
-          <div class="field">
-            <label class="field-label">Email</label>
-            <input
-              v-model="editDialog.form.email"
-              class="field-input"
-              type="email"
-              disabled
-            />
-          </div>
-          <div class="field">
-            <label class="field-label">Full name</label>
-            <input
-              v-model="editDialog.form.full_name"
-              class="field-input"
-              type="text"
-            />
-          </div>
-          <div class="field">
-            <label class="field-label">Role</label>
-            <select v-model="editDialog.form.role" class="field-input">
-              <option value="super">Super admin</option>
-              <option value="support">Support</option>
-              <option value="readonly">Read-only</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="field-label">Status</label>
-            <select v-model="editDialog.form.active" class="field-input">
-              <option :value="true">Active</option>
-              <option :value="false">Disabled</option>
-            </select>
-          </div>
-        </div>
+            <div v-else-if="!eligibleUsersFiltered.length" class="picker-empty">
+              <v-icon size="28" color="#cbd5e1">mdi-account-off-outline</v-icon>
+              <div>No eligible users found</div>
+              <div class="picker-empty-sub">
+                All existing users may already be admins, or none match your search.
+              </div>
+            </div>
 
-        <div class="dialog-actions">
-          <button class="dialog-cancel" @click="closeEditDialog">Cancel</button>
-          <button
-            class="dialog-proceed"
-            :disabled="!canSaveEdit"
-            @click="saveEdit"
-          >
-            {{ editDialog.mode === 'add' ? 'Add admin' : 'Save changes' }}
-          </button>
-        </div>
-      </div>
-    </v-dialog>
+            <div v-else class="picker-list">
+              <button
+                v-for="u in eligibleUsersFiltered"
+                :key="u.uid"
+                class="picker-item"
+                :class="{ 'picker-item-selected': editDialog.selectedUid === u.uid }"
+                @click="pickExistingUser(u)"
+              >
+                <div class="picker-avatar">
+                  {{ initialsOf(u.full_name || u.phone) }}
+                </div>
+                <div class="picker-body">
+                  <div class="picker-name-row">
+                    <span class="picker-name">{{ u.full_name || '(unnamed)' }}</span>
+                    <span class="picker-source" :class="`picker-source-${u.source}`">
+                      {{ u.source }}
+                    </span>
+                  </div>
+                  <div class="picker-meta">
+                    <span v-if="u.email">
+                      <v-icon size="11">mdi-email-outline</v-icon>
+                      {{ u.email }}
+                    </span>
+                    <span v-else class="picker-no-email">no email on file</span>
+                    <span v-if="u.phone" class="meta-dot">·</span>
+                    <span v-if="u.phone">
+                      <v-icon size="11">mdi-phone-outline</v-icon>
+                      {{ u.phone }}
+                    </span>
+                    <span v-if="u.estate_name" class="meta-dot">·</span>
+                    <span v-if="u.estate_name">
+                      <v-icon size="11">mdi-office-building-outline</v-icon>
+                      {{ u.estate_name }}
+                    </span>
+                  </div>
+                </div>
+                <v-icon v-if="editDialog.selectedUid === u.uid" size="20" color="#8051ff">
+                  mdi-check-circle
+                </v-icon>
+              </button>
+            </div>
 
-    <!-- ============================================================
-         REMOVE CONFIRM DIALOG
-         ============================================================ -->
-    <v-dialog v-model="removeDialog.show" max-width="440" persistent>
-      <div class="confirm-card">
-        <div class="confirm-icon">
-          <v-icon size="26" color="#dc2626">mdi-alert-octagon-outline</v-icon>
-        </div>
-        <div class="confirm-title">
-          Remove {{ removeDialog.admin?.full_name || removeDialog.admin?.email }}?
-        </div>
-        <div class="confirm-text">
-          This will disable the admin account. They will lose access immediately.
-          You can re-enable the account later if needed.
-        </div>
-        <div class="confirm-actions">
-          <button class="confirm-cancel" @click="removeDialog.show = false">Cancel</button>
-          <button class="confirm-proceed" @click="executeRemove">Remove</button>
-        </div>
-      </div>
-    </v-dialog>
+            <div v-if="editDialog.selectedUid" class="picker-role">
+              <label class="field-label">Assign role</label>
+              <select v-model="editDialog.form.role" class="field-input">
+                <option value="super">Super admin</option>
+                <option value="support">Support</option>
+                <option value="readonly">Read-only</option>
+              </select>
+            </div>
+          </div>
 
-    <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      :timeout="3000"
-      top
-      rounded="pill"
-    >
-      <div class="d-flex align-center">
-        <v-icon color="white" small class="mr-2">
-          {{ snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-        </v-icon>
-        <span>{{ snackbar.text }}</span>
-      </div>
-    </v-snackbar>
+          <div v-if="editDialog.mode === 'add' && editDialog.tab === 'manual'" class="dialog-fields">
+            <div class="field">
+              <label class="field-label">Email</label>
+              <input
+                v-model="editDialog.form.email"
+                class="field-input"
+                type="email"
+                placeholder="name@example.com"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Full name</label>
+              <input
+                v-model="editDialog.form.full_name"
+                class="field-input"
+                type="text"
+                placeholder="Jane Doe"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Role</label>
+              <select v-model="editDialog.form.role" class="field-input">
+                <option value="super">Super admin</option>
+                <option value="support">Support</option>
+                <option value="readonly">Read-only</option>
+              </select>
+            </div>
+          </div>
+
+          <div v-if="editDialog.mode === 'edit'" class="dialog-fields">
+            <div class="field">
+              <label class="field-label">Email</label>
+              <input
+                v-model="editDialog.form.email"
+                class="field-input"
+                type="email"
+                disabled
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Full name</label>
+              <input
+                v-model="editDialog.form.full_name"
+                class="field-input"
+                type="text"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Role</label>
+              <select v-model="editDialog.form.role" class="field-input">
+                <option value="super">Super admin</option>
+                <option value="support">Support</option>
+                <option value="readonly">Read-only</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Status</label>
+              <select v-model="editDialog.form.active" class="field-input">
+                <option :value="true">Active</option>
+                <option :value="false">Disabled</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dialog-actions">
+            <button class="dialog-cancel" @click="closeEditDialog">Cancel</button>
+            <button
+              class="dialog-proceed"
+              :disabled="!canSaveEdit"
+              @click="saveEdit"
+            >
+              {{ editDialog.mode === 'add' ? 'Add admin' : 'Save changes' }}
+            </button>
+          </div>
+        </div>
+      </v-dialog>
+
+      <!-- REMOVE CONFIRM DIALOG -->
+      <v-dialog v-model="removeDialog.show" max-width="440" persistent>
+        <div class="confirm-card">
+          <div class="confirm-icon">
+            <v-icon size="26" color="#dc2626">mdi-alert-octagon-outline</v-icon>
+          </div>
+          <div class="confirm-title">
+            Remove {{ removeDialog.admin?.full_name || removeDialog.admin?.email }}?
+          </div>
+          <div class="confirm-text">
+            This will disable the admin account. They will lose access immediately.
+            You can re-enable the account later if needed.
+          </div>
+          <div class="confirm-actions">
+            <button class="confirm-cancel" @click="removeDialog.show = false">Cancel</button>
+            <button class="confirm-proceed" @click="executeRemove">Remove</button>
+          </div>
+        </div>
+      </v-dialog>
+
+      <v-snackbar
+        v-model="snackbar.show"
+        :color="snackbar.color"
+        :timeout="3000"
+        top
+        rounded="pill"
+      >
+        <div class="d-flex align-center">
+          <v-icon color="white" small class="mr-2">
+            {{ snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+          </v-icon>
+          <span>{{ snackbar.text }}</span>
+        </div>
+      </v-snackbar>
+    </template>
   </div>
 </template>
 
@@ -479,6 +487,11 @@ export default {
 
   data() {
     return {
+      // ── Access gate ──
+      adminRole: null,
+      roleReady: false,
+
+      // ── Page state ──
       loading: false,
       admins: [],
       eligibleUsers: [],
@@ -513,6 +526,9 @@ export default {
   },
 
   computed: {
+    isSuperAdmin() {
+      return this.adminRole === 'super';
+    },
     roleOptions() {
       return [
         { label: 'All', value: '' },
@@ -576,21 +592,18 @@ export default {
   },
 
   mounted() {
-    const auth = this.$fire?.auth;
-    if (!auth) {
-      console.error('Firebase auth not available');
-      return;
+    // 1) Resolve role from localStorage
+    try {
+      this.adminRole = localStorage.getItem('admin_role') || null;
+    } catch (e) {
+      console.warn('[Admins] localStorage read failed:', e.message);
     }
+    this.roleReady = true;
 
-    const unsub = auth.onAuthStateChanged(async (u) => {
-      unsub();
-      if (!u) {
-        this.$router.push('/admin/login');
-        return;
-      }
-      await this.load();
-      await this.loadMe();
-    });
+    // 2) Only load if authorized
+    if (this.isSuperAdmin) {
+      this.initLoad();
+    }
 
     document.addEventListener('click', this.closeMenuOnClickOutside);
   },
@@ -600,6 +613,24 @@ export default {
   },
 
   methods: {
+    async initLoad() {
+      const auth = this.$fire?.auth;
+      if (!auth) {
+        console.error('Firebase auth not available');
+        return;
+      }
+
+      const unsub = auth.onAuthStateChanged(async (u) => {
+        unsub();
+        if (!u) {
+          this.$router.push('/admin/login');
+          return;
+        }
+        await this.load();
+        await this.loadMe();
+      });
+    },
+
     async getAuthHeaders() {
       try {
         const user = this.$fire?.auth?.currentUser;
@@ -850,6 +881,83 @@ export default {
    ROOT
    ============================================================ */
 .admins-page { display: flex; flex-direction: column; gap: 22px; }
+
+/* ============================================================
+   ACCESS GATE
+   ============================================================ */
+.gate-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 24px;
+  text-align: center;
+}
+.gate-sub {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-top: 14px;
+  font-weight: 500;
+}
+
+.no-access {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  border-radius: 18px;
+  margin-top: 12px;
+  box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
+}
+.no-access-icon {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: rgba(128, 81, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.no-access-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+}
+.no-access-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 6px;
+  max-width: 360px;
+  line-height: 1.6;
+}
+.no-access-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 22px;
+  padding: 11px 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8051ff 0%, #9b6cff 100%);
+  color: #ffffff;
+  border: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+  transition: all 0.2s ease;
+}
+.no-access-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -10px rgba(128, 81, 255, 0.85);
+}
 
 /* Header */
 .page-header {
@@ -1449,5 +1557,6 @@ export default {
   .search-wrap { min-width: 0; }
   .admin-row { padding: 14px 16px; gap: 14px; }
   .admin-name { max-width: 160px; }
+  .no-access { padding: 60px 20px; }
 }
 </style>

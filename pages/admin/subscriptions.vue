@@ -48,6 +48,18 @@
     </div>
 
     <!-- ============================================================
+         SUPPORT NOTICE
+         ============================================================ -->
+    <div v-if="isSupportAdmin" class="support-notice">
+      <div class="support-notice-icon">
+        <v-icon size="16" color="#8051FF">mdi-shield-alert-outline</v-icon>
+      </div>
+      <div class="support-notice-text">
+        Billing changes (subscriptions and plans) require super-admin approval before they take effect.
+      </div>
+    </div>
+
+    <!-- ============================================================
          SUMMARY CARDS
          ============================================================ -->
     <div class="summary-grid">
@@ -245,6 +257,7 @@
               >
                 <v-icon size="16" class="mr-2">mdi-pencil-outline</v-icon>
                 Edit
+                <span v-if="isSupportAdmin" class="menu-tag">Approval</span>
               </button>
               <template v-if="s.status !== 'NotSubscribed'">
                 <div class="row-menu-divider"></div>
@@ -255,6 +268,7 @@
                 >
                   <v-icon size="16" class="mr-2">mdi-check-circle-outline</v-icon>
                   Activate
+                  <span v-if="isSupportAdmin" class="menu-tag">Approval</span>
                 </button>
                 <button
                   v-if="s.status !== 'Expired'"
@@ -263,6 +277,7 @@
                 >
                   <v-icon size="16" class="mr-2">mdi-clock-alert-outline</v-icon>
                   Mark expired
+                  <span v-if="isSupportAdmin" class="menu-tag">Approval</span>
                 </button>
                 <button
                   v-if="s.status !== 'Cancelled'"
@@ -271,6 +286,7 @@
                 >
                   <v-icon size="16" class="mr-2">mdi-close-circle-outline</v-icon>
                   Cancel
+                  <span v-if="isSupportAdmin" class="menu-tag menu-tag-danger">Approval</span>
                 </button>
               </template>
               <template v-else>
@@ -281,6 +297,7 @@
                 >
                   <v-icon size="16" class="mr-2">mdi-plus-circle-outline</v-icon>
                   Create subscription
+                  <span v-if="isSupportAdmin" class="menu-tag">Approval</span>
                 </button>
               </template>
             </div>
@@ -301,8 +318,14 @@
       <div class="sub-dialog-card">
         <div class="sub-dialog-header">
           <div>
-            <div class="sub-dialog-title">New subscription</div>
-            <div class="sub-dialog-sub">Attach a billing plan to an estate</div>
+            <div class="sub-dialog-title">
+              {{ isSupportAdmin ? 'Request subscription' : 'New subscription' }}
+            </div>
+            <div class="sub-dialog-sub">
+              {{ isSupportAdmin
+                ? 'This will be sent to a super admin for approval'
+                : 'Attach a billing plan to an estate' }}
+            </div>
           </div>
           <button class="sub-dialog-close" @click="closeNewDialog">
             <v-icon size="20" color="white">mdi-close</v-icon>
@@ -374,6 +397,11 @@
               <option value="Cash">Cash</option>
             </select>
           </div>
+
+          <div v-if="isSupportAdmin" class="form-hint form-hint-info">
+            <v-icon size="14">mdi-information-outline</v-icon>
+            Submitting will send this to a super admin for approval.
+          </div>
         </div>
 
         <div class="sub-dialog-footer">
@@ -386,7 +414,10 @@
             @click="submitNew"
           >
             <v-icon v-if="submitting" size="16" class="mr-2 spin">mdi-loading</v-icon>
-            {{ submitting ? 'Creating…' : 'Create subscription' }}
+            {{ submitting
+              ? 'Submitting…'
+              : (isSupportAdmin ? 'Send for approval' : 'Create subscription')
+            }}
           </button>
         </div>
       </div>
@@ -406,7 +437,12 @@
           <div>
             <div class="sub-dialog-title">Manage subscription plans</div>
             <div class="sub-dialog-sub">
-              Create, edit, or remove plans. Estates subscribe to these.
+              <span v-if="isSupportAdmin">
+                Changes will be sent to a super admin for approval
+              </span>
+              <span v-else>
+                Create, edit, or remove plans. Estates subscribe to these.
+              </span>
             </div>
           </div>
           <button class="sub-dialog-close" @click="plansDialog = false">
@@ -479,7 +515,13 @@
                 @click="savePlan"
               >
                 <v-icon v-if="savingPlan" size="16" class="mr-2 spin">mdi-loading</v-icon>
-                {{ planEdit.plan_id ? 'Save changes' : 'Create plan' }}
+                {{
+                  savingPlan
+                    ? 'Submitting…'
+                    : (planEdit.plan_id
+                        ? (isSupportAdmin ? 'Send changes' : 'Save changes')
+                        : (isSupportAdmin ? 'Send for approval' : 'Create plan'))
+                }}
               </button>
             </div>
           </div>
@@ -509,7 +551,7 @@
               </button>
               <button
                 class="plan-item-btn plan-item-btn-danger"
-                @click="deletePlan(p)"
+                @click="askDeletePlan(p)"
                 title="Delete"
               >
                 <v-icon size="15">mdi-trash-can-outline</v-icon>
@@ -526,10 +568,67 @@
       </div>
     </v-dialog>
 
+    <!-- ============================================================
+         DELETE PLAN CONFIRM DIALOG
+         ============================================================ -->
+    <v-dialog v-model="deletePlanDialog" max-width="440" persistent>
+      <div class="confirm-card">
+        <div class="confirm-icon confirm-icon-danger">
+          <v-icon size="24" color="white">mdi-delete-alert</v-icon>
+        </div>
+
+        <div class="confirm-title">
+          {{ isSupportAdmin ? 'Request plan removal?' : 'Delete this plan?' }}
+        </div>
+
+        <div class="confirm-text">
+          <span v-if="isSupportAdmin">
+            This will send a request to a super admin for approval.
+            The plan stays active until they approve.
+          </span>
+          <span v-else>
+            This will permanently delete the plan. Existing subscriptions
+            that reference it may be affected. This cannot be undone.
+          </span>
+        </div>
+
+        <div v-if="planToDelete" class="confirm-plan-preview">
+          <div class="confirm-plan-name">{{ planToDelete.plan_name }}</div>
+          <div class="confirm-plan-meta">
+            {{ planToDelete.min_households }} – {{ planToDelete.max_households || '∞' }} households ·
+            KES {{ formatNum(planToDelete.monthly_rate) }}/mo
+          </div>
+        </div>
+
+        <div class="confirm-actions">
+          <button
+            class="action-btn action-btn-ghost"
+            :disabled="deletingPlan"
+            @click="deletePlanDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="action-btn action-btn-danger"
+            :disabled="deletingPlan"
+            @click="confirmDeletePlan"
+          >
+            <v-icon size="14" class="mr-1">
+              {{ deletingPlan ? 'mdi-loading' : (isSupportAdmin ? 'mdi-send' : 'mdi-delete') }}
+            </v-icon>
+            {{ deletingPlan
+              ? 'Working…'
+              : (isSupportAdmin ? 'Send for approval' : 'Delete plan')
+            }}
+          </button>
+        </div>
+      </div>
+    </v-dialog>
+
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
-      :timeout="3000"
+      :timeout="3500"
       top
       rounded="pill"
     >
@@ -567,6 +666,8 @@ export default {
       statusFilter: '',
       openMenuId: null,
 
+      adminRole: null,
+
       newDialog: false,
       form: {
         estate_id: '',
@@ -589,11 +690,22 @@ export default {
         monthly_rate: 100,
       },
 
+      // Plan deletion
+      deletePlanDialog: false,
+      planToDelete: null,
+      deletingPlan: false,
+
       snackbar: { show: false, text: '', color: 'success' },
     };
   },
 
   computed: {
+    isSupportAdmin() {
+      return this.adminRole === 'support';
+    },
+    isSuperAdmin() {
+      return this.adminRole === 'super';
+    },
     statusOptions() {
       return [
         { label: 'All', value: '' },
@@ -659,6 +771,12 @@ export default {
   },
 
   mounted() {
+    try {
+      this.adminRole = localStorage.getItem('admin_role') || null;
+    } catch (e) {
+      console.warn(e.message);
+    }
+
     this.load();
     this.loadEstates();
     this.loadPlans();
@@ -854,23 +972,44 @@ export default {
       this.openMenuId = null;
     },
 
+    /* ============================================================
+       STATUS CHANGE — dual response
+       ============================================================ */
     async setStatus(s, status) {
       this.openMenuId = null;
       if (s.status === 'NotSubscribed') return;
+
       try {
         const headers = await this.getAuthHeaders();
-        const { status: httpStatus } = await axios.post(
+        const { data, status: httpStatus } = await axios.post(
           `${API}/admin/subscriptions/${s.id}/status`,
           { status },
           { headers }
         );
-        if (httpStatus === 200) {
+
+        // Super admin: applied directly
+        if (data?.direct === true || (httpStatus === 200 && !data?.queued)) {
+          s.status = status;
+          this.showSnackbar(`Subscription ${status.toLowerCase()}`, 'success');
+        }
+        // Support admin: queued
+        else if (data?.queued === true) {
+          this.showSnackbar(
+            `Request #${data.request_id} sent to super admins`,
+            'success'
+          );
+        }
+        // Fallback: optimistic update on plain 200
+        else if (httpStatus === 200) {
           s.status = status;
           this.showSnackbar(`Subscription ${status.toLowerCase()}`, 'success');
         }
       } catch (err) {
         console.warn('setStatus failed:', err.message);
-        this.showSnackbar('Could not update status', 'error');
+        this.showSnackbar(
+          err.response?.data?.error || 'Could not update status',
+          'error'
+        );
       }
     },
 
@@ -901,12 +1040,15 @@ export default {
       this.newDialog = false;
     },
 
+    /* ============================================================
+       SUBMIT NEW — dual response
+       ============================================================ */
     async submitNew() {
       if (!this.canSubmit || this.submitting) return;
       this.submitting = true;
       try {
         const headers = await this.getAuthHeaders();
-        const { status } = await axios.post(
+        const { data, status } = await axios.post(
           `${API}/admin/subscriptions`,
           {
             estate_id: this.form.estate_id,
@@ -921,7 +1063,27 @@ export default {
           },
           { headers }
         );
-        if (status === 201 || status === 200) {
+
+        // Super admin: created immediately (201)
+        if (data?.direct === true || (status === 201 && !data?.queued)) {
+          this.closeNewDialog();
+          this.$nextTick(() => {
+            this.showSnackbar('Subscription saved', 'success');
+          });
+          await this.load();
+        }
+        // Support admin: queued for approval (202)
+        else if (data?.queued === true || status === 202) {
+          this.closeNewDialog();
+          this.$nextTick(() => {
+            this.showSnackbar(
+              `Request #${data.request_id} sent to super admins`,
+              'success'
+            );
+          });
+        }
+        // Fallback on plain 200
+        else if (status === 200) {
           this.closeNewDialog();
           this.$nextTick(() => {
             this.showSnackbar('Subscription saved', 'success');
@@ -969,6 +1131,9 @@ export default {
       };
     },
 
+    /* ============================================================
+       SAVE PLAN — dual response (create or update)
+       ============================================================ */
     async savePlan() {
       if (!this.canSavePlan || this.savingPlan) return;
       this.savingPlan = true;
@@ -985,21 +1150,39 @@ export default {
           monthly_rate: Number(this.planEdit.monthly_rate),
         };
 
+        let data, status;
         if (this.planEdit.plan_id) {
-          await axios.patch(
+          ({ data, status } = await axios.patch(
             `${API}/admin/subscription-plans/${this.planEdit.plan_id}`,
             payload,
             { headers }
-          );
-          this.showSnackbar('Plan updated', 'success');
+          ));
         } else {
-          await axios.post(`${API}/admin/subscription-plans`, payload, { headers });
-          this.showSnackbar('Plan created', 'success');
+          ({ data, status } = await axios.post(
+            `${API}/admin/subscription-plans`,
+            payload,
+            { headers }
+          ));
         }
 
-        this.resetPlanForm();
-        await this.loadPlans();
-        await this.load();
+        // Super admin: applied directly
+        if (data?.direct === true || (status >= 200 && status < 300 && !data?.queued)) {
+          this.showSnackbar(
+            this.planEdit.plan_id ? 'Plan updated' : 'Plan created',
+            'success'
+          );
+          this.resetPlanForm();
+          await this.loadPlans();
+          await this.load();
+        }
+        // Support admin: queued
+        else if (data?.queued === true || status === 202) {
+          this.showSnackbar(
+            `Request #${data.request_id} sent to super admins`,
+            'success'
+          );
+          this.resetPlanForm();
+        }
       } catch (err) {
         console.error(err);
         this.showSnackbar(
@@ -1011,25 +1194,48 @@ export default {
       }
     },
 
-    async deletePlan(p) {
-      const confirmed = window.confirm(
-        `Delete "${p.plan_name}"? This cannot be undone.`
-      );
-      if (!confirmed) return;
+    /* ============================================================
+       DELETE PLAN — dialog + dual response
+       ============================================================ */
+    askDeletePlan(p) {
+      this.planToDelete = p;
+      this.deletePlanDialog = true;
+    },
+
+    async confirmDeletePlan() {
+      if (!this.planToDelete) return;
+      const p = this.planToDelete;
+      this.deletingPlan = true;
 
       try {
         const headers = await this.getAuthHeaders();
-        await axios.delete(`${API}/admin/subscription-plans/${p.plan_id}`, {
-          headers,
-        });
-        this.showSnackbar('Plan deleted', 'success');
-        await this.loadPlans();
+        const { data, status } = await axios.delete(
+          `${API}/admin/subscription-plans/${p.plan_id}`,
+          { headers }
+        );
+
+        // Super admin: deleted
+        if (data?.direct === true || (status >= 200 && status < 300 && !data?.queued)) {
+          this.showSnackbar('Plan deleted', 'success');
+          await this.loadPlans();
+        }
+        // Support admin: queued
+        else if (data?.queued === true || status === 202) {
+          this.showSnackbar(
+            `Request #${data.request_id} sent to super admins`,
+            'success'
+          );
+        }
       } catch (err) {
         console.error(err);
         this.showSnackbar(
           err.response?.data?.error || 'Could not delete plan',
           'error'
         );
+      } finally {
+        this.deletingPlan = false;
+        this.deletePlanDialog = false;
+        this.planToDelete = null;
       }
     },
 
@@ -1133,6 +1339,37 @@ export default {
 .new-estate-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 28px -8px rgba(182, 255, 0, 0.8);
+}
+
+/* ============================================================
+   SUPPORT NOTICE
+   ============================================================ */
+.support-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(155, 108, 255, 0.08) 0%, rgba(128, 81, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  border-radius: 14px;
+}
+
+.support-notice-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(128, 81, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.support-notice-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.5;
 }
 
 /* ============================================================
@@ -1652,7 +1889,7 @@ export default {
   top: 100%;
   right: 0;
   margin-top: 6px;
-  min-width: 200px;
+  min-width: 220px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -1683,6 +1920,23 @@ export default {
 .row-menu-item-success:hover { background: rgba(122, 184, 0, 0.1); color: #3f6b00; }
 .row-menu-item-warn:hover { background: rgba(245, 158, 11, 0.1); color: #b45309; }
 .row-menu-item-danger:hover { background: rgba(239, 68, 68, 0.08); color: #b91c1c; }
+
+.menu-tag {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(128, 81, 255, 0.12);
+  color: #6d28d9;
+}
+
+.menu-tag-danger {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
 
 .row-menu-divider {
   height: 1px;
@@ -1824,6 +2078,15 @@ export default {
 
 .form-hint-warn {
   color: #b45309;
+}
+
+.form-hint-info {
+  color: #6d28d9;
+  background: rgba(128, 81, 255, 0.06);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 4px;
 }
 
 .sub-dialog-footer {
@@ -1999,6 +2262,115 @@ export default {
 }
 
 /* ============================================================
+   CONFIRM DIALOG (delete plan)
+   ============================================================ */
+.confirm-card {
+  padding: 28px 26px 22px;
+  background: #ffffff;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.confirm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.confirm-icon-danger {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  box-shadow: 0 12px 26px -12px rgba(220, 38, 38, 0.7);
+}
+
+.confirm-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.confirm-text {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.confirm-plan-preview {
+  padding: 12px 14px;
+  background: #fafaff;
+  border: 1px solid #f0eef8;
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+
+.confirm-plan-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f0d24;
+}
+
+.confirm-plan-meta {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  margin-top: 3px;
+  font-weight: 600;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-btn-ghost {
+  background: #f6f7fb;
+  color: #475569;
+  border: 1px solid #eef1f6;
+}
+
+.action-btn-ghost:hover:not(:disabled) {
+  background: #eef1f6;
+}
+
+.action-btn-danger {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 12px 26px -14px rgba(220, 38, 38, 0.8);
+}
+
+.action-btn-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px -14px rgba(220, 38, 38, 1);
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1024px) {
@@ -2013,14 +2385,12 @@ export default {
   .subs-page { gap: 18px; }
   .page-title { font-size: 1.35rem; }
 
-  /* Page header stacks cleanly */
   .page-header {
     flex-direction: column;
     align-items: stretch;
     gap: 14px;
   }
 
-  /* Action buttons wrap to their own row using a 2-col grid */
   .page-actions {
     width: 100%;
     display: grid;
@@ -2028,7 +2398,6 @@ export default {
     gap: 8px;
   }
 
-  /* Top row: Manage plans + Refresh, evenly split */
   .manage-plans-btn,
   .refresh-btn {
     width: 100%;
@@ -2039,7 +2408,6 @@ export default {
     letter-spacing: 0.5px !important;
   }
 
-  /* Bottom row: New subscription spans both columns */
   .new-estate-btn {
     grid-column: 1 / -1;
     width: 100%;
@@ -2053,6 +2421,12 @@ export default {
     white-space: nowrap;
     overflow: visible;
   }
+
+  .support-notice {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .support-notice-text { font-size: 0.76rem; }
 
   .summary-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -2077,5 +2451,7 @@ export default {
   .col-plan, .col-cycle { display: none; }
 
   .form-grid { grid-template-columns: 1fr; }
+
+  .confirm-card { padding: 22px 20px 18px; }
 }
 </style>

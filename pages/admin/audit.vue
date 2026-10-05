@@ -83,7 +83,7 @@
           v-model="search"
           class="search-input"
           type="text"
-          placeholder="Search by actor, action, target, or IP"
+          placeholder="Search by email, action, entity, or details"
         />
         <button v-if="search" class="search-clear" @click="search = ''">
           <v-icon size="16">mdi-close-circle</v-icon>
@@ -92,9 +92,7 @@
 
       <select v-model="actorFilter" class="filter-select">
         <option value="">All admins</option>
-        <option v-for="a in uniqueActorList" :key="a" :value="a">
-          {{ a }}
-        </option>
+        <option v-for="a in uniqueActorList" :key="a" :value="a">{{ a }}</option>
       </select>
 
       <div class="filter-chips">
@@ -146,7 +144,7 @@
     <div v-else class="audit-card">
       <div
         v-for="log in filteredLogs"
-        :key="log.audit_id"
+        :key="log.id"
         class="audit-row"
         @click="openLog(log)"
       >
@@ -158,44 +156,96 @@
         <!-- Body -->
         <div class="audit-body">
           <div class="audit-title-row">
-            <span class="audit-actor">{{ log.actor_name || log.actor_email || 'System' }}</span>
+            <span class="audit-actor">{{ log.admin_email || 'System' }}</span>
             <span class="action-pill" :class="actionPillClass(log.action)">
-              {{ log.action }}
+              {{ prettyAction(log.action) }}
             </span>
-            <span v-if="log.target_type" class="target-tag">
-              {{ log.target_type }}
-              <span v-if="log.target_id" class="target-id">#{{ log.target_id }}</span>
-            </span>
-          </div>
-          <div class="audit-summary">{{ log.summary || log.description || '—' }}</div>
-          <div class="audit-meta">
-            <span class="meta-item">
-              <v-icon size="12">mdi-account-outline</v-icon>
-              {{ log.actor_role || 'admin' }}
-            </span>
-            <span v-if="log.estate_name" class="meta-dot">·</span>
-            <span v-if="log.estate_name" class="meta-item">
-              <v-icon size="12">mdi-office-building-outline</v-icon>
-              {{ log.estate_name }}
-            </span>
-            <span v-if="log.ip_address" class="meta-dot">·</span>
-            <span v-if="log.ip_address" class="meta-item">
-              <v-icon size="12">mdi-web</v-icon>
-              {{ log.ip_address }}
+            <span v-if="log.entity_type" class="target-tag">
+              {{ log.entity_type }}
+              <span v-if="log.entity_id" class="target-id">#{{ log.entity_id }}</span>
             </span>
           </div>
+          <div class="audit-summary">{{ summaryOf(log) }}</div>
         </div>
 
         <!-- Right -->
         <div class="audit-right">
           <div class="audit-stat">
-            <div class="stat-value-sm">{{ fmtDateTime(log.created_at) }}</div>
-            <div class="stat-label">When</div>
+            <div class="stat-value-sm">{{ relativeTime(log.created_at) }}</div>
+            <div class="stat-label">{{ fmtDateTime(log.created_at) }}</div>
           </div>
           <v-icon size="18" class="audit-chevron">mdi-chevron-right</v-icon>
         </div>
       </div>
     </div>
+
+    <!-- ============================================================
+         DETAIL MODAL
+         ============================================================ -->
+    <v-dialog v-model="detailDialog" max-width="620" content-class="audit-dialog-content">
+      <div class="detail-shell" v-if="selected">
+        <div class="detail-head">
+          <div class="detail-head-left">
+            <div class="audit-icon" :class="actionIconClass(selected.action)">
+              <v-icon size="18">{{ actionIcon(selected.action) }}</v-icon>
+            </div>
+            <div>
+              <div class="detail-title">{{ prettyAction(selected.action) }}</div>
+              <div class="detail-sub">{{ selected.admin_email || 'System' }}</div>
+            </div>
+          </div>
+          <button class="detail-close" @click="detailDialog = false">
+            <v-icon size="20">mdi-close</v-icon>
+          </button>
+        </div>
+
+        <div class="detail-body">
+          <div class="detail-row">
+            <div class="detail-key">Event ID</div>
+            <div class="detail-val mono">#{{ selected.id }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Admin</div>
+            <div class="detail-val">{{ selected.admin_email || 'System' }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Action</div>
+            <div class="detail-val">
+              <span class="action-pill" :class="actionPillClass(selected.action)">
+                {{ prettyAction(selected.action) }}
+              </span>
+              <span class="raw-action">{{ selected.action }}</span>
+            </div>
+          </div>
+          <div v-if="selected.entity_type" class="detail-row">
+            <div class="detail-key">Target</div>
+            <div class="detail-val">
+              {{ selected.entity_type }}
+              <span v-if="selected.entity_id" class="target-id">#{{ selected.entity_id }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-key">Timestamp</div>
+            <div class="detail-val">{{ fmtDateTime(selected.created_at) }}</div>
+          </div>
+
+          <div v-if="parsedDetails(selected)" class="detail-details-block">
+            <div class="detail-key detail-key-spaced">Details</div>
+            <pre class="detail-pre">{{ parsedDetails(selected) }}</pre>
+          </div>
+        </div>
+
+        <div class="detail-foot">
+          <button class="detail-btn detail-btn-ghost" @click="copyDetails">
+            <v-icon size="14" class="mr-1">mdi-content-copy</v-icon>
+            Copy JSON
+          </button>
+          <button class="detail-btn detail-btn-primary" @click="detailDialog = false">
+            Close
+          </button>
+        </div>
+      </div>
+    </v-dialog>
 
     <v-snackbar
       v-model="snackbar.show"
@@ -230,6 +280,8 @@ export default {
       search: '',
       actorFilter: '',
       actionFilter: '',
+      selected: null,
+      detailDialog: false,
       snackbar: { show: false, text: '', color: 'success' },
     };
   },
@@ -238,11 +290,13 @@ export default {
     actionOptions() {
       return [
         { label: 'All', value: '' },
-        { label: 'Create', value: 'CREATE' },
-        { label: 'Update', value: 'UPDATE' },
-        { label: 'Delete', value: 'DELETE' },
-        { label: 'Login', value: 'LOGIN' },
-        { label: 'Approve', value: 'APPROVE' },
+        { label: 'Create', value: 'create' },
+        { label: 'Update', value: 'update' },
+        { label: 'Delete', value: 'delete' },
+        { label: 'Login', value: 'login' },
+        { label: 'Request', value: 'request' },
+        { label: 'Approve', value: 'approve' },
+        { label: 'Reject', value: 'reject' },
       ];
     },
     todayCount() {
@@ -254,8 +308,7 @@ export default {
     uniqueActorList() {
       const set = new Set();
       this.logs.forEach((l) => {
-        const name = l.actor_name || l.actor_email;
-        if (name) set.add(name);
+        if (l.admin_email) set.add(l.admin_email);
       });
       return Array.from(set).sort();
     },
@@ -263,8 +316,8 @@ export default {
       return this.uniqueActorList.length;
     },
     destructiveCount() {
-      return this.logs.filter(
-        (l) => (l.action || '').toUpperCase() === 'DELETE'
+      return this.logs.filter((l) =>
+        this.actionCategory(l.action) === 'delete'
       ).length;
     },
     hasActiveFilters() {
@@ -273,21 +326,16 @@ export default {
     filteredLogs() {
       const q = this.search.trim().toLowerCase();
       return this.logs.filter((l) => {
-        if (this.actorFilter) {
-          const name = l.actor_name || l.actor_email;
-          if (name !== this.actorFilter) return false;
-        }
-        if (this.actionFilter && (l.action || '').toUpperCase() !== this.actionFilter) {
+        if (this.actorFilter && l.admin_email !== this.actorFilter) return false;
+        if (this.actionFilter && this.actionCategory(l.action) !== this.actionFilter) {
           return false;
         }
         if (!q) return true;
         return (
-          (l.actor_name || '').toLowerCase().includes(q) ||
-          (l.actor_email || '').toLowerCase().includes(q) ||
+          (l.admin_email || '').toLowerCase().includes(q) ||
           (l.action || '').toLowerCase().includes(q) ||
-          (l.target_type || '').toLowerCase().includes(q) ||
-          (l.summary || l.description || '').toLowerCase().includes(q) ||
-          (l.ip_address || '').toLowerCase().includes(q)
+          (l.entity_type || '').toLowerCase().includes(q) ||
+          (l.details || '').toLowerCase().includes(q)
         );
       });
     },
@@ -353,6 +401,123 @@ export default {
       this.actionFilter = '';
     },
 
+    /* ============================================================
+       Action classification — matches snake_case from the backend
+       ============================================================ */
+    actionCategory(action) {
+      const a = (action || '').toLowerCase();
+      if (a === 'login') return 'login';
+      if (a.startsWith('reject')) return 'reject';
+      if (a.startsWith('approve')) return 'approve';
+      if (a.startsWith('request')) return 'request';
+      if (a.startsWith('create') || a.startsWith('add')) return 'create';
+      if (a.startsWith('update') || a.startsWith('set') || a.startsWith('upsert')) return 'update';
+      if (a.startsWith('delete') || a.startsWith('remove') || a.startsWith('archive')) return 'delete';
+      return 'default';
+    },
+
+    prettyAction(action) {
+      if (!action) return '—';
+      return String(action).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    },
+
+    actionPillClass(action) {
+      const c = this.actionCategory(action);
+      const map = {
+        create:  'action-create',
+        update:  'action-update',
+        delete:  'action-delete',
+        login:   'action-login',
+        request: 'action-request',
+        approve: 'action-approve',
+        reject:  'action-reject',
+        default: 'action-default',
+      };
+      return map[c] || 'action-default';
+    },
+
+    actionIcon(action) {
+      const c = this.actionCategory(action);
+      const map = {
+        create:  'mdi-plus-circle-outline',
+        update:  'mdi-pencil-outline',
+        delete:  'mdi-trash-can-outline',
+        login:   'mdi-login-variant',
+        request: 'mdi-clock-outline',
+        approve: 'mdi-check-decagram-outline',
+        reject:  'mdi-close-circle-outline',
+        default: 'mdi-information-outline',
+      };
+      return map[c] || 'mdi-information-outline';
+    },
+
+    actionIconClass(action) {
+      const c = this.actionCategory(action);
+      const map = {
+        create:  'icon-green',
+        update:  'icon-blue',
+        delete:  'icon-red',
+        login:   'icon-purple',
+        request: 'icon-amber',
+        approve: 'icon-lime',
+        reject:  'icon-red',
+        default: 'icon-slate',
+      };
+      return map[c] || 'icon-slate';
+    },
+
+    /* ============================================================
+       Details parsing
+       ============================================================ */
+    parsedDetails(log) {
+      if (!log || !log.details) return '';
+      try {
+        const obj = typeof log.details === 'string'
+          ? JSON.parse(log.details)
+          : log.details;
+        return JSON.stringify(obj, null, 2);
+      } catch {
+        // Not JSON — return raw string
+        return String(log.details);
+      }
+    },
+
+    summaryOf(log) {
+      const d = this.parsedDetails(log);
+      if (d) {
+        // Single-line preview of the JSON
+        return d.replace(/\s+/g, ' ').slice(0, 140);
+      }
+      return `#${log.id} · ${log.action}`;
+    },
+
+    /* ============================================================
+       Modal + helpers
+       ============================================================ */
+    openLog(log) {
+      this.selected = log;
+      this.detailDialog = true;
+    },
+
+    async copyDetails() {
+      if (!this.selected) return;
+      try {
+        const payload = {
+          id: this.selected.id,
+          admin_email: this.selected.admin_email,
+          action: this.selected.action,
+          entity_type: this.selected.entity_type,
+          entity_id: this.selected.entity_id,
+          details: this.parsedDetails(this.selected),
+          created_at: this.selected.created_at,
+        };
+        await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+        this.showSnackbar('Copied to clipboard', 'success');
+      } catch {
+        this.showSnackbar('Could not copy', 'error');
+      }
+    },
+
     fmtDateTime(d) {
       if (!d) return '—';
       try {
@@ -363,38 +528,18 @@ export default {
       } catch { return '—'; }
     },
 
-    actionPillClass(action) {
-      const a = (action || '').toUpperCase();
-      if (a === 'CREATE') return 'action-create';
-      if (a === 'UPDATE') return 'action-update';
-      if (a === 'DELETE') return 'action-delete';
-      if (a === 'LOGIN') return 'action-login';
-      if (a === 'APPROVE') return 'action-approve';
-      return 'action-default';
-    },
-
-    actionIcon(action) {
-      const a = (action || '').toUpperCase();
-      if (a === 'CREATE') return 'mdi-plus-circle-outline';
-      if (a === 'UPDATE') return 'mdi-pencil-outline';
-      if (a === 'DELETE') return 'mdi-trash-can-outline';
-      if (a === 'LOGIN') return 'mdi-login-variant';
-      if (a === 'APPROVE') return 'mdi-check-decagram-outline';
-      return 'mdi-information-outline';
-    },
-
-    actionIconClass(action) {
-      const a = (action || '').toUpperCase();
-      if (a === 'CREATE') return 'icon-green';
-      if (a === 'UPDATE') return 'icon-blue';
-      if (a === 'DELETE') return 'icon-red';
-      if (a === 'LOGIN') return 'icon-purple';
-      if (a === 'APPROVE') return 'icon-lime';
-      return 'icon-slate';
-    },
-
-    openLog(log) {
-      this.$router.push(`/admin/audit-log-view/${log.audit_id}`);
+    relativeTime(d) {
+      if (!d) return '—';
+      const diff = Math.max(0, Date.now() - new Date(d).getTime());
+      const sec = Math.floor(diff / 1000);
+      if (sec < 60) return 'just now';
+      const min = Math.floor(sec / 60);
+      if (min < 60) return `${min}m ago`;
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return `${hr}h ago`;
+      const day = Math.floor(hr / 24);
+      if (day < 7) return `${day}d ago`;
+      return `${Math.floor(day / 7)}w ago`;
     },
 
     showSnackbar(text, color = 'success') {
@@ -610,7 +755,9 @@ export default {
 .action-update  { background: rgba(59, 130, 246, 0.14); color: #1d4ed8; }
 .action-delete  { background: rgba(239, 68, 68, 0.1); color: #b91c1c; }
 .action-login   { background: rgba(128, 81, 255, 0.12); color: #5b21b6; }
+.action-request { background: rgba(245, 158, 11, 0.14); color: #b45309; }
 .action-approve { background: rgba(182, 255, 0, 0.18); color: #3f6b00; }
+.action-reject  { background: rgba(239, 68, 68, 0.1); color: #b91c1c; }
 .action-default { background: #f1f5f9; color: #475569; }
 
 .target-tag {
@@ -624,18 +771,11 @@ export default {
 
 .audit-summary {
   font-size: 0.78rem; color: #64748b; line-height: 1.45;
-  margin-bottom: 5px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
   overflow: hidden;
+  word-break: break-all;
 }
-.audit-meta {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.7rem; color: #94a3b8;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-weight: 500;
-}
-.meta-item { display: inline-flex; align-items: center; gap: 3px; }
-.meta-dot { color: #cbd5e1; }
 
 .audit-right {
   display: flex; align-items: center; gap: 16px; flex-shrink: 0;
@@ -654,6 +794,144 @@ export default {
   opacity: 1; transform: translateX(2px); color: #8051ff;
 }
 
+/* ============================================================
+   DETAIL MODAL
+   ============================================================ */
+::v-deep .audit-dialog-content {
+  border-radius: 20px !important;
+  overflow: visible !important;
+  margin: 16px auto !important;
+  width: calc(100% - 32px) !important;
+  max-height: calc(100vh - 32px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.detail-shell {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #0f0d24 0%, #2b1256 100%);
+  color: #fff;
+  flex-shrink: 0;
+}
+.detail-head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.detail-title {
+  font-size: 1rem; font-weight: 800; letter-spacing: -0.3px;
+}
+.detail-sub {
+  font-size: 0.72rem; color: rgba(255, 255, 255, 0.65);
+  margin-top: 2px; word-break: break-all;
+}
+.detail-close {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none; cursor: pointer; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.detail-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+.detail-body {
+  padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.detail-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.detail-key {
+  font-size: 0.68rem; font-weight: 800; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+.detail-key-spaced { margin-bottom: 8px; display: block; }
+
+.detail-val {
+  font-size: 0.85rem; font-weight: 700; color: #0f0d24;
+  text-align: right;
+  word-break: break-all;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.detail-val.mono { font-family: ui-monospace, SFMono-Regular, monospace; }
+
+.raw-action {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.detail-details-block {
+  display: flex; flex-direction: column;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.detail-pre {
+  margin: 0;
+  padding: 14px 16px;
+  background: #0a0a14;
+  color: #c4b5fd;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  line-height: 1.6;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.detail-foot {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #f1f5f9;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.detail-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 10px 18px; border-radius: 11px;
+  border: none; font-family: inherit;
+  font-size: 0.8rem; font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.detail-btn-ghost {
+  background: transparent; color: #64748b; border: 1px solid #eef1f6;
+}
+.detail-btn-ghost:hover { background: #f1f5f9; color: #0f0d24; }
+.detail-btn-primary {
+  background: linear-gradient(135deg, #8051ff 0%, #9b6cff 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
+}
+.detail-btn-primary:hover { transform: translateY(-1px); }
+
 /* Responsive */
 @media (max-width: 900px) { .audit-stat { display: none; } }
 @media (max-width: 767px) {
@@ -670,5 +948,8 @@ export default {
   .filter-select { min-width: 0; }
   .audit-row { padding: 14px 16px; gap: 14px; }
   .audit-actor { max-width: 180px; }
+  .detail-shell { border-radius: 16px; }
+  .detail-row { flex-direction: column; gap: 6px; }
+  .detail-val { justify-content: flex-start; text-align: left; }
 }
 </style>

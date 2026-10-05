@@ -38,6 +38,18 @@
     </div>
 
     <!-- ============================================================
+         SUPPORT-ADMIN NOTICE (only when not super)
+         ============================================================ -->
+    <div v-if="isSupportAdmin" class="support-notice">
+      <div class="support-notice-icon">
+        <v-icon size="16" color="#8051FF">mdi-shield-alert-outline</v-icon>
+      </div>
+      <div class="support-notice-text">
+        Some actions (edit, remove) will be sent to a super admin for approval before they take effect.
+      </div>
+    </div>
+
+    <!-- ============================================================
          FILTERS
          ============================================================ -->
     <div class="filters-card">
@@ -105,7 +117,7 @@
       <button
         v-else
         class="empty-create-btn"
-        @click="$router.push('/admin/estates/new')"
+        @click="$router.push('/admin/new')"
       >
         <v-icon size="16" class="mr-1" color="#0A0A14">mdi-plus</v-icon>
         Create estate
@@ -177,6 +189,7 @@
               <button class="row-menu-item" @click="editEstate(e)">
                 <v-icon size="16" class="mr-2">mdi-pencil-outline</v-icon>
                 Edit
+                <span v-if="isSupportAdmin" class="menu-tag">Approval</span>
               </button>
               <button class="row-menu-item" @click="viewSubscription(e)">
                 <v-icon size="16" class="mr-2">mdi-credit-card-outline</v-icon>
@@ -189,6 +202,7 @@
               >
                 <v-icon size="16" class="mr-2">mdi-delete-outline</v-icon>
                 Remove estate
+                <span v-if="isSupportAdmin" class="menu-tag menu-tag-danger">Approval</span>
               </button>
             </div>
           </transition>
@@ -198,10 +212,71 @@
       </div>
     </div>
 
+    <!-- ============================================================
+         REMOVE CONFIRM DIALOG
+         ============================================================ -->
+    <v-dialog v-model="confirmDialog" max-width="440" persistent>
+      <div class="confirm-card">
+        <div class="confirm-icon confirm-icon-danger">
+          <v-icon size="24" color="white">mdi-delete-alert</v-icon>
+        </div>
+
+        <div class="confirm-title">
+          {{ isSupportAdmin ? 'Request estate removal?' : 'Remove this estate?' }}
+        </div>
+
+        <div class="confirm-text">
+          <span v-if="isSupportAdmin">
+            <strong>{{ estateToRemove?.estate_name }}</strong> cannot be deleted directly.
+            This will send a request to a super admin for approval.
+          </span>
+          <span v-else>
+            This will permanently delete <strong>{{ estateToRemove?.estate_name }}</strong>
+            and all households, officials, payments, and subscriptions attached to it.
+            This action cannot be undone.
+          </span>
+        </div>
+
+        <div v-if="estateToRemove" class="confirm-estate-preview">
+          <div class="confirm-estate-avatar">
+            {{ initialsOf(estateToRemove.estate_name) }}
+          </div>
+          <div class="confirm-estate-info">
+            <div class="confirm-estate-name">{{ estateToRemove.estate_name }}</div>
+            <div class="confirm-estate-urn">{{ estateToRemove.estate_urn }}</div>
+          </div>
+        </div>
+
+        <div class="confirm-actions">
+          <button
+            class="action-btn action-btn-ghost"
+            :disabled="removing"
+            @click="confirmDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="action-btn action-btn-danger"
+            :disabled="removing"
+            @click="confirmRemove"
+          >
+            <v-icon size="14" class="mr-1">
+              {{ removing ? 'mdi-loading' : (isSupportAdmin ? 'mdi-send' : 'mdi-delete') }}
+            </v-icon>
+            {{ removing
+              ? 'Working…'
+              : (isSupportAdmin ? 'Send for approval' : 'Remove permanently')
+            }}
+          </button>
+        </div>
+      </div>
+    </v-dialog>
+
+    <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
-      :timeout="3000"
+      :timeout="3500"
       top
       rounded="pill"
     >
@@ -232,11 +307,25 @@ export default {
       search: '',
       statusFilter: '',
       openMenuId: null,
+
+      adminRole: null,
+
+      // Remove confirmation
+      confirmDialog: false,
+      estateToRemove: null,
+      removing: false,
+
       snackbar: { show: false, text: '', color: 'success' },
     };
   },
 
   computed: {
+    isSupportAdmin() {
+      return this.adminRole === 'support';
+    },
+    isSuperAdmin() {
+      return this.adminRole === 'super';
+    },
     statusOptions() {
       return [
         { label: 'All', value: '' },
@@ -266,6 +355,12 @@ export default {
   },
 
   mounted() {
+    try {
+      this.adminRole = localStorage.getItem('admin_role') || null;
+    } catch (e) {
+      console.warn(e.message);
+    }
+
     this.load();
     document.addEventListener('click', this.closeMenuOnClickOutside);
   },
@@ -358,20 +453,62 @@ export default {
       this.openMenuId = null;
     },
 
-    async removeEstate(e) {
+    /* ============================================================
+       REMOVE — uses confirmation dialog + handles dual response
+       ============================================================ */
+    removeEstate(e) {
       this.openMenuId = null;
-      const ok = window.confirm(
-        `Remove "${e.estate_name}"? This cannot be undone.`
-      );
-      if (!ok) return;
+      this.estateToRemove = e;
+      this.confirmDialog = true;
+    },
+
+    async confirmRemove() {
+      if (!this.estateToRemove) return;
+      const e = this.estateToRemove;
+      this.removing = true;
+
       try {
         const headers = await this.getAuthHeaders();
-        await axios.delete(`${API}/admin/estates/${e.estate_id}`, { headers });
-        this.estates = this.estates.filter((x) => x.estate_id !== e.estate_id);
-        this.showSnackbar('Estate removed', 'success');
+        const { data, status } = await axios.delete(
+          `${API}/admin/estates/${e.estate_id}`,
+          { headers }
+        );
+
+        // ─── Super admin: real deletion ───
+        if (data?.direct === true) {
+          this.estates = this.estates.filter((x) => x.estate_id !== e.estate_id);
+          this.showSnackbar(`"${e.estate_name}" removed`, 'success');
+        }
+        // ─── Support admin: queued for approval (202) ───
+        else if (data?.queued === true) {
+          this.showSnackbar(
+            `Request #${data.request_id} sent to super admins`,
+            'success'
+          );
+        }
+        // ─── Fallback (endpoint returned 200 with no `direct` flag) ───
+        else if (status >= 200 && status < 300) {
+          this.estates = this.estates.filter((x) => x.estate_id !== e.estate_id);
+          this.showSnackbar(`"${e.estate_name}" removed`, 'success');
+        }
       } catch (err) {
-        console.warn('removeEstate failed:', err.message);
-        this.showSnackbar('Could not remove estate', 'error');
+        console.error('removeEstate failed:', err);
+        const s = err.response?.status;
+        if (s === 401 || s === 403) {
+          this.showSnackbar(
+            err.response?.data?.error || 'Not authorized for this action',
+            'error'
+          );
+        } else {
+          this.showSnackbar(
+            err.response?.data?.error || 'Could not remove estate',
+            'error'
+          );
+        }
+      } finally {
+        this.removing = false;
+        this.confirmDialog = false;
+        this.estateToRemove = null;
       }
     },
 
@@ -472,6 +609,37 @@ export default {
 .new-estate-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 28px -8px rgba(182, 255, 0, 0.8);
+}
+
+/* ============================================================
+   SUPPORT NOTICE
+   ============================================================ */
+.support-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(155, 108, 255, 0.08) 0%, rgba(128, 81, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  border-radius: 14px;
+}
+
+.support-notice-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(128, 81, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.support-notice-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.5;
 }
 
 /* ============================================================
@@ -842,7 +1010,7 @@ export default {
   top: 100%;
   right: 0;
   margin-top: 6px;
-  min-width: 200px;
+  min-width: 220px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -872,6 +1040,23 @@ export default {
 
 .row-menu-item-danger:hover {
   background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+}
+
+.menu-tag {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(128, 81, 255, 0.12);
+  color: #6d28d9;
+}
+
+.menu-tag-danger {
+  background: rgba(220, 38, 38, 0.12);
   color: #b91c1c;
 }
 
@@ -906,6 +1091,139 @@ export default {
 }
 
 /* ============================================================
+   CONFIRM DIALOG
+   ============================================================ */
+.confirm-card {
+  padding: 28px 26px 22px;
+  background: #ffffff;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.confirm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.confirm-icon-danger {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  box-shadow: 0 12px 26px -12px rgba(220, 38, 38, 0.7);
+}
+
+.confirm-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.confirm-text {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.confirm-estate-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fafaff;
+  border: 1px solid #f0eef8;
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+
+.confirm-estate-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.confirm-estate-info { min-width: 0; }
+
+.confirm-estate-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f0d24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.confirm-estate-urn {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-btn-ghost {
+  background: #f6f7fb;
+  color: #475569;
+  border: 1px solid #eef1f6;
+}
+
+.action-btn-ghost:hover:not(:disabled) {
+  background: #eef1f6;
+}
+
+.action-btn-danger {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 12px 26px -14px rgba(220, 38, 38, 0.8);
+}
+
+.action-btn-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px -14px rgba(220, 38, 38, 1);
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
@@ -920,6 +1238,12 @@ export default {
   .page-actions { width: 100%; }
   .refresh-btn, .new-estate-btn { flex: 1; }
 
+  .support-notice {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .support-notice-text { font-size: 0.76rem; }
+
   .filters-card {
     flex-direction: column;
     align-items: stretch;
@@ -931,5 +1255,7 @@ export default {
   .estate-name { max-width: 160px; }
   .estate-row { padding: 14px 16px; gap: 14px; }
   .estate-avatar { width: 42px; height: 42px; }
+
+  .confirm-card { padding: 22px 20px 18px; }
 }
 </style>

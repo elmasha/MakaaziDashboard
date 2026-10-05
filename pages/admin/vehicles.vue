@@ -43,6 +43,18 @@
     </div>
 
     <!-- ============================================================
+         SUPPORT NOTICE (only for support admins)
+         ============================================================ -->
+    <div v-if="isSupportAdmin" class="support-notice">
+      <div class="support-notice-icon">
+        <v-icon size="16" color="#8051FF">mdi-shield-alert-outline</v-icon>
+      </div>
+      <div class="support-notice-text">
+        Vehicle actions may require super-admin approval depending on platform policy.
+      </div>
+    </div>
+
+    <!-- ============================================================
          STATS ROW
          ============================================================ -->
     <div class="stats-row">
@@ -214,7 +226,7 @@
               <div class="row-menu-divider"></div>
               <button
                 class="row-menu-item row-menu-item-danger"
-                @click="remove(v)"
+                @click="askRemove(v)"
               >
                 <v-icon size="16" class="mr-2">mdi-delete-outline</v-icon>
                 Delete vehicle
@@ -235,8 +247,14 @@
             <v-icon color="white" size="20">mdi-car-plus</v-icon>
           </div>
           <div class="flex-grow-1">
-            <div class="dialog-title">Add vehicle</div>
-            <div class="dialog-sub">Create a vehicle on behalf of a household</div>
+            <div class="dialog-title">
+              {{ isSupportAdmin ? 'Request new vehicle' : 'Add vehicle' }}
+            </div>
+            <div class="dialog-sub">
+              {{ isSupportAdmin
+                ? 'This may be sent to a super admin for approval'
+                : 'Create a vehicle on behalf of a household' }}
+            </div>
           </div>
           <button class="dialog-close" @click="dialog = false">
             <v-icon size="18">mdi-close</v-icon>
@@ -302,6 +320,11 @@
             </select>
           </div>
 
+          <div v-if="isSupportAdmin" class="form-hint form-hint-info">
+            <v-icon size="14">mdi-information-outline</v-icon>
+            Submitting may send this to a super admin for approval.
+          </div>
+
           <div v-if="submitError" class="form-error">{{ submitError }}</div>
         </div>
 
@@ -309,7 +332,73 @@
           <button class="btn-ghost" @click="dialog = false" :disabled="saving">Cancel</button>
           <button class="btn-lime" @click="submit" :disabled="saving">
             <v-icon v-if="saving" size="14" class="spin mr-1">mdi-loading</v-icon>
-            {{ saving ? 'Saving…' : 'Save vehicle' }}
+            {{ saving
+              ? 'Submitting…'
+              : (isSupportAdmin ? 'Send for approval' : 'Save vehicle')
+            }}
+          </button>
+        </div>
+      </div>
+    </v-dialog>
+
+    <!-- ============================================================
+         DELETE CONFIRM DIALOG
+         ============================================================ -->
+    <v-dialog v-model="confirmDialog" max-width="440" persistent>
+      <div class="confirm-card">
+        <div class="confirm-icon confirm-icon-danger">
+          <v-icon size="24" color="white">mdi-delete-alert</v-icon>
+        </div>
+
+        <div class="confirm-title">
+          {{ isSupportAdmin ? 'Request vehicle removal?' : 'Delete this vehicle?' }}
+        </div>
+
+        <div class="confirm-text">
+          <span v-if="isSupportAdmin">
+            This will send a request to a super admin for approval.
+            The vehicle stays in place until they approve.
+          </span>
+          <span v-else>
+            <strong>{{ vehicleToRemove?.plate_number }}</strong> will be permanently
+            removed from <strong>{{ vehicleToRemove?.estate_name || 'this estate' }}</strong>.
+            This cannot be undone.
+          </span>
+        </div>
+
+        <div v-if="vehicleToRemove" class="confirm-vehicle-preview">
+          <div class="confirm-vehicle-avatar">
+            <v-icon size="20" color="white">{{ iconFor(vehicleToRemove.vehicle_type) }}</v-icon>
+          </div>
+          <div class="confirm-vehicle-info">
+            <div class="confirm-vehicle-plate">{{ vehicleToRemove.plate_number }}</div>
+            <div class="confirm-vehicle-meta">
+              {{ [vehicleToRemove.make, vehicleToRemove.model].filter(Boolean).join(' ') || '—' }}
+              · {{ vehicleToRemove.household_owner || 'Unassigned' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="confirm-actions">
+          <button
+            class="action-btn action-btn-ghost"
+            :disabled="removing"
+            @click="confirmDialog = false"
+          >
+            Cancel
+          </button>
+          <button
+            class="action-btn action-btn-danger"
+            :disabled="removing"
+            @click="confirmRemove"
+          >
+            <v-icon size="14" class="mr-1">
+              {{ removing ? 'mdi-loading' : (isSupportAdmin ? 'mdi-send' : 'mdi-delete') }}
+            </v-icon>
+            {{ removing
+              ? 'Working…'
+              : (isSupportAdmin ? 'Send for approval' : 'Delete vehicle')
+            }}
           </button>
         </div>
       </div>
@@ -318,7 +407,7 @@
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
-      :timeout="3000"
+      :timeout="3500"
       top
       rounded="pill"
     >
@@ -351,6 +440,7 @@ export default {
       vehicles: [],
       estates: [],
       households: [],
+      adminRole: null,
       stats: {
         active_vehicles: 0,
         pending_vehicles: 0,
@@ -362,11 +452,23 @@ export default {
       dialog: false,
       submitError: '',
       form: this.blankForm(),
+
+      // Delete confirmation
+      confirmDialog: false,
+      vehicleToRemove: null,
+      removing: false,
+
       snackbar: { show: false, text: '', color: 'success' },
     };
   },
 
   computed: {
+    isSupportAdmin() {
+      return this.adminRole === 'support';
+    },
+    isSuperAdmin() {
+      return this.adminRole === 'super';
+    },
     statusOptions() {
       return [
         { label: 'All', value: '' },
@@ -395,6 +497,12 @@ export default {
   },
 
   mounted() {
+    try {
+      this.adminRole = localStorage.getItem('admin_role') || null;
+    } catch (e) {
+      console.warn(e.message);
+    }
+
     this.load();
     this.fetchEstates();
     document.addEventListener('click', this.closeMenu);
@@ -485,9 +593,13 @@ export default {
       this.form = this.blankForm();
       this.households = [];
       this.submitError = '';
+      this.openMenuId = null;
       this.dialog = true;
     },
 
+    /* ============================================================
+       SUBMIT — handles both direct and queued responses
+       ============================================================ */
     async submit() {
       this.submitError = '';
       if (!this.form.estate_id || !this.form.plate_number.trim()) {
@@ -497,7 +609,7 @@ export default {
       this.saving = true;
       try {
         const headers = await this.getAuthHeaders();
-        await axios.post(
+        const { data, status } = await axios.post(
           `${API}/admin/vehicles`,
           {
             ...this.form,
@@ -505,9 +617,24 @@ export default {
           },
           { headers }
         );
-        this.dialog = false;
-        this.showSnackbar('Vehicle created');
-        this.load();
+
+        // Direct success (201 with body, no queued flag)
+        if (data?.queued === true || status === 202) {
+          this.dialog = false;
+          this.$nextTick(() => {
+            this.showSnackbar(
+              `Request #${data.request_id} sent to super admins`,
+              'success'
+            );
+          });
+        } else {
+          // Plain 200/201 — real create
+          this.dialog = false;
+          this.$nextTick(() => {
+            this.showSnackbar('Vehicle created', 'success');
+          });
+          this.load();
+        }
       } catch (err) {
         this.submitError = err.response?.data?.error || 'Failed to create';
       } finally {
@@ -515,40 +642,96 @@ export default {
       }
     },
 
+    /* ============================================================
+       APPROVE / REACTIVATE
+       ============================================================ */
     async approve(v) {
       this.openMenuId = null;
       try {
         const headers = await this.getAuthHeaders();
-        await axios.post(`${API}/admin/vehicles/${v.vehicle_id}/approve`, {}, { headers });
-        this.showSnackbar('Vehicle approved');
-        this.load();
+        const { data, status } = await axios.post(
+          `${API}/admin/vehicles/${v.vehicle_id}/approve`,
+          {},
+          { headers }
+        );
+
+        if (data?.queued === true || status === 202) {
+          this.showSnackbar(
+            `Request #${data.request_id} sent to super admins`,
+            'success'
+          );
+        } else {
+          this.showSnackbar('Vehicle approved', 'success');
+          this.load();
+        }
       } catch (err) {
         this.showSnackbar(err.response?.data?.error || 'Failed', 'error');
       }
     },
 
+    /* ============================================================
+       SUSPEND
+       ============================================================ */
     async suspend(v) {
       this.openMenuId = null;
       try {
         const headers = await this.getAuthHeaders();
-        await axios.post(`${API}/admin/vehicles/${v.vehicle_id}/suspend`, {}, { headers });
-        this.showSnackbar('Vehicle suspended');
-        this.load();
+        const { data, status } = await axios.post(
+          `${API}/admin/vehicles/${v.vehicle_id}/suspend`,
+          {},
+          { headers }
+        );
+
+        if (data?.queued === true || status === 202) {
+          this.showSnackbar(
+            `Request #${data.request_id} sent to super admins`,
+            'success'
+          );
+        } else {
+          this.showSnackbar('Vehicle suspended', 'success');
+          this.load();
+        }
       } catch (err) {
         this.showSnackbar(err.response?.data?.error || 'Failed', 'error');
       }
     },
 
-    async remove(v) {
+    /* ============================================================
+       REMOVE — confirmation dialog + dual response
+       ============================================================ */
+    askRemove(v) {
       this.openMenuId = null;
-      if (!window.confirm(`Delete vehicle ${v.plate_number}? This cannot be undone.`)) return;
+      this.vehicleToRemove = v;
+      this.confirmDialog = true;
+    },
+
+    async confirmRemove() {
+      if (!this.vehicleToRemove) return;
+      const v = this.vehicleToRemove;
+      this.removing = true;
+
       try {
         const headers = await this.getAuthHeaders();
-        await axios.delete(`${API}/admin/vehicles/${v.vehicle_id}`, { headers });
-        this.vehicles = this.vehicles.filter((x) => x.vehicle_id !== v.vehicle_id);
-        this.showSnackbar('Vehicle removed');
+        const { data, status } = await axios.delete(
+          `${API}/admin/vehicles/${v.vehicle_id}`,
+          { headers }
+        );
+
+        if (data?.queued === true || status === 202) {
+          this.showSnackbar(
+            `Request #${data.request_id} sent to super admins`,
+            'success'
+          );
+        } else {
+          this.vehicles = this.vehicles.filter((x) => x.vehicle_id !== v.vehicle_id);
+          this.showSnackbar('Vehicle removed', 'success');
+        }
       } catch (err) {
         this.showSnackbar(err.response?.data?.error || 'Failed', 'error');
+      } finally {
+        this.removing = false;
+        this.confirmDialog = false;
+        this.vehicleToRemove = null;
       }
     },
 
@@ -712,6 +895,37 @@ export default {
 .new-vehicle-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 28px -8px rgba(182, 255, 0, 0.8);
+}
+
+/* ============================================================
+   SUPPORT NOTICE
+   ============================================================ */
+.support-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(155, 108, 255, 0.08) 0%, rgba(128, 81, 255, 0.04) 100%);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  border-radius: 14px;
+}
+
+.support-notice-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(128, 81, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.support-notice-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.5;
 }
 
 /* ============================================================
@@ -967,11 +1181,9 @@ export default {
   background: #ffffff;
   border: 1px solid #e9edf3;
   border-radius: 18px;
-  /* NOTE: no overflow:hidden — it would clip the row dropdown menus */
   box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
 }
 
-/* Restore the card's rounded look by rounding the first/last row corners */
 .vehicle-row:first-child {
   border-top-left-radius: 17px;
   border-top-right-radius: 17px;
@@ -1306,6 +1518,24 @@ select.field-input {
   cursor: pointer;
 }
 
+.form-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.form-hint-info {
+  color: #6d28d9;
+  background: rgba(128, 81, 255, 0.06);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 4px;
+}
+
 .form-error {
   color: #dc2626;
   font-size: 0.78rem;
@@ -1377,6 +1607,134 @@ select.field-input {
 }
 
 /* ============================================================
+   CONFIRM DIALOG
+   ============================================================ */
+.confirm-card {
+  padding: 28px 26px 22px;
+  background: #ffffff;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.confirm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.confirm-icon-danger {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  box-shadow: 0 12px 26px -12px rgba(220, 38, 38, 0.7);
+}
+
+.confirm-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.confirm-text {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.confirm-vehicle-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fafaff;
+  border: 1px solid #f0eef8;
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+
+.confirm-vehicle-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8px 16px -8px rgba(128, 81, 255, 0.65);
+}
+
+.confirm-vehicle-info { min-width: 0; }
+
+.confirm-vehicle-plate {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f0d24;
+  letter-spacing: 0.5px;
+}
+
+.confirm-vehicle-meta {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-btn-ghost {
+  background: #f6f7fb;
+  color: #475569;
+  border: 1px solid #eef1f6;
+}
+
+.action-btn-ghost:hover:not(:disabled) {
+  background: #eef1f6;
+}
+
+.action-btn-danger {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 12px 26px -14px rgba(220, 38, 38, 0.8);
+}
+
+.action-btn-danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px -14px rgba(220, 38, 38, 1);
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
@@ -1411,6 +1769,12 @@ select.field-input {
     height: 36px;
   }
 
+  .support-notice {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .support-notice-text { font-size: 0.76rem; }
+
   .filters-card {
     flex-direction: column;
     align-items: stretch;
@@ -1431,5 +1795,7 @@ select.field-input {
   .field-row {
     grid-template-columns: 1fr;
   }
+
+  .confirm-card { padding: 22px 20px 18px; }
 }
 </style>
