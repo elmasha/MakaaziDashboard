@@ -27,9 +27,7 @@
          FULL PAGE — visible only to super admins
          ============================================================ -->
     <template v-else>
-      <!-- ============================================================
-           PAGE HEADER
-           ============================================================ -->
+      <!-- PAGE HEADER -->
       <div class="page-header">
         <div>
           <div class="page-title-row">
@@ -55,9 +53,7 @@
         </div>
       </div>
 
-      <!-- ============================================================
-           SUMMARY CARDS
-           ============================================================ -->
+      <!-- SUMMARY CARDS -->
       <div class="summary-grid">
         <div class="summary-card summary-card-highlight">
           <div class="summary-icon summary-icon-white">
@@ -100,9 +96,7 @@
         </div>
       </div>
 
-      <!-- ============================================================
-           FILTERS
-           ============================================================ -->
+      <!-- FILTERS -->
       <div class="filters-card">
         <div class="search-wrap">
           <v-icon size="18" class="search-icon">mdi-magnify</v-icon>
@@ -110,7 +104,7 @@
             v-model="search"
             class="search-input"
             type="text"
-            placeholder="Search by summary, requester, or operation"
+            placeholder="Search by summary, requester, reference, or operation"
           />
           <button v-if="search" class="search-clear" @click="search = ''">
             <v-icon size="16">mdi-close-circle</v-icon>
@@ -154,9 +148,7 @@
         </div>
       </div>
 
-      <!-- ============================================================
-           LOADING / EMPTY / LIST
-           ============================================================ -->
+      <!-- LOADING / EMPTY / LIST -->
       <div v-if="loading && !items.length" class="loading-block">
         <v-skeleton-loader
           type="list-item-avatar-three-line, list-item-avatar-three-line, list-item-avatar-three-line"
@@ -192,12 +184,17 @@
       <div v-else class="approvals-card">
         <div
           v-for="item in filteredItems"
-          :key="item.id"
-          :ref="'row-' + item.id"
+          :key="item.reference"
+          :ref="'row-' + item.reference"
           class="approval-row"
           :class="{ 'approval-row-focus': isFocused(item) }"
+          role="button"
+          tabindex="0"
+          @click="openRow(item)"
+          @keydown.enter="openRow(item)"
+          @keydown.space.prevent="openRow(item)"
         >
-          <!-- Op icon (like admin avatar) -->
+          <!-- Op icon -->
           <div class="approval-icon" :class="opClass(item.operation)">
             <v-icon size="20" color="white">{{ opIcon(item.operation) }}</v-icon>
           </div>
@@ -209,19 +206,28 @@
               <span class="op-pill" :class="opClass(item.operation)">
                 {{ prettyOp(item.operation) }}
               </span>
-              <span v-if="item.status !== 'Pending'" class="status-pill" :class="`status-${item.status.toLowerCase()}`">
+              <span
+                v-if="item.status !== 'Pending'"
+                class="status-pill"
+                :class="`status-${item.status.toLowerCase()}`"
+              >
                 {{ item.status }}
               </span>
             </div>
             <div class="approval-meta">
+              <span class="meta-item mono">
+                <v-icon size="12">mdi-pound</v-icon>
+                {{ item.reference }}
+              </span>
+              <span class="meta-dot">·</span>
               <span class="meta-item">
                 <v-icon size="12">mdi-account-outline</v-icon>
                 {{ item.requested_email }}
               </span>
               <span v-if="item.target_id" class="meta-dot">·</span>
               <span v-if="item.target_id" class="meta-item mono">
-                <v-icon size="12">mdi-pound</v-icon>
-                {{ item.target_id }}
+                <v-icon size="12">mdi-tag-outline</v-icon>
+                #{{ item.target_id }}
               </span>
               <span class="meta-dot">·</span>
               <span class="meta-item">
@@ -240,7 +246,6 @@
 
           <!-- Right: actions or status -->
           <div class="approval-right" @click.stop>
-            <!-- Pending — inline actions -->
             <template v-if="item.status === 'Pending'">
               <button
                 class="row-btn row-btn-ghost"
@@ -270,7 +275,6 @@
               </button>
             </template>
 
-            <!-- Non-pending — info button + status stamp -->
             <template v-else>
               <button
                 class="row-btn row-btn-ghost"
@@ -287,13 +291,22 @@
               </span>
             </template>
           </div>
+
+          <!-- Click-to-open chevron -->
+          <v-icon size="20" class="approval-chevron">mdi-chevron-right</v-icon>
         </div>
       </div>
 
       <!-- ============================================================
            DETAIL DIALOG
            ============================================================ -->
-      <v-dialog v-model="detailDialog" max-width="620" content-class="approval-dialog-content">
+      <v-dialog
+        v-model="detailDialog"
+        max-width="620"
+        content-class="approval-dialog-content"
+        @keydown.esc="closeDetail"
+        @click:outside="closeDetail"
+      >
         <div v-if="selected" class="detail-card">
           <div class="detail-header">
             <div class="detail-icon" :class="opClass(selected.operation)">
@@ -307,12 +320,21 @@
                 </span>
               </div>
             </div>
-            <button class="detail-close" @click="detailDialog = false">
+            <button
+              type="button"
+              class="detail-close"
+              aria-label="Close"
+              @click="closeDetail"
+            >
               <v-icon size="18">mdi-close</v-icon>
             </button>
           </div>
 
           <div class="detail-body">
+            <div class="detail-row">
+              <span class="detail-key">Reference</span>
+              <span class="detail-val mono">{{ selected.reference }}</span>
+            </div>
             <div class="detail-row">
               <span class="detail-key">Status</span>
               <span class="status-pill" :class="`status-${selected.status.toLowerCase()}`">
@@ -358,9 +380,16 @@
           </div>
 
           <div class="detail-actions">
-            <button class="detail-btn-ghost" @click="detailDialog = false">Close</button>
+            <button
+              type="button"
+              class="detail-btn-ghost"
+              @click="closeDetail"
+            >
+              Close
+            </button>
             <template v-if="selected.status === 'Pending'">
               <button
+                type="button"
                 class="detail-btn-reject"
                 :disabled="busyId === selected.id"
                 @click="openRejectFromDetail"
@@ -369,6 +398,7 @@
                 Reject
               </button>
               <button
+                type="button"
                 class="detail-btn-approve"
                 :disabled="busyId === selected.id"
                 @click="approveFromDetail"
@@ -384,9 +414,14 @@
       </v-dialog>
 
       <!-- ============================================================
-           REJECT DIALOG
+           REJECT DIALOG  (no longer `persistent` — ESC & outside-click work)
            ============================================================ -->
-      <v-dialog v-model="rejectDialog" max-width="440" persistent>
+      <v-dialog
+        v-model="rejectDialog"
+        max-width="440"
+        @keydown.esc="closeReject"
+        @click:outside="closeReject"
+      >
         <div class="reject-card">
           <div class="reject-header">
             <div class="reject-icon">
@@ -405,6 +440,7 @@
               {{ prettyOp(currentReject.operation) }}
             </span>
             <div class="reject-preview-summary">{{ currentReject.summary }}</div>
+            <div class="reject-preview-ref">{{ currentReject.reference }}</div>
           </div>
 
           <label class="reject-label">Reason (optional)</label>
@@ -417,13 +453,15 @@
 
           <div class="reject-actions">
             <button
+              type="button"
               class="reject-btn-cancel"
               :disabled="rejecting"
-              @click="rejectDialog = false"
+              @click="closeReject"
             >
               Cancel
             </button>
             <button
+              type="button"
               class="reject-btn-proceed"
               :disabled="rejecting"
               @click="confirmReject"
@@ -462,7 +500,7 @@ import axios from 'axios';
 const API = 'https://makaaziserver22.up.railway.app/api';
 
 export default {
-  name: 'AdminApprovals',
+  name: 'AdminApprove',
   layout: 'admin',
 
   data() {
@@ -497,7 +535,7 @@ export default {
       currentReject: null,
 
       // Deep-link focus
-      focusedId: null,
+      focusedRef: null,
 
       snackbar: { show: false, text: '', color: 'success' },
     };
@@ -529,7 +567,8 @@ export default {
           (i.summary || '').toLowerCase().includes(q) ||
           (i.requested_email || '').toLowerCase().includes(q) ||
           (i.operation || '').toLowerCase().includes(q) ||
-          (i.reviewed_email || '').toLowerCase().includes(q)
+          (i.reviewed_email || '').toLowerCase().includes(q) ||
+          (i.reference || '').toLowerCase().includes(q)
         );
       });
     },
@@ -539,12 +578,12 @@ export default {
     try {
       this.adminRole = localStorage.getItem('admin_role') || null;
     } catch (e) {
-      console.warn('[Approvals] localStorage read failed:', e.message);
+      console.warn('[Approve] localStorage read failed:', e.message);
     }
     this.roleReady = true;
 
     if (this.isSuperAdmin) {
-      this.focusedId = this.$route.params.id ? Number(this.$route.params.id) : null;
+      this.focusedRef = this.$route.params.ref || null;
       this.fetchQueue();
     } else {
       this.loading = false;
@@ -559,15 +598,11 @@ export default {
         const token = await user.getIdToken();
         return { Authorization: `Bearer ${token}` };
       } catch (e) {
-        console.warn('[Approvals] getIdToken failed:', e.message);
+        console.warn('[Approve] getIdToken failed:', e.message);
         return {};
       }
     },
 
-    /**
-     * Fetch the full queue (all statuses) so the summary cards stay
-     * accurate regardless of which tab is active.
-     */
     async fetchQueue() {
       this.loading = true;
       try {
@@ -583,7 +618,7 @@ export default {
           this.$router.push('/admin/login');
           return;
         }
-        console.warn('[Approvals] fetch failed:', err.message);
+        console.warn('[Approve] fetch failed:', err.message);
         this.items = [];
         this.showSnackbar(err.response?.data?.error || 'Failed to load queue', 'error');
       } finally {
@@ -593,8 +628,8 @@ export default {
     },
 
     scrollToFocused() {
-      if (!this.focusedId) return;
-      const el = this.$refs['row-' + this.focusedId];
+      if (!this.focusedRef) return;
+      const el = this.$refs['row-' + this.focusedRef];
       const node = Array.isArray(el) ? el[0] : el;
       const target = node?.$el || node;
       if (target?.scrollIntoView) {
@@ -614,31 +649,59 @@ export default {
     },
 
     isFocused(item) {
-      return this.focusedId && Number(item.id) === this.focusedId;
+      return this.focusedRef && item.reference === this.focusedRef;
     },
 
     /* ============================================================
-       DETAIL MODAL
+       ROW CLICK → open the single-request page
+       ============================================================ */
+    openRow(item) {
+      if (!item?.reference) return;
+      const path = `/admin/approve/${item.reference}`;
+      if (this.$route.path === path) return;
+
+      const result = this.$router.push(path);
+      if (result && typeof result.catch === 'function') {
+        result.catch((err) => {
+          if (err && err.name !== 'NavigationDuplicated') {
+            console.error('Nav error:', err);
+          }
+        });
+      }
+    },
+
+    /* ============================================================
+       DIALOG OPEN / CLOSE — all close paths converge here
        ============================================================ */
     openDetails(item) {
       this.selected = item;
       this.detailDialog = true;
     },
 
-    async approveFromDetail() {
-      if (!this.selected) return;
-      const item = this.selected;
-      await this.approve(item);
-      if (!this.items.find((i) => i.id === item.id)) {
-        this.detailDialog = false;
-      }
+    closeDetail() {
+      // Flip the model first so Vuetify starts the leave transition
+      this.detailDialog = false;
+      // Then clear the payload after the transition has had time to render
+      this.$nextTick(() => {
+        setTimeout(() => { this.selected = null; }, 250);
+      });
     },
 
-    openRejectFromDetail() {
-      if (!this.selected) return;
-      const item = this.selected;
-      this.detailDialog = false;
-      this.$nextTick(() => this.openReject(item));
+    openReject(item) {
+      this.currentReject = item;
+      this.rejectReason = '';
+      this.rejectDialog = true;
+    },
+
+    closeReject() {
+      if (this.rejecting) return; // don't allow closing mid-submit
+      this.rejectDialog = false;
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.currentReject = null;
+          this.rejectReason = '';
+        }, 250);
+      });
     },
 
     /* ============================================================
@@ -653,29 +716,46 @@ export default {
         this.items = this.items.filter((i) => i.id !== item.id);
         this.showSnackbar(`Approved · ${this.prettyOp(item.operation)}`, 'success');
 
-        if (this.focusedId === item.id) this.focusedId = null;
+        if (this.focusedRef === item.reference) this.focusedRef = null;
 
         if (this.$nuxt && this.$nuxt.$emit) {
           this.$nuxt.$emit('approvals-changed');
         }
+        return true;
       } catch (err) {
-        console.error('[Approvals] approve failed:', err);
+        console.error('[Approve] approve failed:', err);
         const msg = err.response?.data?.error || 'Approve failed';
         this.showSnackbar(msg, 'error');
+        return false;
       } finally {
         this.busyId = null;
       }
     },
 
+    async approveFromDetail() {
+      if (!this.selected) return;
+      const item = this.selected;
+      const ok = await this.approve(item);
+      // Close regardless of success so the user isn't stuck with a stale modal
+      this.closeDetail();
+    },
+
+    openRejectFromDetail() {
+      if (!this.selected) return;
+      const item = this.selected;
+      // Close the detail dialog first, then open reject after the leave transition
+      this.detailDialog = false;
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.selected = null;
+          this.openReject(item);
+        }, 250);
+      });
+    },
+
     /* ============================================================
        REJECT
        ============================================================ */
-    openReject(item) {
-      this.currentReject = item;
-      this.rejectReason = '';
-      this.rejectDialog = true;
-    },
-
     async confirmReject() {
       if (!this.currentReject) return;
       this.rejecting = true;
@@ -690,17 +770,18 @@ export default {
         this.items = this.items.filter((i) => i.id !== this.currentReject.id);
         this.showSnackbar('Request rejected', 'success');
 
-        if (this.focusedId === this.currentReject.id) this.focusedId = null;
+        if (this.focusedRef === this.currentReject.reference) this.focusedRef = null;
 
-        this.rejectDialog = false;
+        // Close via the standard close path so state is cleaned up consistently
+        this.rejecting = false;
+        this.closeReject();
 
         if (this.$nuxt && this.$nuxt.$emit) {
           this.$nuxt.$emit('approvals-changed');
         }
       } catch (err) {
-        console.error('[Approvals] reject failed:', err);
+        console.error('[Approve] reject failed:', err);
         this.showSnackbar(err.response?.data?.error || 'Reject failed', 'error');
-      } finally {
         this.rejecting = false;
       }
     },
@@ -1023,11 +1104,10 @@ export default {
 }
 
 /* ============================================================
-   LIST — row based, like admins
+   LIST — row based
    ============================================================ */
 .approvals-card {
   background: #ffffff; border: 1px solid #e9edf3; border-radius: 18px;
-  /* no overflow:hidden so a focus glow is not clipped */
   box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
 }
 
@@ -1048,9 +1128,15 @@ export default {
   padding: 14px 22px;
   border-bottom: 1px solid #f1f5f9;
   transition: background 0.15s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 .approval-row:last-child { border-bottom: none; }
 .approval-row:hover { background: #fafbff; }
+
+.approval-row:focus-visible {
+  outline: 2px solid #8051ff;
+  outline-offset: -2px;
+}
 
 .approval-row-focus {
   border-color: #8051ff;
@@ -1122,7 +1208,6 @@ export default {
 .op-pill.op-admin,
 .op-pill.op-billing,
 .op-pill.op-official {
-  /* override gradient bg from .op-* for the pill variant */
   background: transparent;
   box-shadow: none;
 }
@@ -1201,6 +1286,19 @@ export default {
 }
 .stamp-approved { background: rgba(122, 184, 0, 0.14); color: #3f6b00; }
 .stamp-rejected { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
+
+/* Chevron — the "click to open" affordance */
+.approval-chevron {
+  flex-shrink: 0;
+  color: #cbd5e1;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease;
+}
+.approval-row:hover .approval-chevron {
+  opacity: 1;
+  transform: translateX(2px);
+  color: #8051ff;
+}
 
 /* ============================================================
    DETAIL MODAL
@@ -1371,6 +1469,14 @@ export default {
 .reject-preview-summary {
   font-size: 0.82rem; font-weight: 700; color: #0f0d24;
   line-height: 1.4; margin-top: 8px;
+}
+.reject-preview-ref {
+  font-size: 0.7rem;
+  color: #8051ff;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-top: 6px;
 }
 .reject-label {
   font-size: 0.68rem; font-weight: 800; color: #475569;
