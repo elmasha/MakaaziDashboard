@@ -132,30 +132,67 @@
             </span>
           </div>
 
-          <div class="diff-table">
-            <div class="diff-row diff-row-head">
-              <div class="diff-cell diff-cell-label">Field</div>
-              <div class="diff-cell diff-cell-val">Current</div>
-              <div class="diff-cell diff-cell-val">Requested</div>
-            </div>
+          <!-- Nothing actually changed -->
+          <div v-if="changedCount === 0" class="diff-hint">
+            No fields are actually different from the current values.
+          </div>
 
+          <!-- Only the changed fields -->
+          <div v-else class="change-list">
             <div
-              v-for="row in diffRows"
+              v-for="row in changedRows"
               :key="row.key"
-              class="diff-row"
-              :class="{ 'diff-row-changed': row.changed }"
+              class="change-card"
             >
-              <div class="diff-cell diff-cell-label">{{ row.label }}</div>
-              <div class="diff-cell diff-cell-val diff-old">
-                <span v-if="row.current == null || row.current === ''" class="diff-empty">— empty —</span>
-                <span v-else>{{ formatValue(row.current, row.key) }}</span>
+              <div class="change-field">
+                {{ row.label }}
+                <span class="change-tag change-tag-changed">changed</span>
               </div>
-              <div class="diff-cell diff-cell-val diff-new">
-                <span v-if="row.requested == null || row.requested === ''" class="diff-empty">— empty —</span>
-                <span v-else>{{ formatValue(row.requested, row.key) }}</span>
+              <div class="change-values">
+                <div class="change-side change-old">
+                  <div class="change-side-label">Before</div>
+                  <div class="change-side-value">
+                    <span v-if="row.current == null || row.current === ''" class="diff-empty">— empty —</span>
+                    <span v-else>{{ formatValue(row.current, row.key) }}</span>
+                  </div>
+                </div>
+                <div class="change-arrow">
+                  <v-icon size="18" color="#94a3b8">mdi-arrow-right</v-icon>
+                </div>
+                <div class="change-side change-new">
+                  <div class="change-side-label">After</div>
+                  <div class="change-side-value">
+                    <span v-if="row.requested == null || row.requested === ''" class="diff-empty">— empty —</span>
+                    <span v-else>{{ formatValue(row.requested, row.key) }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Unchanged fields sent in the payload — collapsed -->
+          <details v-if="unchangedRows.length" class="unchanged-details">
+            <summary class="unchanged-summary">
+              <v-icon size="12" class="mr-1">mdi-chevron-right</v-icon>
+              {{ unchangedRows.length }} other field{{ unchangedRows.length === 1 ? '' : 's' }} in payload (unchanged)
+            </summary>
+            <div class="change-list">
+              <div
+                v-for="row in unchangedRows"
+                :key="row.key"
+                class="change-card change-card-same"
+              >
+                <div class="change-field">
+                  {{ row.label }}
+                  <span class="change-tag change-tag-same">no change</span>
+                </div>
+                <div class="change-side-value">
+                  <span v-if="row.requested == null || row.requested === ''" class="diff-empty">— empty —</span>
+                  <span v-else>{{ formatValue(row.requested, row.key) }}</span>
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
 
         <!-- CREATE: everything is new -->
@@ -165,19 +202,14 @@
             What will be created
           </div>
 
-          <div class="diff-table">
-            <div class="diff-row diff-row-head">
-              <div class="diff-cell diff-cell-label">Field</div>
-              <div class="diff-cell diff-cell-val">Value</div>
-            </div>
-
+          <div class="change-list">
             <div
               v-for="row in diffRows"
               :key="row.key"
-              class="diff-row diff-row-new"
+              class="change-card change-card-new"
             >
-              <div class="diff-cell diff-cell-label">{{ row.label }}</div>
-              <div class="diff-cell diff-cell-val diff-new">
+              <div class="change-field">{{ row.label }}</div>
+              <div class="change-side-value change-new-value">
                 <span v-if="row.requested == null || row.requested === ''" class="diff-empty">— empty —</span>
                 <span v-else>{{ formatValue(row.requested, row.key) }}</span>
               </div>
@@ -192,21 +224,21 @@
             This will be permanently deleted
           </div>
 
-          <div class="diff-table" v-if="request.target_id">
-            <div class="diff-row">
-              <div class="diff-cell diff-cell-label">Target</div>
-              <div class="diff-cell diff-cell-val mono">
+          <div class="warn-card">
+            <div v-if="request.target_id" class="warn-row">
+              <span class="warn-label">Target</span>
+              <span class="warn-value mono">
                 {{ request.target_table }} #{{ request.target_id }}
-              </div>
+              </span>
             </div>
-            <div v-if="targetName" class="diff-row">
-              <div class="diff-cell diff-cell-label">Name</div>
-              <div class="diff-cell diff-cell-val">{{ targetName }}</div>
+            <div v-if="targetName" class="warn-row">
+              <span class="warn-label">Name</span>
+              <span class="warn-value">{{ targetName }}</span>
             </div>
           </div>
         </div>
 
-        <!-- FALLBACK: unknown operation type, just show the payload below -->
+        <!-- FALLBACK: unknown operation type -->
         <div v-else class="diff-block diff-block-info">
           <div class="diff-head">
             <v-icon size="14" class="mr-1">mdi-information-outline</v-icon>
@@ -504,8 +536,16 @@ export default {
       return rows;
     },
 
+    changedRows() {
+      return this.diffRows.filter((r) => r.changed);
+    },
+
+    unchangedRows() {
+      return this.diffRows.filter((r) => !r.changed);
+    },
+
     changedCount() {
-      return this.diffRows.filter((r) => r.changed).length;
+      return this.changedRows.length;
     },
 
     /* ---- Best-effort friendly name for the target entity ----- */
@@ -956,7 +996,7 @@ export default {
 }
 
 /* ============================================================
-   DIFF BLOCK
+   DIFF BLOCK — simplified before/after cards
    ============================================================ */
 .diff-block {
   padding: 20px 24px 0;
@@ -969,92 +1009,78 @@ export default {
   margin-bottom: 12px;
 }
 .diff-count {
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.16);
-  color: #92400e;
-  font-size: 0.6rem;
-  letter-spacing: 0.4px;
+  margin-left: 8px; padding: 2px 8px; border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16); color: #92400e;
+  font-size: 0.6rem; letter-spacing: 0.4px;
 }
 
-.diff-table {
+.change-list {
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.change-card {
   border: 1px solid #e9edf3;
+  border-left: 3px solid #f59e0b;
   border-radius: 14px;
-  overflow: hidden;
   background: #ffffff;
+  padding: 14px 16px;
+}
+.change-card-same {
+  border-left-color: #e2e8f0;
+  background: #fbfcfe;
+}
+.change-card-new {
+  border-left-color: #22c55e;
 }
 
-.diff-row {
+.change-field {
+  font-size: 0.7rem; font-weight: 800; color: #475569;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.change-tag {
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 0.55rem; letter-spacing: 0.5px;
+}
+.change-tag-changed { background: #fef3c7; color: #92400e; }
+.change-tag-same    { background: #f1f5f9; color: #94a3b8; }
+
+.change-values {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1.2fr;
-  align-items: stretch;
-  border-bottom: 1px solid #f1f5f9;
+  grid-template-columns: 1fr 28px 1fr;
+  gap: 6px;
+  align-items: center;
 }
-.diff-row:last-child { border-bottom: none; }
-
-/* Update ops with a "changed" state: subtle amber tint */
-.diff-row-changed {
-  background: #fffbeb;
+.change-side { min-width: 0; }
+.change-side-label {
+  font-size: 0.58rem; font-weight: 800; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  margin-bottom: 4px;
 }
-.diff-row-new {
-  background: rgba(122, 184, 0, 0.06);
-}
-
-.diff-row-head {
-  background: #f8fafc;
-  font-size: 0.62rem;
-  font-weight: 800;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  border-bottom: 1px solid #e2e8f0;
-}
-.diff-row-head .diff-cell {
-  padding: 10px 14px;
-}
-
-.diff-cell {
-  padding: 11px 14px;
-  min-width: 0;
-  word-break: break-word;
-  font-size: 0.82rem;
-}
-.diff-cell + .diff-cell {
-  border-left: 1px solid #f1f5f9;
-}
-
-.diff-cell-label {
-  font-weight: 700;
-  color: #475569;
-  font-size: 0.72rem;
-  letter-spacing: 0.2px;
-  text-transform: uppercase;
-}
-
-.diff-cell-val {
-  font-weight: 600;
-  color: #0f0d24;
+.change-side-value {
+  font-size: 0.85rem; font-weight: 700; color: #0f0d24;
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.78rem;
+  word-break: break-word; line-height: 1.4;
 }
-
-.diff-old {
+.change-old .change-side-value {
   color: #94a3b8;
-}
-.diff-row-changed .diff-old {
-  color: #b45309;
   text-decoration: line-through;
-  text-decoration-color: rgba(180, 83, 9, 0.4);
+  text-decoration-color: rgba(148, 163, 184, 0.5);
 }
-
-.diff-new {
-  color: #0f0d24;
+.change-card-same .change-old .change-side-value {
+  text-decoration: none;
 }
-.diff-row-changed .diff-new,
-.diff-row-new .diff-new {
-  color: #15803d;
-  font-weight: 800;
+.change-new .change-side-value {
+  color: #15803d; font-weight: 800;
+}
+.change-new-value {
+  color: #15803d; font-weight: 800;
+  font-size: 0.88rem;
+}
+.change-arrow {
+  display: flex; align-items: center; justify-content: center;
+  padding-top: 18px;
 }
 
 .diff-empty {
@@ -1065,14 +1091,47 @@ export default {
   font-size: 0.74rem;
 }
 
+/* Unchanged fields toggle */
+.unchanged-details {
+  margin-top: 12px;
+}
+.unchanged-summary {
+  display: inline-flex; align-items: center;
+  cursor: pointer; user-select: none;
+  font-size: 0.68rem; font-weight: 800; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.7px;
+  list-style: none;
+  margin-bottom: 10px;
+}
+.unchanged-summary::-webkit-details-marker { display: none; }
+.unchanged-summary:hover { color: #64748b; }
+.unchanged-details[open] .unchanged-summary .v-icon {
+  transform: rotate(90deg);
+}
+
 /* Delete variant */
 .diff-block-warn .diff-head { color: #b91c1c; }
-.diff-block-warn .diff-table {
-  border-color: #fecaca;
+.warn-card {
+  border: 1px solid #fecaca;
   background: #fef2f2;
+  border-radius: 14px;
+  padding: 4px 16px;
 }
-.diff-block-warn .diff-cell-label { color: #991b1b; }
-.diff-block-warn .diff-cell-val { color: #7f1d1d; }
+.warn-row {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #fee2e2;
+}
+.warn-row:last-child { border-bottom: none; }
+.warn-label {
+  font-size: 0.62rem; font-weight: 800; color: #991b1b;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  min-width: 70px;
+}
+.warn-value {
+  font-size: 0.85rem; font-weight: 700; color: #7f1d1d;
+  word-break: break-word;
+}
 
 /* Unknown operation */
 .diff-block-info .diff-head { color: #475569; }
@@ -1299,29 +1358,16 @@ export default {
   }
 
   .diff-block { padding: 16px 20px 0; }
-  .diff-row,
-  .diff-row-head {
+
+  .change-values {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
-  .diff-row-head { display: none; }
-  .diff-cell {
-    padding: 10px 14px;
+  .change-arrow {
+    padding-top: 0;
+    transform: rotate(90deg);
   }
-  .diff-cell + .diff-cell {
-    border-left: none;
-    border-top: 1px solid #f1f5f9;
-  }
-  .diff-cell-val::before {
-    content: attr(data-label);
-    display: block;
-    font-size: 0.58rem;
-    font-weight: 800;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 3px;
-    font-family: inherit;
-  }
+  .change-card { padding: 12px 14px; }
 
   .payload-block { margin: 16px 20px 0; }
   .payload-pre { padding: 14px 14px; font-size: 0.72rem; }

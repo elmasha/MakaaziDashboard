@@ -156,6 +156,9 @@
               <button class="field-toggle" @click="showSecrets.sms = !showSecrets.sms">
                 <v-icon size="14">{{ showSecrets.sms ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}</v-icon>
               </button>
+              <div class="field-hint">
+                Leave blank to keep the current key. Enter a new value to replace it.
+              </div>
             </div>
             <div class="field field-full">
               <label class="field-label">API base URL</label>
@@ -187,10 +190,14 @@
                 v-model="form.sms_template_payment"
                 class="field-input field-textarea"
                 rows="3"
-                :placeholder="'Hi {{name}}, we have received your payment of KES {{amount}} for {{estate}}. Receipt: {{receipt}}. Asante! - Makaazi'"
+                :placeholder="'Hi {{name}}, we have received your payment of KES {{amount}} for {{estate}}. Receipt: {{receipt}}. {{balance_line}} - Makaazi'"
               ></textarea>
               <div class="field-hint" v-pre>
-                Available tokens: <code>{{name}}</code> <code>{{amount}}</code> <code>{{estate}}</code> <code>{{receipt}}</code>
+                Available tokens: <code>{{name}}</code> <code>{{amount}}</code> <code>{{estate}}</code> <code>{{receipt}}</code> <code>{{balance_line}}</code>
+              </div>
+              <div class="field-hint">
+                <code>{{balance_line}}</code> renders "You are fully paid up." or
+                "Outstanding: KES X." Leave it out if you don't want that sentence.
               </div>
             </div>
           </div>
@@ -249,6 +256,9 @@
               <button class="field-toggle" @click="showSecrets.email = !showSecrets.email">
                 <v-icon size="14">{{ showSecrets.email ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}</v-icon>
               </button>
+              <div class="field-hint">
+                Leave blank to keep the current password.
+              </div>
             </div>
             <div class="field">
               <label class="field-label">From name</label>
@@ -393,6 +403,9 @@
                 rows="4"
                 :placeholder="'196.201.214.0/24' + String.fromCharCode(10) + '41.90.64.10'"
               ></textarea>
+              <div class="field-hint field-hint-warn">
+                ⚠️ Enabling this with the wrong range will lock you out. Add your current IP first.
+              </div>
             </div>
           </div>
         </div>
@@ -547,6 +560,31 @@ const DEFAULT_FORM = () => ({
   max_failed_logins: 5,
 });
 
+// Which form fields belong to which sidebar section
+const SECTION_FIELDS = {
+  platform: [
+    'platform_name', 'support_email', 'support_phone',
+    'currency', 'timezone', 'date_format',
+  ],
+  sms: [
+    'sms_provider', 'sms_sender_id', 'sms_partner_id', 'sms_api_key',
+    'sms_api_base', 'sms_template_approval', 'sms_template_payment',
+  ],
+  email: [
+    'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass',
+    'smtp_encryption', 'mail_from_name', 'mail_from_email',
+  ],
+  fees: [
+    'default_service_fee', 'default_security_levy', 'default_garbage_fee',
+    'late_penalty_pct', 'grace_period_days', 'reminder_lead_days',
+  ],
+  security: [
+    'require_mfa_super', 'require_mfa_all', 'ip_allowlist_enabled',
+    'ip_allowlist', 'session_idle_minutes', 'max_failed_logins',
+  ],
+  danger: [],
+};
+
 export default {
   name: 'AdminSettings',
   layout: 'admin',
@@ -576,7 +614,7 @@ export default {
         confirmText: '',
         input: '',
       },
-      balanceInfo: null, // { ok: boolean, text: string }
+      balanceInfo: null,
       snackbar: { show: false, text: '', color: 'success' },
     };
   },
@@ -658,25 +696,42 @@ export default {
           this.showSnackbar('Access denied', 'error');
         } else {
           console.warn('Settings save failed:', err.message);
-          this.showSnackbar('Could not save settings', 'error');
+          this.showSnackbar(
+            err.response?.data?.error || 'Could not save settings',
+            'error'
+          );
         }
       } finally {
         this.saving = false;
       }
     },
 
-    sectionDirty() {
-      return false;
+    sectionDirty(key) {
+      const fields = SECTION_FIELDS[key] || [];
+      return fields.some(
+        (f) => JSON.stringify(this.form[f]) !== JSON.stringify(this.original[f])
+      );
     },
 
     async testSms() {
       try {
         const headers = await this.getAuthHeaders();
-        await axios.post(`${API}/admin/settings/test-sms`, {}, { headers });
-        this.showSnackbar('Test SMS dispatched', 'success');
+        const { data } = await axios.post(
+          `${API}/admin/settings/test-sms`,
+          {},
+          { headers }
+        );
+        if (data?.ok) {
+          this.showSnackbar(`Test SMS sent to ${data.to}`, 'success');
+        } else {
+          this.showSnackbar(data?.error || 'Test SMS failed', 'error');
+        }
       } catch (err) {
         console.warn('Test SMS failed:', err.message);
-        this.showSnackbar('Test SMS failed', 'error');
+        this.showSnackbar(
+          err.response?.data?.error || 'Test SMS failed',
+          'error'
+        );
       }
     },
 
@@ -687,7 +742,10 @@ export default {
         this.showSnackbar('Test email dispatched', 'success');
       } catch (err) {
         console.warn('Test email failed:', err.message);
-        this.showSnackbar('Test email failed', 'error');
+        this.showSnackbar(
+          err.response?.data?.error || 'Test email failed',
+          'error'
+        );
       }
     },
 
@@ -746,15 +804,22 @@ export default {
     },
 
     async executeDanger() {
-      const { action } = this.dangerDialog;
+      const { action, input } = this.dangerDialog;
       try {
         const headers = await this.getAuthHeaders();
-        await axios.post(`${API}/admin/settings/danger`, { action }, { headers });
+        await axios.post(
+          `${API}/admin/settings/danger`,
+          { action, confirm: input },
+          { headers }
+        );
         this.dangerDialog.show = false;
         this.showSnackbar('Operation completed', 'success');
       } catch (err) {
         console.warn('Danger action failed:', err.message);
-        this.showSnackbar('Operation failed', 'error');
+        this.showSnackbar(
+          err.response?.data?.error || 'Operation failed',
+          'error'
+        );
       }
     },
 
@@ -911,9 +976,14 @@ export default {
 .field-hint {
   font-size: 0.72rem; color: #94a3b8; margin-top: 2px;
 }
+.field-hint-warn {
+  color: #b45309;
+  font-weight: 700;
+}
 .field-hint code {
   background: #f1f5f9; padding: 1px 6px; border-radius: 4px;
   font-size: 0.7rem; color: #8051ff; font-weight: 700;
+  margin-right: 2px;
 }
 .field-toggle {
   position: absolute; right: 10px; top: 32px;

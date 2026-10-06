@@ -1,8 +1,6 @@
 <template>
   <div class="admins-page">
-    <!-- ============================================================
-         ACCESS GATE — only super admins may manage other admins
-         ============================================================ -->
+    <!-- ACCESS GATE -->
     <div v-if="!roleReady" class="gate-state">
       <v-progress-circular indeterminate color="#8051FF" size="42" />
       <div class="gate-sub">Checking access…</div>
@@ -23,9 +21,7 @@
       </button>
     </div>
 
-    <!-- ============================================================
-         FULL PAGE — visible only to super admins
-         ============================================================ -->
+    <!-- FULL PAGE -->
     <template v-else>
       <!-- PAGE HEADER -->
       <div class="page-header">
@@ -193,11 +189,24 @@
                 Disabled
               </span>
               <span v-if="isSelf(admin)" class="self-tag">You</span>
+              <span
+                v-if="!admin.phone_number"
+                class="no-phone-tag"
+                title="No phone number on file — won't receive SMS notifications"
+              >
+                <v-icon size="11">mdi-message-off-outline</v-icon>
+                No SMS
+              </span>
             </div>
             <div class="admin-meta">
               <span class="meta-item">
                 <v-icon size="12">mdi-email-outline</v-icon>
                 {{ admin.email }}
+              </span>
+              <span v-if="admin.phone_number" class="meta-dot">·</span>
+              <span v-if="admin.phone_number" class="meta-item">
+                <v-icon size="12">mdi-phone-outline</v-icon>
+                {{ admin.phone_number }}
               </span>
               <span v-if="admin.last_login_at" class="meta-dot">·</span>
               <span v-if="admin.last_login_at" class="meta-item">
@@ -352,12 +361,38 @@
             </div>
 
             <div v-if="editDialog.selectedUid" class="picker-role">
+              <label class="field-label">Email</label>
+              <input
+                v-model="editDialog.form.email"
+                class="field-input"
+                type="email"
+                placeholder="name@example.com"
+              />
+              <div v-if="!pickedUserEmail" class="form-hint form-hint-warn">
+                This user has no email on file. Enter one to continue.
+              </div>
+            </div>
+
+            <div v-if="editDialog.selectedUid" class="picker-role">
               <label class="field-label">Assign role</label>
               <select v-model="editDialog.form.role" class="field-input">
                 <option value="super">Super admin</option>
                 <option value="support">Support</option>
                 <option value="readonly">Read-only</option>
               </select>
+            </div>
+
+            <div v-if="editDialog.selectedUid" class="picker-role">
+              <label class="field-label">Phone number (for SMS alerts)</label>
+              <input
+                v-model="editDialog.form.phone_number"
+                class="field-input"
+                type="tel"
+                placeholder="254712345678"
+              />
+              <div class="form-hint">
+                Required for SMS notifications on approval/rejection.
+              </div>
             </div>
           </div>
 
@@ -378,6 +413,15 @@
                 class="field-input"
                 type="text"
                 placeholder="Jane Doe"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Phone number (for SMS alerts)</label>
+              <input
+                v-model="editDialog.form.phone_number"
+                class="field-input"
+                type="tel"
+                placeholder="254712345678"
               />
             </div>
             <div class="field">
@@ -406,6 +450,15 @@
                 v-model="editDialog.form.full_name"
                 class="field-input"
                 type="text"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Phone number (for SMS alerts)</label>
+              <input
+                v-model="editDialog.form.phone_number"
+                class="field-input"
+                type="tel"
+                placeholder="254712345678"
               />
             </div>
             <div class="field">
@@ -487,11 +540,9 @@ export default {
 
   data() {
     return {
-      // ── Access gate ──
       adminRole: null,
       roleReady: false,
 
-      // ── Page state ──
       loading: false,
       admins: [],
       eligibleUsers: [],
@@ -511,6 +562,7 @@ export default {
         form: {
           email: '',
           full_name: '',
+          phone_number: '',
           role: 'support',
           active: true,
         },
@@ -562,7 +614,8 @@ export default {
         if (!q) return true;
         return (
           (a.full_name || '').toLowerCase().includes(q) ||
-          (a.email || '').toLowerCase().includes(q)
+          (a.email || '').toLowerCase().includes(q) ||
+          (a.phone_number || '').toLowerCase().includes(q)
         );
       });
     },
@@ -576,6 +629,13 @@ export default {
         (u.email || '').toLowerCase().includes(q)
       );
     },
+    pickedUserEmail() {
+      if (!this.editDialog.selectedUid) return '';
+      const u = this.eligibleUsers.find(
+        (x) => x.uid === this.editDialog.selectedUid
+      );
+      return u?.email || '';
+    },
     canSaveEdit() {
       const { mode, tab, selectedUid, form } = this.editDialog;
 
@@ -584,7 +644,10 @@ export default {
       }
 
       if (tab === 'existing') {
-        return !!selectedUid;
+        return (
+          !!selectedUid &&
+          /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)
+        );
       }
 
       return !!form.email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email);
@@ -592,7 +655,6 @@ export default {
   },
 
   mounted() {
-    // 1) Resolve role from localStorage
     try {
       this.adminRole = localStorage.getItem('admin_role') || null;
     } catch (e) {
@@ -600,7 +662,6 @@ export default {
     }
     this.roleReady = true;
 
-    // 2) Only load if authorized
     if (this.isSuperAdmin) {
       this.initLoad();
     }
@@ -703,6 +764,7 @@ export default {
         form: {
           email: '',
           full_name: '',
+          phone_number: '',
           role: 'support',
           active: true,
         },
@@ -714,6 +776,7 @@ export default {
       this.editDialog.selectedUid = u.uid;
       this.editDialog.form.email = u.email || '';
       this.editDialog.form.full_name = u.full_name || '';
+      this.editDialog.form.phone_number = u.phone || '';
     },
 
     editAdmin(admin) {
@@ -729,6 +792,7 @@ export default {
         form: {
           email: admin.email,
           full_name: admin.full_name || '',
+          phone_number: admin.phone_number || '',
           role: admin.role,
           active: !!admin.active,
         },
@@ -739,9 +803,6 @@ export default {
       this.editDialog.show = false;
     },
 
-    /* ============================================================
-       SAVE (add / update) — dual response
-       ============================================================ */
     async saveEdit() {
       const { mode, adminId, form, selectedUid, tab } = this.editDialog;
 
@@ -752,6 +813,7 @@ export default {
           const payload = {
             email: (form.email || '').trim().toLowerCase(),
             full_name: form.full_name || null,
+            phone_number: (form.phone_number || '').trim() || null,
             role: form.role,
           };
 
@@ -760,10 +822,7 @@ export default {
           }
 
           if (!payload.email) {
-            this.showSnackbar(
-              'This user has no email on file — add one in Manual entry',
-              'error'
-            );
+            this.showSnackbar('Email is required — enter one to continue', 'error');
             return;
           }
 
@@ -785,6 +844,7 @@ export default {
           const payload = {
             full_name: form.full_name,
             role: form.role,
+            phone_number: (form.phone_number || '').trim() || null,
             active: form.active ? 1 : 0,
           };
 
@@ -812,9 +872,6 @@ export default {
       }
     },
 
-    /* ============================================================
-       TOGGLE ACTIVE — dual response
-       ============================================================ */
     async toggleActive(admin) {
       this.openMenuId = null;
       try {
@@ -842,9 +899,6 @@ export default {
       }
     },
 
-    /* ============================================================
-       REMOVE — dual response
-       ============================================================ */
     confirmRemove(admin) {
       this.openMenuId = null;
       if (this.isSelf(admin)) {
@@ -939,82 +993,43 @@ export default {
    ============================================================ */
 .admins-page { display: flex; flex-direction: column; gap: 22px; }
 
-/* ============================================================
-   ACCESS GATE
-   ============================================================ */
+/* ACCESS GATE */
 .gate-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 100px 24px;
-  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 100px 24px; text-align: center;
 }
-.gate-sub {
-  font-size: 0.82rem;
-  color: #94a3b8;
-  margin-top: 14px;
-  font-weight: 500;
-}
+.gate-sub { font-size: 0.82rem; color: #94a3b8; margin-top: 14px; font-weight: 500; }
 
 .no-access {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 24px;
-  text-align: center;
-  background: #ffffff;
-  border: 1px solid #e9edf3;
-  border-radius: 18px;
-  margin-top: 12px;
-  box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 80px 24px; text-align: center;
+  background: #ffffff; border: 1px solid #e9edf3; border-radius: 18px;
+  margin-top: 12px; box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
 }
 .no-access-icon {
-  width: 84px;
-  height: 84px;
-  border-radius: 24px;
+  width: 84px; height: 84px; border-radius: 24px;
   background: rgba(128, 81, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   margin-bottom: 18px;
 }
 .no-access-title {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #0f0d24;
-  letter-spacing: -0.3px;
+  font-size: 1.1rem; font-weight: 800; color: #0f0d24; letter-spacing: -0.3px;
 }
 .no-access-text {
-  font-size: 0.85rem;
-  color: #94a3b8;
-  margin-top: 6px;
-  max-width: 360px;
-  line-height: 1.6;
+  font-size: 0.85rem; color: #94a3b8; margin-top: 6px;
+  max-width: 360px; line-height: 1.6;
 }
 .no-access-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 22px;
-  padding: 11px 22px;
-  border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 22px; padding: 11px 22px; border-radius: 999px;
   background: linear-gradient(135deg, #8051ff 0%, #9b6cff 100%);
-  color: #ffffff;
-  border: none;
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.4px;
+  color: #ffffff; border: none; font-family: inherit;
+  font-size: 0.8rem; font-weight: 800; letter-spacing: 0.4px;
   cursor: pointer;
   box-shadow: 0 10px 22px -10px rgba(128, 81, 255, 0.7);
   transition: all 0.2s ease;
 }
-.no-access-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 28px -10px rgba(128, 81, 255, 0.85);
-}
+.no-access-btn:hover { transform: translateY(-1px); }
 
 /* Header */
 .page-header {
@@ -1242,6 +1257,13 @@ export default {
   font-size: 0.6rem; font-weight: 800;
   letter-spacing: 0.4px; text-transform: uppercase;
 }
+.no-phone-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 8px; border-radius: 999px;
+  background: rgba(245, 158, 11, 0.14); color: #b45309;
+  font-size: 0.6rem; font-weight: 800;
+  letter-spacing: 0.4px; text-transform: uppercase;
+}
 
 .admin-meta {
   display: flex; align-items: center; gap: 8px;
@@ -1264,31 +1286,17 @@ export default {
 .icon-btn:hover { background: #f1f5f9; color: #0f0d24; }
 
 .row-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 6px;
-  min-width: 180px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  position: absolute; top: 100%; right: 0; margin-top: 6px;
+  min-width: 180px; background: #ffffff;
+  border: 1px solid #e2e8f0; border-radius: 12px;
   box-shadow: 0 20px 40px -16px rgba(15, 13, 36, 0.2);
-  padding: 6px;
-  z-index: 100;
+  padding: 6px; z-index: 100;
 }
 .row-menu-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  padding: 9px 12px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #334155;
-  cursor: pointer;
-  font-family: inherit;
+  width: 100%; display: flex; align-items: center;
+  padding: 9px 12px; background: transparent; border: none;
+  border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+  color: #334155; cursor: pointer; font-family: inherit;
   text-align: left;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -1329,198 +1337,114 @@ export default {
 }
 .dialog-sub { font-size: 0.78rem; color: #94a3b8; margin-top: 2px; font-weight: 500; }
 
-/* Dialog tabs */
 .dialog-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  background: #f1f5f9;
-  border-radius: 12px;
-  margin-bottom: 16px;
+  display: flex; gap: 4px; padding: 4px;
+  background: #f1f5f9; border-radius: 12px; margin-bottom: 16px;
 }
 .dialog-tab {
   flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 9px 12px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  color: #475569;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-  cursor: pointer;
-  font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 9px 12px;
+  background: transparent; border: none; border-radius: 8px;
+  color: #475569; font-size: 0.78rem; font-weight: 800;
+  letter-spacing: 0.3px; cursor: pointer; font-family: inherit;
   transition: all 0.15s ease;
 }
 .dialog-tab:hover { color: #0f0d24; }
 .dialog-tab-active {
-  background: #ffffff;
-  color: #8051ff;
+  background: #ffffff; color: #8051ff;
   box-shadow: 0 1px 3px rgba(15, 13, 36, 0.08);
 }
 
-/* Picker */
-.picker-search {
-  position: relative;
-  margin-bottom: 12px;
-}
+.picker-search { position: relative; margin-bottom: 12px; }
 .picker-search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94a3b8;
-  pointer-events: none;
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: #94a3b8; pointer-events: none;
 }
 .picker-search-input {
-  width: 100%;
-  padding: 11px 14px 11px 38px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #0f0d24;
-  outline: none;
-  font-family: inherit;
+  width: 100%; padding: 11px 14px 11px 38px;
+  border-radius: 12px; border: 1px solid #e2e8f0;
+  background: #f8fafc; font-size: 0.85rem; font-weight: 500;
+  color: #0f0d24; outline: none; font-family: inherit;
 }
 .picker-search-input:focus {
-  border-color: #8051ff;
-  background: #ffffff;
+  border-color: #8051ff; background: #ffffff;
 }
 
 .picker-loading,
 .picker-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 8px;
   padding: 32px 16px;
-  color: #94a3b8;
-  font-size: 0.82rem;
-  text-align: center;
+  color: #94a3b8; font-size: 0.82rem; text-align: center;
 }
-.picker-loading {
-  flex-direction: row;
-  gap: 10px;
-}
+.picker-loading { flex-direction: row; gap: 10px; }
 .picker-empty-sub {
-  font-size: 0.72rem;
-  color: #cbd5e1;
-  max-width: 280px;
+  font-size: 0.72rem; color: #cbd5e1; max-width: 280px;
 }
 
 .picker-list {
-  max-height: 320px;
-  overflow-y: auto;
-  border: 1px solid #e9edf3;
-  border-radius: 12px;
+  max-height: 320px; overflow-y: auto;
+  border: 1px solid #e9edf3; border-radius: 12px;
   background: #ffffff;
 }
 .picker-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  background: transparent;
-  border: none;
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; background: transparent; border: none;
   border-bottom: 1px solid #f1f5f9;
-  cursor: pointer;
-  font-family: inherit;
-  text-align: left;
+  cursor: pointer; font-family: inherit; text-align: left;
   transition: background 0.15s ease;
 }
 .picker-item:last-child { border-bottom: none; }
 .picker-item:hover { background: #fafbff; }
-.picker-item-selected {
-  background: rgba(128, 81, 255, 0.08) !important;
-}
+.picker-item-selected { background: rgba(128, 81, 255, 0.08) !important; }
 
 .picker-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 36px; height: 36px; border-radius: 10px;
   background: linear-gradient(135deg, #9b6cff 0%, #8051ff 100%);
   color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.5px; flex-shrink: 0;
 }
 .picker-body { flex: 1; min-width: 0; }
 .picker-name-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 3px;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
 }
 .picker-name {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #0f0d24;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.85rem; font-weight: 800; color: #0f0d24;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 200px;
 }
 .picker-source {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  display: inline-flex; align-items: center;
+  padding: 2px 7px; border-radius: 999px;
+  font-size: 0.58rem; font-weight: 800;
+  letter-spacing: 0.4px; text-transform: uppercase;
 }
 .picker-source-household {
-  background: rgba(122, 184, 0, 0.14);
-  color: #3f6b00;
+  background: rgba(122, 184, 0, 0.14); color: #3f6b00;
 }
 .picker-source-official {
-  background: rgba(128, 81, 255, 0.12);
-  color: #5b21b6;
+  background: rgba(128, 81, 255, 0.12); color: #5b21b6;
 }
 .picker-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.68rem;
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.68rem; color: #94a3b8;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-weight: 500;
 }
 .picker-meta .meta-dot { color: #cbd5e1; }
 .picker-meta > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
+  display: inline-flex; align-items: center; gap: 3px;
 }
-.picker-no-email {
-  color: #b45309;
-  font-weight: 700;
-}
+.picker-no-email { color: #b45309; font-weight: 700; }
 
 .picker-role {
   margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: flex; flex-direction: column; gap: 6px;
 }
 
-/* Fields */
-.dialog-fields { display: flex; flex-direction: column; gap: 14px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-label {
   font-size: 0.68rem; font-weight: 800; color: #64748b;
@@ -1535,6 +1459,17 @@ export default {
 }
 .field-input:focus { border-color: #8051ff; background: #ffffff; }
 .field-input:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+.form-hint {
+  font-size: 0.68rem; color: #94a3b8;
+  font-weight: 500; margin-top: 4px;
+}
+.form-hint-warn {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.dialog-fields { display: flex; flex-direction: column; gap: 14px; }
 
 .dialog-actions {
   display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;
@@ -1562,7 +1497,6 @@ export default {
   background: #e2e8f0; color: #94a3b8; box-shadow: none; cursor: not-allowed;
 }
 
-/* Confirm dialog */
 .confirm-card {
   background: #ffffff; border-radius: 18px; padding: 24px;
   box-shadow: 0 24px 48px -20px rgba(15, 13, 36, 0.4);
@@ -1600,13 +1534,12 @@ export default {
 }
 .confirm-proceed:hover { background: #b91c1c; }
 
-/* Responsive */
 @media (max-width: 767px) {
   .admins-page { gap: 18px; }
   .page-title { font-size: 1.35rem; }
   .page-actions { width: 100%; }
   .add-btn, .refresh-btn { flex: 1; }
-  .summary-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .summary-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
   .summary-card { padding: 14px 16px; gap: 10px; }
   .summary-icon { width: 36px; height: 36px; }
   .summary-value { font-size: 1.15rem; }
