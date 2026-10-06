@@ -44,14 +44,15 @@
               {{ item.badge > 99 ? '99+' : item.badge }}
             </span>
           </button>
-        </nav>
 
-        <div class="sidebar-footer">
-          <button class="logout-btn" @click="logout">
-            <v-icon size="16" class="mr-2">mdi-logout</v-icon>
-            Sign Out
+          <!-- Sign out — after Settings, scrolls with the nav -->
+          <button class="nav-item nav-item-logout" @click="logout">
+            <span class="nav-icon-wrap">
+              <v-icon size="18">mdi-logout</v-icon>
+            </span>
+            <span class="nav-label">Sign Out</span>
           </button>
-        </div>
+        </nav>
       </aside>
 
       <!-- ============================================================
@@ -109,7 +110,8 @@
         class="mobile-drawer"
       >
         <div class="mobile-drawer-inner">
-          <div class="brand-block">
+          <!-- Top: brand (fixed) -->
+          <div class="drawer-brand">
             <div class="brand-mark">
               <v-icon color="white" size="22">mdi-shield-crown</v-icon>
             </div>
@@ -119,7 +121,8 @@
             </div>
           </div>
 
-          <nav class="nav-list">
+          <!-- Scrollable nav list (includes Sign Out at the end) -->
+          <nav class="drawer-scroll">
             <button
               v-for="item in menuItems"
               :key="item.view"
@@ -138,14 +141,18 @@
                 {{ item.badge > 99 ? '99+' : item.badge }}
               </span>
             </button>
-          </nav>
 
-          <div class="sidebar-footer">
-            <button class="logout-btn" @click="logout">
-              <v-icon size="16" class="mr-2">mdi-logout</v-icon>
-              Sign Out
+            <!-- Sign out — after Settings -->
+            <button
+              class="nav-item nav-item-logout"
+              @click="logout(), (drawer = false)"
+            >
+              <span class="nav-icon-wrap">
+                <v-icon size="18">mdi-logout</v-icon>
+              </span>
+              <span class="nav-label">Sign Out</span>
             </button>
-          </div>
+          </nav>
         </div>
       </v-navigation-drawer>
 
@@ -200,10 +207,6 @@ export default {
       if (this.adminRole === 'readonly') return 'Read-Only';
       return 'INTEC Staff';
     },
-    /**
-     * Menu items with role-based visibility.
-     * Items without a `roles` array are visible to everyone.
-     */
     allMenuItems() {
       const items = [
         {
@@ -267,11 +270,10 @@ export default {
       return items;
     },
     menuItems() {
-      // If role hasn't been resolved yet, show the safe defaults (no sensitive items)
       const role = this.adminRole;
       return this.allMenuItems.filter((item) => {
-        if (!item.roles) return true;      // visible to all
-        if (!role) return false;           // role unknown → hide sensitive
+        if (!item.roles) return true;
+        if (!role) return false;
         return item.roles.includes(role);
       });
     },
@@ -421,7 +423,9 @@ export default {
 </script>
 
 <style scoped>
-/* ...same styles as before, no changes... */
+/* ============================================================
+   ROOT
+   ============================================================ */
 .admin-root {
   background: #0f0d24;
   font-family: inherit;
@@ -429,8 +433,12 @@ export default {
   align-items: stretch;
   min-height: 100vh;
   width: 100%;
+  position: relative;
 }
 
+/* ============================================================
+   DESKTOP SIDEBAR
+   ============================================================ */
 .admin-sidebar {
   width: 268px;
   flex-shrink: 0;
@@ -462,6 +470,7 @@ export default {
   bottom: -60px; left: -60px;
   pointer-events: none;
 }
+
 .brand-block {
   position: relative; z-index: 1;
   display: flex; align-items: center; gap: 12px;
@@ -487,6 +496,7 @@ export default {
   font-weight: 600; letter-spacing: 0.6px; margin-top: 2px;
   text-transform: uppercase;
 }
+
 .admin-chip {
   position: relative; z-index: 1;
   display: flex; align-items: center; gap: 10px;
@@ -513,16 +523,22 @@ export default {
   margin-top: 2px; text-transform: uppercase;
   letter-spacing: 0.5px; font-weight: 600;
 }
+
 .nav-list {
-  position: relative; z-index: 1; flex: 1; overflow-y: auto;
+  position: relative; z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: 0 12px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 .nav-list::-webkit-scrollbar { width: 4px; }
 .nav-list::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1); border-radius: 2px;
 }
+
 .nav-item {
   width: 100%;
   display: flex; align-items: center; gap: 12px;
@@ -572,31 +588,32 @@ export default {
   background: rgba(255, 255, 255, 0.9);
   color: #dc2626; box-shadow: none;
 }
-.sidebar-footer {
-  position: relative; z-index: 1;
-  padding: 14px 16px 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  margin-top: 12px; flex-shrink: 0;
-}
-.logout-btn {
-  width: 100%;
-  display: flex; align-items: center; justify-content: center;
-  padding: 11px;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.22);
-  border-radius: 10px;
+
+/* ---- Sign Out nav item ------------------------------------- */
+.nav-item-logout {
+  margin-top: 12px;
+  padding-top: 14px;
   color: #fca5a5;
-  font-size: 0.82rem; font-weight: 600;
-  cursor: pointer;
-  transition: all 0.22s ease;
-  font-family: inherit;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0;
 }
-.logout-btn:hover {
-  background: rgba(239, 68, 68, 0.22);
-  color: white;
-  border-color: rgba(239, 68, 68, 0.4);
+.nav-item-logout .nav-icon-wrap {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+}
+.nav-item-logout:hover {
+  background: rgba(239, 68, 68, 0.14);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+.nav-item-logout:hover .nav-icon-wrap {
+  background: rgba(239, 68, 68, 0.28);
+  color: #ffffff;
 }
 
+/* ============================================================
+   MAIN
+   ============================================================ */
 .admin-main {
   flex: 1; min-width: 0;
   display: flex; flex-direction: column;
@@ -675,14 +692,63 @@ export default {
   padding: 16px 16px 96px;
 }
 
+/* ============================================================
+   MOBILE DRAWER — two-part layout
+   ------------------------------------------------------------
+   [brand]  — fixed at top
+   [scroll] — flex: 1, scrolls vertically; contains nav + Sign Out
+   ============================================================ */
 .mobile-drawer {
   background: linear-gradient(180deg, #0a0820 0%, #120f33 100%) !important;
 }
-.mobile-drawer-inner {
-  display: flex; flex-direction: column; height: 100%;
-  padding: 22px 0;
+
+/* Kill Vuetify's default scroll on the content wrapper and
+   make it the flex parent for our layout */
+::v-deep .mobile-drawer .v-navigation-drawer__content {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  padding: 0 !important;
 }
 
+.mobile-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+/* Top: brand (fixed) */
+.mobile-drawer-inner .drawer-brand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Scrollable region: nav items + Sign Out.
+   Bottom padding = clear the mobile bottom nav (~54px) + safe area. */
+.mobile-drawer-inner .drawer-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 12px calc(90px + env(safe-area-inset-bottom)) 12px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.mobile-drawer-inner .drawer-scroll::-webkit-scrollbar { width: 4px; }
+.mobile-drawer-inner .drawer-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15); border-radius: 2px;
+}
+
+/* ============================================================
+   MOBILE BOTTOM NAV
+   ============================================================ */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
   z-index: 50;

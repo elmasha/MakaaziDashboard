@@ -461,7 +461,7 @@
       <v-snackbar
         v-model="snackbar.show"
         :color="snackbar.color"
-        :timeout="3000"
+        :timeout="3500"
         top
         rounded="pill"
       >
@@ -739,6 +739,9 @@ export default {
       this.editDialog.show = false;
     },
 
+    /* ============================================================
+       SAVE (add / update) — dual response
+       ============================================================ */
     async saveEdit() {
       const { mode, adminId, form, selectedUid, tab } = this.editDialog;
 
@@ -764,16 +767,41 @@ export default {
             return;
           }
 
-          await axios.post(`${API}/admin/admins`, payload, { headers });
-          this.showSnackbar('Admin added', 'success');
+          const { data, status } = await axios.post(
+            `${API}/admin/admins`,
+            payload,
+            { headers }
+          );
+
+          if (data?.queued === true || status === 202) {
+            this.showSnackbar(
+              `Request sent to super admins${data?.reference ? ' · ' + data.reference : ''}`,
+              'success'
+            );
+          } else {
+            this.showSnackbar('Admin added', 'success');
+          }
         } else {
           const payload = {
             full_name: form.full_name,
             role: form.role,
             active: form.active ? 1 : 0,
           };
-          await axios.patch(`${API}/admin/admins/${adminId}`, payload, { headers });
-          this.showSnackbar('Admin updated', 'success');
+
+          const { data, status } = await axios.patch(
+            `${API}/admin/admins/${adminId}`,
+            payload,
+            { headers }
+          );
+
+          if (data?.queued === true || status === 202) {
+            this.showSnackbar(
+              `Request sent to super admins${data?.reference ? ' · ' + data.reference : ''}`,
+              'success'
+            );
+          } else {
+            this.showSnackbar('Admin updated', 'success');
+          }
         }
 
         this.editDialog.show = false;
@@ -784,22 +812,39 @@ export default {
       }
     },
 
+    /* ============================================================
+       TOGGLE ACTIVE — dual response
+       ============================================================ */
     async toggleActive(admin) {
       this.openMenuId = null;
       try {
         const headers = await this.getAuthHeaders();
-        await axios.patch(
+        const { data, status } = await axios.patch(
           `${API}/admin/admins/${admin.id}`,
           { active: admin.active ? 0 : 1 },
           { headers }
         );
-        admin.active = !admin.active;
-        this.showSnackbar(admin.active ? 'Admin enabled' : 'Admin disabled', 'success');
+
+        if (data?.queued === true || status === 202) {
+          this.showSnackbar(
+            `Request sent to super admins${data?.reference ? ' · ' + data.reference : ''}`,
+            'success'
+          );
+        } else {
+          admin.active = !admin.active;
+          this.showSnackbar(
+            admin.active ? 'Admin enabled' : 'Admin disabled',
+            'success'
+          );
+        }
       } catch (err) {
         this.showSnackbar(err.response?.data?.error || 'Update failed', 'error');
       }
     },
 
+    /* ============================================================
+       REMOVE — dual response
+       ============================================================ */
     confirmRemove(admin) {
       this.openMenuId = null;
       if (this.isSelf(admin)) {
@@ -814,8 +859,20 @@ export default {
       if (!admin) return;
       try {
         const headers = await this.getAuthHeaders();
-        await axios.delete(`${API}/admin/admins/${admin.id}`, { headers });
-        this.showSnackbar('Admin removed', 'success');
+        const { data, status } = await axios.delete(
+          `${API}/admin/admins/${admin.id}`,
+          { headers }
+        );
+
+        if (data?.queued === true || status === 202) {
+          this.showSnackbar(
+            `Request sent to super admins${data?.reference ? ' · ' + data.reference : ''}`,
+            'success'
+          );
+        } else {
+          this.showSnackbar('Admin removed', 'success');
+        }
+
         this.removeDialog.show = false;
         await this.load();
       } catch (err) {

@@ -17,6 +17,14 @@ const PUBLIC_PATHS = [
   // '/', '/about', '/terms', '/privacy',
 ]
 
+// Routes that ONLY a super admin may open.
+// Matched by prefix, so '/admin/approve/APV-X' is caught too.
+const SUPER_ONLY_PATHS = [
+  '/admin/approve',
+  '/admin/admins',
+  '/admin/settings',
+]
+
 // Where to send a user of a given role
 const HOME_FOR_ROLE = {
   super:    '/admin',
@@ -60,6 +68,10 @@ async function resolveRole(uid) {
   return result
 }
 
+function isSuperOnly(path) {
+  return SUPER_ONLY_PATHS.some((p) => path === p || path.startsWith(p + '/'))
+}
+
 export default async function ({ app, store, route, redirect }) {
   const path = route.path
 
@@ -88,12 +100,33 @@ export default async function ({ app, store, route, redirect }) {
     return redirect(loginForPath(path) + '?error=no-role')
   }
 
-  // 5. Stash on app + store
+  // 5. SUPER-ADMIN GATE — before stashing anything, block non-supers
+  //    from the sensitive sections. Redirect to dashboard, not login,
+  //    because they ARE authenticated — just not authorized.
+  if (isSuperOnly(path) && session.role !== 'super') {
+    return redirect('/admin')
+  }
+
+  // 6. Stash on app + store
   app.$authRole        = session.role
   app.$authRoleId      = session.role_id
   app.$authPermissions = session.permissions
   app.$authProfile     = session.profile
   app.$authUid         = user.uid
+
+  // 6b. Also mirror the role into localStorage so `layouts/admin.vue`
+  //     can render the correct nav on the very first paint (its
+  //     `loadAdminSession()` reads `localStorage.admin_role`, not `$authRole`).
+  if (process.client) {
+    try {
+      localStorage.setItem('admin_role', session.role)
+      if (session.profile?.email) {
+        localStorage.setItem('admin_email', session.profile.email)
+      }
+    } catch (e) {
+      console.warn('auth: could not persist role to localStorage:', e.message)
+    }
+  }
 
   if (store) {
     store.commit('auth/SET_ROLE', session.role)
