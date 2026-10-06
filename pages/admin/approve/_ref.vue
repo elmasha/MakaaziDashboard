@@ -1,8 +1,6 @@
 <template>
   <div class="single-approve-page">
-    <!-- ============================================================
-         ACCESS GATE
-         ============================================================ -->
+    <!-- ACCESS GATE -->
     <div v-if="!roleReady" class="gate-state">
       <v-progress-circular indeterminate color="#8051FF" size="42" />
       <div class="gate-sub">Checking access…</div>
@@ -22,18 +20,14 @@
       </button>
     </div>
 
-    <!-- ============================================================
-         LOADING
-         ============================================================ -->
+    <!-- LOADING -->
     <div v-else-if="loading" class="state-block">
       <v-progress-circular indeterminate color="#8051FF" size="42" />
       <div class="state-title">Loading request…</div>
       <div class="state-ref mono">{{ ref }}</div>
     </div>
 
-    <!-- ============================================================
-         NOT FOUND
-         ============================================================ -->
+    <!-- NOT FOUND -->
     <div v-else-if="error" class="state-block">
       <div class="state-icon state-icon-error">
         <v-icon size="32" color="white">mdi-alert-circle-outline</v-icon>
@@ -56,9 +50,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         THE REQUEST
-         ============================================================ -->
+    <!-- THE REQUEST -->
     <template v-else-if="request">
       <!-- PAGE HEADER -->
       <div class="page-header">
@@ -126,6 +118,105 @@
           </div>
         </div>
 
+        <!-- ============================================================
+             DIFF BLOCK — what will change
+             ============================================================ -->
+
+        <!-- UPDATE: field-by-field before/after -->
+        <div v-if="isUpdateOp && diffRows.length" class="diff-block">
+          <div class="diff-head">
+            <v-icon size="14" class="mr-1">mdi-file-compare</v-icon>
+            What will change
+            <span v-if="changedCount > 0" class="diff-count">
+              {{ changedCount }} field{{ changedCount === 1 ? '' : 's' }}
+            </span>
+          </div>
+
+          <div class="diff-table">
+            <div class="diff-row diff-row-head">
+              <div class="diff-cell diff-cell-label">Field</div>
+              <div class="diff-cell diff-cell-val">Current</div>
+              <div class="diff-cell diff-cell-val">Requested</div>
+            </div>
+
+            <div
+              v-for="row in diffRows"
+              :key="row.key"
+              class="diff-row"
+              :class="{ 'diff-row-changed': row.changed }"
+            >
+              <div class="diff-cell diff-cell-label">{{ row.label }}</div>
+              <div class="diff-cell diff-cell-val diff-old">
+                <span v-if="row.current == null || row.current === ''" class="diff-empty">— empty —</span>
+                <span v-else>{{ formatValue(row.current, row.key) }}</span>
+              </div>
+              <div class="diff-cell diff-cell-val diff-new">
+                <span v-if="row.requested == null || row.requested === ''" class="diff-empty">— empty —</span>
+                <span v-else>{{ formatValue(row.requested, row.key) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CREATE: everything is new -->
+        <div v-else-if="isCreateOp && diffRows.length" class="diff-block">
+          <div class="diff-head">
+            <v-icon size="14" class="mr-1">mdi-plus-circle-outline</v-icon>
+            What will be created
+          </div>
+
+          <div class="diff-table">
+            <div class="diff-row diff-row-head">
+              <div class="diff-cell diff-cell-label">Field</div>
+              <div class="diff-cell diff-cell-val">Value</div>
+            </div>
+
+            <div
+              v-for="row in diffRows"
+              :key="row.key"
+              class="diff-row diff-row-new"
+            >
+              <div class="diff-cell diff-cell-label">{{ row.label }}</div>
+              <div class="diff-cell diff-cell-val diff-new">
+                <span v-if="row.requested == null || row.requested === ''" class="diff-empty">— empty —</span>
+                <span v-else>{{ formatValue(row.requested, row.key) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DELETE: warning -->
+        <div v-else-if="isDeleteOp" class="diff-block diff-block-warn">
+          <div class="diff-head">
+            <v-icon size="14" class="mr-1">mdi-delete-alert-outline</v-icon>
+            This will be permanently deleted
+          </div>
+
+          <div class="diff-table" v-if="request.target_id">
+            <div class="diff-row">
+              <div class="diff-cell diff-cell-label">Target</div>
+              <div class="diff-cell diff-cell-val mono">
+                {{ request.target_table }} #{{ request.target_id }}
+              </div>
+            </div>
+            <div v-if="targetName" class="diff-row">
+              <div class="diff-cell diff-cell-label">Name</div>
+              <div class="diff-cell diff-cell-val">{{ targetName }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FALLBACK: unknown operation type, just show the payload below -->
+        <div v-else class="diff-block diff-block-info">
+          <div class="diff-head">
+            <v-icon size="14" class="mr-1">mdi-information-outline</v-icon>
+            Requested changes
+          </div>
+          <div class="diff-hint">
+            No diff view for this operation. See the payload below.
+          </div>
+        </div>
+
         <!-- Rejection reason -->
         <div
           v-if="request.status === 'Rejected' && request.rejection_reason"
@@ -138,14 +229,14 @@
           </div>
         </div>
 
-        <!-- Payload -->
-        <div class="payload-block">
-          <div class="payload-head">
+        <!-- Raw payload — collapsible -->
+        <details class="payload-block">
+          <summary class="payload-head">
             <v-icon size="14" class="mr-1">mdi-code-json</v-icon>
-            Requested changes
-          </div>
+            View raw payload
+          </summary>
           <pre class="payload-pre">{{ prettyPayload(request.payload) }}</pre>
-        </div>
+        </details>
 
         <!-- Actions -->
         <div v-if="request.status === 'Pending'" class="request-actions">
@@ -208,9 +299,7 @@
       </div>
     </template>
 
-    <!-- ============================================================
-         REJECT DIALOG
-         ============================================================ -->
+    <!-- REJECT DIALOG -->
     <v-dialog v-model="rejectDialog" max-width="440" persistent>
       <div class="reject-card">
         <div class="reject-header">
@@ -313,6 +402,125 @@ export default {
     isSuperAdmin() {
       return this.adminRole === 'super';
     },
+
+    /* ---- Operation category ---------------------------------- */
+    isUpdateOp() {
+      const op = this.request?.operation || '';
+      return (
+        op.endsWith('.update') ||
+        op === 'subscription.status' ||
+        op === 'estate.address_config'
+      );
+    },
+    isCreateOp() {
+      const op = this.request?.operation || '';
+      return (
+        op.endsWith('.create') ||
+        op === 'charge.add' ||
+        op === 'subscription.upsert'
+      );
+    },
+    isDeleteOp() {
+      const op = this.request?.operation || '';
+      return op.endsWith('.delete') || op === 'charge.delete';
+    },
+
+    /* ---- Parsed payload -------------------------------------- */
+    parsedPayload() {
+      try {
+        const p = this.request?.payload;
+        return typeof p === 'string' ? JSON.parse(p) : (p || {});
+      } catch {
+        return {};
+      }
+    },
+
+    /* ---- Fields we never want to show in the diff ------------ */
+    hiddenFields() {
+      return new Set([
+        // Internal IDs
+        'id', 'estate_id', 'official_id', 'charges_id', 'plan_id',
+        'subscription_id', 'household_id', 'target_id', 'target_table',
+        // Timestamps
+        'created_at', 'updated_at', 'last_login_at', 'approved_at',
+        'reviewed_at',
+        // Media blobs
+        'estate_image', 'logo_url', 'receipt_url',
+        // Auth
+        'password', 'firebase_uid',
+        // Long unique IDs (not useful in a diff)
+        'estate_urn', 'urn_prefix', 'official_unique_id',
+      ]);
+    },
+
+    /* ---- Ordered diff rows ----------------------------------- */
+    diffRows() {
+      const r = this.request;
+      if (!r) return [];
+
+      const payload = this.parsedPayload || {};
+      const current = r.current_state || {};
+
+      // Collect all keys — for updates include current keys too, so we
+      // can show "field wasn't changed" vs "field was removed"
+      const keys = new Set([
+        ...Object.keys(payload),
+        ...(this.isUpdateOp ? Object.keys(current) : []),
+      ]);
+
+      const rows = [];
+      for (const key of keys) {
+        if (this.hiddenFields.has(key)) continue;
+
+        // For updates, only show keys actually present in the payload
+        // (i.e. fields the requester wants to change)
+        if (this.isUpdateOp && !(key in payload)) continue;
+
+        const currVal = current?.[key];
+        const newVal = payload?.[key];
+
+        const changed =
+          this.isUpdateOp && this.norm(currVal) !== this.norm(newVal);
+
+        rows.push({
+          key,
+          label: this.humanKey(key),
+          current: currVal,
+          requested: newVal,
+          changed,
+        });
+      }
+
+      // Sort: changed rows first (for updates), then alphabetical
+      if (this.isUpdateOp) {
+        rows.sort((a, b) => {
+          if (a.changed !== b.changed) return a.changed ? -1 : 1;
+          return a.label.localeCompare(b.label);
+        });
+      } else {
+        rows.sort((a, b) => a.label.localeCompare(b.label));
+      }
+
+      return rows;
+    },
+
+    changedCount() {
+      return this.diffRows.filter((r) => r.changed).length;
+    },
+
+    /* ---- Best-effort friendly name for the target entity ----- */
+    targetName() {
+      const c = this.request?.current_state;
+      if (!c) return null;
+      return (
+        c.estate_name ||
+        c.full_name ||
+        c.plan_name ||
+        c.charge_type ||
+        c.primary_owner ||
+        null
+      );
+    },
   },
 
   mounted() {
@@ -379,9 +587,6 @@ export default {
       }
     },
 
-    /* ============================================================
-       APPROVE
-       ============================================================ */
     async approve() {
       if (!this.request || this.busy) return;
       this.busy = true;
@@ -393,7 +598,6 @@ export default {
           { headers }
         );
 
-        // Reflect the new state locally — no need to refetch
         this.request.status = 'Approved';
         this.request.reviewed_email =
           localStorage.getItem('admin_email') || 'super admin';
@@ -415,9 +619,6 @@ export default {
       }
     },
 
-    /* ============================================================
-       REJECT
-       ============================================================ */
     openReject() {
       this.rejectReason = '';
       this.rejectDialog = true;
@@ -457,12 +658,7 @@ export default {
       }
     },
 
-    /* ============================================================
-       NAVIGATION
-       ============================================================ */
     goBack() {
-      // If the user came from the SMS with no history in this tab,
-      // send them to the queue. Otherwise, use browser history.
       if (window.history.length > 1) {
         this.$router.back();
       } else {
@@ -471,7 +667,42 @@ export default {
     },
 
     /* ============================================================
-       Display helpers
+       Diff helpers
+       ============================================================ */
+    norm(v) {
+      if (v === null || v === undefined) return '';
+      if (typeof v === 'boolean') return v ? '1' : '0';
+      if (typeof v === 'object') return JSON.stringify(v);
+      return String(v);
+    },
+
+    humanKey(key) {
+      return key
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+    },
+
+    formatValue(val, key) {
+      if (val === null || val === undefined) return '—';
+
+      // Booleans / 0-1 flags for known boolean fields
+      const booleanFields = new Set([
+        'active', 'is_active', 'show_street', 'show_section',
+        'show_court', 'show_house_number', 'welfare_mandatory',
+      ]);
+      if (booleanFields.has(key)) {
+        const truthy = val === 1 || val === '1' || val === true || val === 'true';
+        return truthy ? 'Yes' : 'No';
+      }
+
+      if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+      if (typeof val === 'object') return JSON.stringify(val, null, 2);
+
+      return String(val);
+    },
+
+    /* ============================================================
+       Display helpers (unchanged)
        ============================================================ */
     prettyOp(op) {
       const map = {
@@ -555,21 +786,13 @@ export default {
   padding: 4px 0 8px;
 }
 
-/* ============================================================
-   ACCESS GATE + STATE BLOCKS
-   ============================================================ */
+/* ACCESS GATE + STATE BLOCKS */
 .gate-state,
 .state-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 24px;
-  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 80px 24px; text-align: center;
 }
-.gate-sub {
-  font-size: 0.82rem; color: #94a3b8; margin-top: 14px; font-weight: 500;
-}
+.gate-sub { font-size: 0.82rem; color: #94a3b8; margin-top: 14px; font-weight: 500; }
 
 .state-icon {
   width: 68px; height: 68px; border-radius: 20px;
@@ -580,23 +803,17 @@ export default {
   background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
   box-shadow: 0 12px 26px -12px rgba(220, 38, 38, 0.6);
 }
-
 .state-title {
-  font-size: 1.1rem; font-weight: 800; color: #0f0d24;
-  letter-spacing: -0.3px;
+  font-size: 1.1rem; font-weight: 800; color: #0f0d24; letter-spacing: -0.3px;
 }
 .state-sub {
   font-size: 0.85rem; color: #94a3b8; margin-top: 6px;
   max-width: 360px; line-height: 1.55;
 }
 .state-ref {
-  margin-top: 14px;
-  padding: 6px 14px;
-  background: #f1f5f9;
-  border-radius: 999px;
-  color: #8051ff;
-  font-weight: 800;
-  letter-spacing: 0.5px;
+  margin-top: 14px; padding: 6px 14px;
+  background: #f1f5f9; border-radius: 999px;
+  color: #8051ff; font-weight: 800; letter-spacing: 0.5px;
 }
 .mono { font-family: ui-monospace, SFMono-Regular, monospace; }
 
@@ -635,12 +852,8 @@ export default {
 }
 .no-access-btn:hover { transform: translateY(-1px); }
 
-/* ============================================================
-   PAGE HEADER
-   ============================================================ */
-.page-header {
-  display: flex; align-items: flex-start; gap: 14px;
-}
+/* PAGE HEADER */
+.page-header { display: flex; align-items: flex-start; gap: 14px; }
 .back-btn {
   width: 40px; height: 40px; border-radius: 12px;
   background: #ffffff; border: 1px solid #e2e8f0;
@@ -653,9 +866,7 @@ export default {
   transform: translateX(-2px);
 }
 .header-text { min-width: 0; flex: 1; }
-.page-title-row {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-}
+.page-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .page-title {
   font-size: 1.65rem; font-weight: 800; color: #0f0d24;
   letter-spacing: -0.7px; margin: 0; line-height: 1.15;
@@ -664,9 +875,7 @@ export default {
   font-size: 0.82rem; color: #64748b; margin: 6px 0 0; font-weight: 500;
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
 }
-.sub-ref {
-  color: #8051ff; font-weight: 800; letter-spacing: 0.4px;
-}
+.sub-ref { color: #8051ff; font-weight: 800; letter-spacing: 0.4px; }
 
 .status-pill {
   display: inline-flex; align-items: center; gap: 5px;
@@ -674,21 +883,15 @@ export default {
   font-size: 0.62rem; font-weight: 800;
   letter-spacing: 0.5px; text-transform: uppercase;
 }
-.status-dot {
-  width: 5px; height: 5px; border-radius: 50%; background: currentColor;
-}
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .status-pending  { background: rgba(245, 158, 11, 0.16); color: #92400e; }
 .status-approved { background: rgba(122, 184, 0, 0.14); color: #3f6b00; }
 .status-rejected { background: rgba(239, 68, 68, 0.1); color: #b91c1c; }
 
-/* ============================================================
-   REQUEST CARD
-   ============================================================ */
+/* REQUEST CARD */
 .request-card {
-  background: #ffffff;
-  border: 1px solid #e9edf3;
-  border-radius: 20px;
-  box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
+  background: #ffffff; border: 1px solid #e9edf3;
+  border-radius: 20px; box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
   overflow: hidden;
 }
 
@@ -735,14 +938,11 @@ export default {
   word-break: break-word;
 }
 
-/* Meta */
+/* META */
 .request-meta {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 18px;
-  padding: 20px 24px;
-  background: #fafaff;
-  border-bottom: 1px solid #f0eef8;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 18px; padding: 20px 24px;
+  background: #fafaff; border-bottom: 1px solid #f0eef8;
 }
 .meta-block { min-width: 0; }
 .meta-label {
@@ -755,36 +955,173 @@ export default {
   word-break: break-word;
 }
 
-/* Reject reason */
+/* ============================================================
+   DIFF BLOCK
+   ============================================================ */
+.diff-block {
+  padding: 20px 24px 0;
+}
+
+.diff-head {
+  display: inline-flex; align-items: center;
+  font-size: 0.68rem; font-weight: 800; color: #8051ff;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 12px;
+}
+.diff-count {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #92400e;
+  font-size: 0.6rem;
+  letter-spacing: 0.4px;
+}
+
+.diff-table {
+  border: 1px solid #e9edf3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.diff-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.2fr;
+  align-items: stretch;
+  border-bottom: 1px solid #f1f5f9;
+}
+.diff-row:last-child { border-bottom: none; }
+
+/* Update ops with a "changed" state: subtle amber tint */
+.diff-row-changed {
+  background: #fffbeb;
+}
+.diff-row-new {
+  background: rgba(122, 184, 0, 0.06);
+}
+
+.diff-row-head {
+  background: #f8fafc;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.diff-row-head .diff-cell {
+  padding: 10px 14px;
+}
+
+.diff-cell {
+  padding: 11px 14px;
+  min-width: 0;
+  word-break: break-word;
+  font-size: 0.82rem;
+}
+.diff-cell + .diff-cell {
+  border-left: 1px solid #f1f5f9;
+}
+
+.diff-cell-label {
+  font-weight: 700;
+  color: #475569;
+  font-size: 0.72rem;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.diff-cell-val {
+  font-weight: 600;
+  color: #0f0d24;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.78rem;
+}
+
+.diff-old {
+  color: #94a3b8;
+}
+.diff-row-changed .diff-old {
+  color: #b45309;
+  text-decoration: line-through;
+  text-decoration-color: rgba(180, 83, 9, 0.4);
+}
+
+.diff-new {
+  color: #0f0d24;
+}
+.diff-row-changed .diff-new,
+.diff-row-new .diff-new {
+  color: #15803d;
+  font-weight: 800;
+}
+
+.diff-empty {
+  color: #cbd5e1;
+  font-style: italic;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 0.74rem;
+}
+
+/* Delete variant */
+.diff-block-warn .diff-head { color: #b91c1c; }
+.diff-block-warn .diff-table {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.diff-block-warn .diff-cell-label { color: #991b1b; }
+.diff-block-warn .diff-cell-val { color: #7f1d1d; }
+
+/* Unknown operation */
+.diff-block-info .diff-head { color: #475569; }
+.diff-hint {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* REJECT REASON */
 .reject-reason {
   display: flex; align-items: flex-start;
-  padding: 14px 24px;
+  margin: 20px 24px 0;
+  padding: 14px 16px;
   background: #fef2f2;
-  border-bottom: 1px solid #fecaca;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
   color: #b91c1c;
 }
 .reject-reason-label {
   font-size: 0.62rem; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.8px;
-  margin-bottom: 3px;
-  opacity: 0.75;
+  margin-bottom: 3px; opacity: 0.75;
 }
 .reject-reason-text {
   font-size: 0.85rem; font-weight: 600; line-height: 1.5;
 }
 
-/* Payload */
+/* PAYLOAD (collapsible) */
 .payload-block {
-  padding: 20px 24px;
+  margin: 20px 24px 0;
 }
-.payload-head {
+.payload-block summary {
   display: inline-flex; align-items: center;
+  cursor: pointer; user-select: none;
   font-size: 0.68rem; font-weight: 800; color: #8051ff;
   text-transform: uppercase; letter-spacing: 0.8px;
-  margin-bottom: 10px;
+  list-style: none;
 }
+.payload-block summary::-webkit-details-marker { display: none; }
+.payload-block summary:hover { color: #5b21b6; }
+
 .payload-pre {
-  margin: 0; padding: 16px 18px;
+  margin: 10px 0 0;
+  padding: 16px 18px;
   background: #0a0a14; color: #c4b5fd;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -794,10 +1131,11 @@ export default {
   max-height: 380px; overflow-y: auto;
 }
 
-/* Actions */
+/* ACTIONS */
 .request-actions {
   display: flex; gap: 10px;
   padding: 20px 24px;
+  margin-top: 20px;
   border-top: 1px solid #f1f5f9;
   background: #fafbfc;
 }
@@ -807,15 +1145,12 @@ export default {
   padding: 14px 18px; border-radius: 12px;
   border: none; font-family: inherit;
   font-size: 0.85rem; font-weight: 800;
-  letter-spacing: 0.3px;
-  cursor: pointer;
+  letter-spacing: 0.3px; cursor: pointer;
   transition: all 0.2s ease;
 }
 .action-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.action-btn-reject {
-  background: #fee2e2; color: #b91c1c;
-}
+.action-btn-reject { background: #fee2e2; color: #b91c1c; }
 .action-btn-reject:hover:not(:disabled) { background: #fecaca; }
 
 .action-btn-approve {
@@ -828,46 +1163,33 @@ export default {
   box-shadow: 0 18px 36px -16px rgba(128, 81, 255, 1);
 }
 
-/* Reviewed banner */
+/* REVIEWED BANNER */
 .reviewed-banner {
   display: flex; align-items: center;
   padding: 18px 24px;
   border-top: 1px solid #f1f5f9;
 }
-.reviewed-approved {
-  background: rgba(122, 184, 0, 0.08);
-  color: #3f6b00;
-}
-.reviewed-rejected {
-  background: rgba(220, 38, 38, 0.06);
-  color: #b91c1c;
-}
-.reviewed-title {
-  font-size: 0.9rem; font-weight: 800;
-}
+.reviewed-approved { background: rgba(122, 184, 0, 0.08); color: #3f6b00; }
+.reviewed-rejected { background: rgba(220, 38, 38, 0.06); color: #b91c1c; }
+.reviewed-title { font-size: 0.9rem; font-weight: 800; }
 .reviewed-sub {
   font-size: 0.75rem; margin-top: 2px;
   opacity: 0.85; font-weight: 600;
 }
 
-/* Footer hint */
+/* FOOTER HINT */
 .footer-hint {
   display: flex; align-items: flex-start;
   font-size: 0.78rem; color: #94a3b8;
-  line-height: 1.55;
-  padding: 0 4px;
+  line-height: 1.55; padding: 0 4px;
 }
 
-/* ============================================================
-   REJECT DIALOG
-   ============================================================ */
+/* REJECT DIALOG */
 .reject-card {
   padding: 24px; background: #ffffff; border-radius: 20px;
   display: flex; flex-direction: column;
 }
-.reject-header {
-  display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
-}
+.reject-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
 .reject-icon {
   width: 44px; height: 44px; border-radius: 12px;
   background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
@@ -934,31 +1256,24 @@ export default {
   letter-spacing: 0.3px; cursor: pointer;
   transition: all 0.2s ease;
 }
-.reject-btn-cancel {
-  background: #f6f7fb; color: #475569; border: 1px solid #eef1f6;
-}
+.reject-btn-cancel { background: #f6f7fb; color: #475569; border: 1px solid #eef1f6; }
 .reject-btn-cancel:hover:not(:disabled) { background: #eef1f6; }
-.reject-btn-proceed {
-  background: #fee2e2; color: #b91c1c;
-}
+.reject-btn-proceed { background: #fee2e2; color: #b91c1c; }
 .reject-btn-proceed:hover:not(:disabled) { background: #fecaca; }
 .reject-btn-cancel:disabled,
 .reject-btn-proceed:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* Shared button used in states */
+/* Shared buttons */
 .btn-ghost,
 .btn-primary {
   display: inline-flex; align-items: center; justify-content: center;
-  gap: 6px;
-  padding: 11px 20px; border-radius: 12px;
+  gap: 6px; padding: 11px 20px; border-radius: 12px;
   border: none; font-family: inherit;
   font-size: 0.8rem; font-weight: 800;
   letter-spacing: 0.3px; cursor: pointer;
   transition: all 0.2s ease;
 }
-.btn-ghost {
-  background: #f6f7fb; color: #475569; border: 1px solid #eef1f6;
-}
+.btn-ghost { background: #f6f7fb; color: #475569; border: 1px solid #eef1f6; }
 .btn-ghost:hover { background: #eef1f6; }
 .btn-primary {
   background: linear-gradient(135deg, #8051ff 0%, #9b6cff 100%);
@@ -967,9 +1282,7 @@ export default {
 }
 .btn-primary:hover { transform: translateY(-1px); }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+/* RESPONSIVE */
 @media (max-width: 767px) {
   .single-approve-page { gap: 18px; }
 
@@ -985,17 +1298,43 @@ export default {
     grid-template-columns: 1fr 1fr;
   }
 
-  .payload-block { padding: 16px 20px; }
+  .diff-block { padding: 16px 20px 0; }
+  .diff-row,
+  .diff-row-head {
+    grid-template-columns: 1fr;
+  }
+  .diff-row-head { display: none; }
+  .diff-cell {
+    padding: 10px 14px;
+  }
+  .diff-cell + .diff-cell {
+    border-left: none;
+    border-top: 1px solid #f1f5f9;
+  }
+  .diff-cell-val::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.58rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 3px;
+    font-family: inherit;
+  }
+
+  .payload-block { margin: 16px 20px 0; }
   .payload-pre { padding: 14px 14px; font-size: 0.72rem; }
 
   .request-actions {
     flex-direction: column-reverse;
     padding: 16px 20px;
+    margin-top: 16px;
   }
   .action-btn { padding: 13px 16px; }
 
+  .reject-reason { margin: 16px 20px 0; }
   .reviewed-banner { padding: 16px 20px; }
-
   .reject-card { padding: 20px; }
 }
 </style>
