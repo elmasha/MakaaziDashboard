@@ -45,7 +45,6 @@
             </span>
           </button>
 
-          <!-- Sign out — after Settings, scrolls with the nav -->
           <button class="nav-item nav-item-logout" @click="logout">
             <span class="nav-icon-wrap">
               <v-icon size="18">mdi-logout</v-icon>
@@ -105,7 +104,7 @@
       <v-navigation-drawer
         v-model="drawer"
         temporary
-        absolute
+        fixed
         width="280"
         class="mobile-drawer"
       >
@@ -209,63 +208,19 @@ export default {
     },
     allMenuItems() {
       const items = [
-        {
-          title: 'Dashboard', view: 'dashboard',
-          icon: 'mdi-view-dashboard-outline', route: '/admin',
-        },
-        {
-          title: 'Approvals', view: 'approvals',
-          icon: 'mdi-shield-check-outline', route: '/admin/approvals',
-          roles: ['super'], badge: this.pendingApprovals,
-        },
-        {
-          title: 'Estates', view: 'estates',
-          icon: 'mdi-office-building-outline', route: '/admin/estates',
-        },
-        {
-          title: 'Subscriptions', view: 'subscriptions',
-          icon: 'mdi-credit-card-outline', route: '/admin/subscriptions',
-          shortTitle: 'Subs',
-        },
-        {
-          title: 'Officials', view: 'officials',
-          icon: 'mdi-shield-account-outline', route: '/admin/officials',
-        },
-        {
-          title: 'Residents', view: 'residents',
-          icon: 'mdi-home-group', route: '/admin/residents',
-        },
-        {
-          title: 'Vehicles', view: 'vehicles',
-          icon: 'mdi-car-multiple', route: '/admin/vehicles',
-        },
-        {
-          title: 'Visitors', view: 'visitors',
-          icon: 'mdi-account-multiple-plus', route: '/admin/visitors',
-        },
-        {
-          title: 'Reports', view: 'reports',
-          icon: 'mdi-chart-line', route: '/admin/reports',
-        },
-        {
-          title: 'SMS Logs', view: 'sms',
-          icon: 'mdi-message-text-outline', route: '/admin/sms',
-          shortTitle: 'SMS',
-        },
-        {
-          title: 'Audit Logs', view: 'audit',
-          icon: 'mdi-history', route: '/admin/audit',
-        },
-        {
-          title: 'Admins', view: 'admins',
-          icon: 'mdi-shield-crown-outline', route: '/admin/admins',
-          roles: ['super'],
-        },
-        {
-          title: 'Settings', view: 'settings',
-          icon: 'mdi-cog-outline', route: '/admin/settings',
-          roles: ['super'],
-        },
+        { title: 'Dashboard', view: 'dashboard', icon: 'mdi-view-dashboard-outline', route: '/admin' },
+        { title: 'Approvals', view: 'approvals', icon: 'mdi-shield-check-outline', route: '/admin/approvals', roles: ['super'], badge: this.pendingApprovals },
+        { title: 'Estates', view: 'estates', icon: 'mdi-office-building-outline', route: '/admin/estates' },
+        { title: 'Subscriptions', view: 'subscriptions', icon: 'mdi-credit-card-outline', route: '/admin/subscriptions', shortTitle: 'Subs' },
+        { title: 'Officials', view: 'officials', icon: 'mdi-shield-account-outline', route: '/admin/officials' },
+        { title: 'Residents', view: 'residents', icon: 'mdi-home-group', route: '/admin/residents' },
+        { title: 'Vehicles', view: 'vehicles', icon: 'mdi-car-multiple', route: '/admin/vehicles' },
+        { title: 'Visitors', view: 'visitors', icon: 'mdi-account-multiple-plus', route: '/admin/visitors' },
+        { title: 'Reports', view: 'reports', icon: 'mdi-chart-line', route: '/admin/reports' },
+        { title: 'SMS Logs', view: 'sms', icon: 'mdi-message-text-outline', route: '/admin/sms', shortTitle: 'SMS' },
+        { title: 'Audit Logs', view: 'audit', icon: 'mdi-history', route: '/admin/audit' },
+        { title: 'Admins', view: 'admins', icon: 'mdi-shield-crown-outline', route: '/admin/admins', roles: ['super'] },
+        { title: 'Settings', view: 'settings', icon: 'mdi-cog-outline', route: '/admin/settings', roles: ['super'] },
       ];
       return items;
     },
@@ -449,7 +404,7 @@ export default {
   position: sticky;
   top: 0;
   align-self: flex-start;
-  padding: 22px 0;
+  padding: 24px 0;
   overflow: hidden;
 }
 .admin-sidebar::before {
@@ -474,7 +429,7 @@ export default {
 .brand-block {
   position: relative; z-index: 1;
   display: flex; align-items: center; gap: 12px;
-  padding: 0 20px 22px; flex-shrink: 0;
+  padding: 0 22px 26px; flex-shrink: 0;
 }
 .brand-mark {
   width: 42px; height: 42px; border-radius: 12px;
@@ -500,7 +455,7 @@ export default {
 .admin-chip {
   position: relative; z-index: 1;
   display: flex; align-items: center; gap: 10px;
-  margin: 0 16px 22px; padding: 11px 12px;
+  margin: 0 18px 26px; padding: 12px 14px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px; backdrop-filter: blur(10px);
@@ -529,7 +484,7 @@ export default {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 12px;
+  padding: 0 14px 24px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   -webkit-overflow-scrolling: touch;
@@ -542,14 +497,14 @@ export default {
 .nav-item {
   width: 100%;
   display: flex; align-items: center; gap: 12px;
-  padding: 10px 12px;
+  padding: 11px 14px;
   background: transparent; border: none; border-radius: 10px;
   color: rgba(255, 255, 255, 0.62);
   font-size: 0.85rem; font-weight: 500;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit; text-align: left;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -589,10 +544,9 @@ export default {
   color: #dc2626; box-shadow: none;
 }
 
-/* ---- Sign Out nav item ------------------------------------- */
 .nav-item-logout {
-  margin-top: 12px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding-top: 18px;
   color: #fca5a5;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0;
@@ -685,25 +639,26 @@ export default {
 }
 .admin-content {
   flex: 1;
-  padding: 24px 28px 40px;
+  padding: 28px 32px 48px;
   min-width: 0;
 }
 .admin-main-mobile .admin-content {
-  padding: 16px 16px 96px;
+  padding: 18px 18px 104px;
 }
 
 /* ============================================================
-   MOBILE DRAWER — two-part layout
+   MOBILE DRAWER
    ------------------------------------------------------------
-   [brand]  — fixed at top
-   [scroll] — flex: 1, scrolls vertically; contains nav + Sign Out
+   Uses `fixed` positioning so the drawer is always anchored to
+   the viewport (not to page content). Inner height is 100% (not
+   100vh) so it respects the actual rendered height instead of
+   including the mobile browser address bar.
    ============================================================ */
 .mobile-drawer {
   background: linear-gradient(180deg, #0a0820 0%, #120f33 100%) !important;
 }
 
-/* Kill Vuetify's default scroll on the content wrapper and
-   make it the flex parent for our layout */
+/* Vuetify's content wrapper becomes the flex parent */
 ::v-deep .mobile-drawer .v-navigation-drawer__content {
   display: flex !important;
   flex-direction: column !important;
@@ -715,8 +670,8 @@ export default {
 .mobile-drawer-inner {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-height: 100vh;
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
 }
 
@@ -726,18 +681,17 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 22px 20px;
+  padding: 24px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Scrollable region: nav items + Sign Out.
-   Bottom padding = clear the mobile bottom nav (~54px) + safe area. */
+/* Scrollable region: nav items + Sign Out */
 .mobile-drawer-inner .drawer-scroll {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 12px calc(90px + env(safe-area-inset-bottom)) 12px;
+  padding: 14px 14px calc(96px + env(safe-area-inset-bottom)) 14px;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
