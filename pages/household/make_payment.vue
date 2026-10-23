@@ -404,8 +404,8 @@
 import axios from 'axios';
 import numeral from 'numeral';
 
-const API = 'https://makaaziserver22.up.railway.app/api';
-const PAYMENT_API = 'https://makaaziserver22.up.railway.app/payment';
+const API = 'https://makaaziserver-production.up.railway.app/api';
+const PAYMENT_API = 'https://makaaziserver-production.up.railway.app/payment';
 
 export default {
   name: 'HouseholdMakePayment',

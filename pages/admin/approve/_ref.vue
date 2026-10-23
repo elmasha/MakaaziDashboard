@@ -1,4 +1,4 @@
-<template>
+          <template>
   <div class="single-approve-page">
     <!-- ACCESS GATE -->
     <div v-if="!roleReady" class="gate-state">
@@ -404,7 +404,7 @@
 <script>
 import axios from 'axios';
 
-const API = 'https://makaaziserver22.up.railway.app/api';
+const API = 'https://makaaziserver-production.up.railway.app/api';
 
 export default {
   name: 'AdminApproveSingle',

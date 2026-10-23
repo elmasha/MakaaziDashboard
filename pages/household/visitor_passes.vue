@@ -566,7 +566,7 @@
 <script>
 import axios from "axios";
 
-const API = "https://makaaziserver22.up.railway.app/api";
+const API = "https://makaaziserver-production.up.railway.app/api";
 const APP_URL = "https://makaazi.app";
 
 // "2026-09-30T14:30" → local time for <input type="datetime-local">

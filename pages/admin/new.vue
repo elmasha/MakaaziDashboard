@@ -438,7 +438,7 @@
 <script>
 import axios from 'axios';
 
-const API = 'https://makaaziserver22.up.railway.app/api';
+const API = 'https://makaaziserver-production.up.railway.app/api';
 
 export default {
   name: 'AdminNewEstate',
