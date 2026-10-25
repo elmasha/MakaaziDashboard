@@ -467,7 +467,6 @@ export default {
 
       deleteDialog: false,
       deleteTarget: null,
-
       snackbar: { show: false, text: '', color: 'success' },
     };
   },
