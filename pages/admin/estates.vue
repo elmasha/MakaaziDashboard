@@ -307,9 +307,7 @@ export default {
       search: '',
       statusFilter: '',
       openMenuId: null,
-
       adminRole: null,
-
       // Remove confirmation
       confirmDialog: false,
       estateToRemove: null,

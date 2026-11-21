@@ -32,7 +32,6 @@ export default {
       miniVariant: false,
       right: true,
       rightDrawer: false,
-      title: "Charge24 Mpesa",
     };
   },
 };
