@@ -1,8 +1,6 @@
 <template>
   <div class="config-page">
-    <!-- ============================================================
-         HEADER
-         ============================================================ -->
+    <!-- HEADER -->
     <div class="page-header">
       <div>
         <h1 class="page-title">Address configuration</h1>
@@ -16,9 +14,7 @@
       </button>
     </div>
 
-    <!-- ============================================================
-         SUMMARY STRIP
-         ============================================================ -->
+    <!-- SUMMARY STRIP -->
     <div class="summary-strip">
       <div class="summary-card">
         <div class="summary-icon summary-icon-purple">
@@ -60,9 +56,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         TOGGLE CARDS
-         ============================================================ -->
+    <!-- TOGGLE CARDS -->
     <div class="toggles-grid">
       <div
         v-for="t in toggles"
@@ -104,11 +98,9 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         ADDRESS CARDS
-         ============================================================ -->
+    <!-- ADDRESS CARDS -->
     <div class="addr-grid">
-      <!-- ============ SECTIONS ============ -->
+      <!-- SECTIONS -->
       <div v-if="config.show_section" class="addr-card addr-card-purple">
         <div class="addr-head">
           <div class="addr-icon addr-icon-purple">
@@ -179,7 +171,7 @@
         </div>
       </div>
 
-      <!-- ============ COURTS ============ -->
+      <!-- COURTS -->
       <div v-if="config.show_court" class="addr-card addr-card-blue">
         <div class="addr-head">
           <div class="addr-icon addr-icon-blue">
@@ -250,7 +242,7 @@
         </div>
       </div>
 
-      <!-- ============ STREETS ============ -->
+      <!-- STREETS -->
       <div v-if="config.show_street" class="addr-card addr-card-green">
         <div class="addr-head">
           <div class="addr-icon addr-icon-green">
@@ -321,7 +313,7 @@
         </div>
       </div>
 
-      <!-- ============ ALL DISABLED ============ -->
+      <!-- ALL DISABLED -->
       <div v-if="!anyEnabled" class="disabled-card">
         <div class="disabled-icon">
           <v-icon size="36" color="#7c3aed">mdi-tune-off</v-icon>
@@ -333,9 +325,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         INFO CARD
-         ============================================================ -->
+    <!-- INFO CARD -->
     <div class="info-card">
       <div class="info-icon">
         <v-icon size="18" color="white">mdi-information-outline</v-icon>
@@ -349,17 +339,15 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         CONFIRM DELETE DIALOG
-         ============================================================ -->
+    <!-- CONFIRM DELETE DIALOG -->
     <v-dialog v-model="confirmDialog" max-width="420" content-class="confirm-dialog">
       <div class="confirm-shell">
         <div class="confirm-icon">
           <v-icon size="30" color="#ef4444">mdi-delete-outline</v-icon>
         </div>
-        <div class="confirm-title">Delete "{{ deleteTarget?.name }}"?</div>
+        <div class="confirm-title">Delete "{{ deleteTarget && deleteTarget.name }}"?</div>
         <div class="confirm-text">
-          This will remove the {{ deleteTarget?.type }} permanently.
+          This will remove the {{ deleteTarget && deleteTarget.type }} permanently.
           Households already assigned to it will keep their data, but it will no longer
           appear in new registration forms.
         </div>
@@ -408,7 +396,7 @@
 <script>
 import axios from "axios";
 
-const API = "https://makaaziserver22.up.railway.app/api";
+const API = "https://makaaziserver-production.up.railway.app/api";
 
 export default {
   name: "EstateAddressConfig",
@@ -482,14 +470,27 @@ export default {
       );
     },
   },
-  mounted() {
-    this.refreshAll();
+
+  // FIX: watch estateId with immediate:true so all config + lists load
+  // as soon as the parent provides it — no manual refresh needed.
+  watch: {
+    estateId: {
+      immediate: true,
+      handler(id) {
+        if (id) this.refreshAll();
+      },
+    },
   },
+
+  // FIX: removed mounted() fetch. The watcher above handles initial load
+  // AND any later estateId change (route change, bootstrap redirect, etc.).
+
   methods: {
     // =========================================================
     // LOAD
     // =========================================================
     async refreshAll() {
+      if (!this.estateId) return;
       this.loading = true;
       await Promise.allSettled([
         this.fetchConfig(),
@@ -616,7 +617,11 @@ export default {
         this.newSection = "";
         await this.fetchSections();
       } catch (err) {
-        this.showError(err.response?.data?.error || "Could not add section");
+        // FIX: removed optional chaining for Vue 2 compatibility
+        const msg =
+          (err.response && err.response.data && err.response.data.error) ||
+          "Could not add section";
+        this.showError(msg);
       } finally {
         this.addingSection = false;
       }
@@ -635,7 +640,10 @@ export default {
         this.newCourt = "";
         await this.fetchCourts();
       } catch (err) {
-        this.showError(err.response?.data?.error || "Could not add court");
+        const msg =
+          (err.response && err.response.data && err.response.data.error) ||
+          "Could not add court";
+        this.showError(msg);
       } finally {
         this.addingCourt = false;
       }
@@ -654,7 +662,10 @@ export default {
         this.newStreet = "";
         await this.fetchStreets();
       } catch (err) {
-        this.showError(err.response?.data?.error || "Could not add street");
+        const msg =
+          (err.response && err.response.data && err.response.data.error) ||
+          "Could not add street";
+        this.showError(msg);
       } finally {
         this.addingStreet = false;
       }
@@ -706,9 +717,11 @@ export default {
         if (type === "street") await this.fetchStreets();
       } catch (err) {
         console.error(err);
-        this.showError(
-          err.response?.data?.error || "Could not delete — backend route missing"
-        );
+        // FIX: removed optional chaining
+        const msg =
+          (err.response && err.response.data && err.response.data.error) ||
+          "Could not delete — backend route missing";
+        this.showError(msg);
       } finally {
         this.deleting = false;
       }

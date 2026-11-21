@@ -82,6 +82,7 @@
       <div class="estate-content">
         <transition name="view-fade" mode="out-in">
           <div :key="currentView" class="estate-view">
+            <!-- FIX: pass estateId; children must watch it with immediate:true -->
             <dashboard v-if="currentView === 'dashboard'" :estateId="estateId" />
             <account v-else-if="currentView === 'account'" :estateId="estateId" />
             <billing v-else-if="currentView === 'billing'" :estateId="estateId" />
@@ -316,7 +317,7 @@ import estateConfig from "@/components/estate/estateConfig.vue";
 import estateOfficials from "@/components/estate/estateOfficials.vue";
 import account from "@/components/estate/account.vue";
 
-const API = "https://makaaziserver22.up.railway.app/api";
+const API = "https://makaaziserver-production.up.railway.app/api";
 
 export default {
   name: "EstateConsole",
@@ -332,7 +333,8 @@ export default {
 
   data() {
     return {
-      isMobile: false,
+      // FIX: initialise isMobile from window so there is no first-paint flicker
+      isMobile: typeof window !== "undefined" ? window.innerWidth < 960 : false,
       drawer: false,
       currentView: "dashboard",
 
@@ -390,6 +392,18 @@ export default {
     },
   },
 
+  watch: {
+    // FIX: react to route param changes so navigating between estates reloads everything
+    "$route.params.id"(newId) {
+      const id = parseInt(newId);
+      if (!isNaN(id) && id !== this.estateId) {
+        this.estateId = id;
+        this.currentView = "dashboard";
+        this.initPage();
+      }
+    },
+  },
+
   mounted() {
     this.onResize();
     window.addEventListener("resize", this.onResize);
@@ -397,10 +411,10 @@ export default {
     const id = parseInt(this.$route.params.id);
     if (!isNaN(id)) {
       this.estateId = id;
-      this.fetchEstate();
-      this.checkBilling();
+      this.initPage();
     } else {
-      this.showError("Invalid estate ID in URL");
+      // FIX: no :id in URL → redirect to the first estate instead of hanging on "Loading…"
+      this.bootstrapEstate();
     }
   },
 
@@ -411,6 +425,37 @@ export default {
   methods: {
     onResize() {
       this.isMobile = window.innerWidth < 960;
+    },
+
+    // FIX: single init method so watcher and mounted do the same thing
+    initPage() {
+      if (!this.estateId) return;
+      this.estate_name = "";
+      this.estate_urn = "";
+      this.estate_houseHolds = [];
+      this.fetchEstate();
+      this.checkBilling();
+      this.fetchEstateHouseholds();
+    },
+
+    // FIX: when there is no :id in the URL, pick the first estate and redirect
+    async bootstrapEstate() {
+      try {
+        const { data: list } = await axios.get(`${API}/estates/getall`);
+        const first = Array.isArray(list) && list.length ? list[0] : null;
+        if (first && first.estate_id) {
+          // Adjust the route path below to match your actual route name/path
+          this.$router.replace(`/estates/${first.estate_id}`);
+          // Also init directly in case the route doesn't remount this component
+          this.estateId = first.estate_id;
+          this.initPage();
+          return;
+        }
+        this.showError("No estates found");
+      } catch (err) {
+        console.warn("Bootstrap failed:", err.message);
+        this.showError("Could not load estates");
+      }
     },
 
     MoveNavigation(view) {
@@ -444,8 +489,9 @@ export default {
       if (!this.estateId) return;
       try {
         const { data } = await axios.get(`${API}/estates/subscriptions/${this.estateId}/disable-if-due`);
-        const sub = data?.subscription || data;
-        this.estate_active = sub?.is_active === 1 || sub?.is_active === true;
+        // FIX: removed optional chaining so Vue 2 / older Babel builds don't break
+        const sub = (data && data.subscription) || data || {};
+        this.estate_active = sub.is_active === 1 || sub.is_active === true;
       } catch (err) {
         console.warn("Billing check failed:", err.message);
       }
@@ -519,7 +565,9 @@ export default {
         this.fetchEstateHouseholds();
       } catch (err) {
         console.error(err);
-        this.showError(err.response?.data?.error || "Could not assign official");
+        // FIX: removed optional chaining
+        const msg = (err.response && err.response.data && err.response.data.error) || "Could not assign official";
+        this.showError(msg);
       }
     },
 
@@ -533,7 +581,9 @@ export default {
         this.showSuccess("Official role removed");
         this.fetchEstateHouseholds();
       } catch (err) {
-        this.showError(err.response?.data?.error || "Could not revoke");
+        // FIX: removed optional chaining
+        const msg = (err.response && err.response.data && err.response.data.error) || "Could not revoke";
+        this.showError(msg);
       }
     },
 
@@ -548,8 +598,9 @@ export default {
     },
 
     logout() {
-      if (this.$fire?.auth) this.$fire.auth.signOut();
-      this.$router.push("/");
+      // FIX: removed optional chaining + redirect to a real login route, not "/"
+      if (this.$fire && this.$fire.auth) this.$fire.auth.signOut();
+      this.$router.push("/officials/login");
     },
 
     showSuccess(msg) {
@@ -953,7 +1004,6 @@ export default {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Generous bottom padding so content never ends flush against siblings */
   padding: 24px 28px 80px;
   -webkit-overflow-scrolling: touch;
 }
@@ -967,12 +1017,10 @@ export default {
   background: #c7b8ff;
 }
 
-/* Wrapper around the current view */
 .estate-view {
   min-height: 100%;
 }
 
-/* Extra tail spacer — guarantees nothing overlaps at the bottom */
 .estate-content-tail {
   height: 8px;
   width: 100%;
@@ -983,23 +1031,17 @@ export default {
    MOBILE — reserve space for bottom nav + extra components
    ============================================================ */
 .estate-main-mobile {
-  /* No extra bottom margin on the main itself — the content handles it */
   padding-bottom: 0;
 }
 
 .estate-main-mobile .estate-content {
-  /* 72px bottom nav + ~20px breathing + safe area on iOS
-     Bumped from 96 → 120 so nothing hides behind the nav or a FAB */
   padding: 16px 16px calc(120px + env(safe-area-inset-bottom));
 }
 
-/* Keep the extra tail spacer on mobile too */
 .estate-main-mobile .estate-content-tail {
   height: 16px;
 }
 
-/* If you have a floating action button or chat widget below the
-   bottom nav, bump the padding even more here: */
 @media (max-width: 959px) {
   .estate-main-mobile.has-extra-bottom .estate-content {
     padding-bottom: calc(160px + env(safe-area-inset-bottom));

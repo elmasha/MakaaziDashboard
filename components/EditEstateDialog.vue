@@ -684,7 +684,7 @@ import axios from 'axios';
 import numeral from 'numeral';
 import EditEstateDialog from '~/components/EditEstateDialog.vue';
 
-const API = 'https://makaaziserver22.up.railway.app/api';
+const API = 'https://makaaziserver-production.up.railway.app/api';
 
 export default {
   name: 'EditEstateDialog',

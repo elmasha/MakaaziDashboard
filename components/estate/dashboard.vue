@@ -597,7 +597,7 @@ import numeral from "numeral";
 import Map from "@/components/map.vue";
 import paymentSummary from "@/components/paymentSummary.vue";
 
-const API = "https://makaaziserver22.up.railway.app/api";
+const API = "https://makaaziserver-production.up.railway.app/api";
 
 export default {
   name: "EstateDashboard",
@@ -680,12 +680,23 @@ export default {
     };
   },
 
-  mounted() {
-    this.refreshAll();
+  // FIX: watch estateId with immediate:true so all data loads as soon as
+  // the parent provides it — no manual refresh needed.
+  watch: {
+    estateId: {
+      immediate: true,
+      handler(id) {
+        if (id) this.refreshAll();
+      },
+    },
   },
+
+  // FIX: removed mounted() fetch. The watcher above handles initial load
+  // AND any later estateId change (route change, bootstrap redirect, etc.).
 
   methods: {
     async refreshAll() {
+      if (!this.estateId) return;
       this.refreshing = true;
       await Promise.allSettled([
         this.fetchEstate(),
@@ -817,7 +828,11 @@ export default {
         this.estateSections_input = null;
         this.fetchEstateAddress();
       } catch (err) {
-        this.showError(err.response?.data?.error || "Could not add section");
+        // FIX: removed optional chaining for Vue 2 compatibility
+        const msg =
+          (err.response && err.response.data && err.response.data.error) ||
+          "Could not add section";
+        this.showError(msg);
       } finally {
         this.addingSection = false;
       }
@@ -835,7 +850,10 @@ export default {
         this.estateStreet_input = null;
         this.fetchEstateAddress();
       } catch (err) {
-        this.showError(err.response?.data?.error || "Could not add street");
+        const msg =
+          (err.response && err.response.data && err.response.data.error) ||
+          "Could not add street";
+        this.showError(msg);
       } finally {
         this.addingStreet = false;
       }
@@ -853,7 +871,10 @@ export default {
         this.estateCourts_input = null;
         this.fetchEstateAddress();
       } catch (err) {
-        this.showError(err.response?.data?.error || "Could not add court");
+        const msg =
+          (err.response && err.response.data && err.response.data.error) ||
+          "Could not add court";
+        this.showError(msg);
       } finally {
         this.addingCourt = false;
       }
@@ -890,6 +911,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 .dashboard-page {

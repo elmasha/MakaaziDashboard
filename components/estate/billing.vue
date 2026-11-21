@@ -27,6 +27,85 @@
     </div>
 
     <!-- ============================================================
+         INVOICES FROM MAKAAZI
+         ============================================================ -->
+    <div class="panel-card">
+      <div class="panel-head">
+        <div class="panel-title">
+          Invoices from Makaazi
+          <span class="panel-count">{{ invoices.length }}</span>
+        </div>
+        <button class="panel-action" @click="fetchInvoices" :disabled="invoicesLoading">
+          <v-icon size="14" :class="{ spin: invoicesLoading }">mdi-refresh</v-icon>
+          Refresh
+        </button>
+      </div>
+      
+      <div class="panel-body no-pad">
+        <div v-if="invoicesLoading" class="panel-loading">
+          <v-skeleton-loader type="list-item" />
+          <v-skeleton-loader type="list-item" />
+        </div>
+        
+        <div v-else-if="!invoices.length" class="panel-empty">
+          <v-icon size="40" color="#cbd5e1" class="mb-2">mdi-receipt-text-outline</v-icon>
+          <div style="font-weight: 700; color: #4b5563;">No invoices yet</div>
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">
+            You will see invoices here when Makaazi admin issues one for your estate.
+          </div>
+        </div>
+
+        <div v-else class="invoice-table-wrap">
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Description</th>
+                <th class="ta-right">Amount</th>
+                <th>Due date</th>
+                <th>Status</th>
+                <th class="ta-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="inv in invoices" :key="inv.invoice_id">
+                <td class="mono">{{ inv.invoice_number }}</td>
+                <td>
+                  <div class="inv-title">{{ inv.title }}</div>
+                  <div v-if="inv.description" class="inv-desc">{{ inv.description }}</div>
+                </td>
+                <td class="ta-right mono">KES {{ numeral(inv.amount).format('0,0') }}</td>
+                <td>{{ fmtDate(inv.due_date) }}</td>
+                <td>
+                  <span class="status-pill" :class="invoiceStatusClass(inv.status)">
+                    {{ inv.status }}
+                  </span>
+                </td>
+                <td class="ta-right">
+                  <!-- Block Pay if already active -->
+                  <button
+                    v-if="['Sent', 'Overdue'].includes(inv.status) && !active"
+                    class="pay-btn-small"
+                    @click="payInvoice(inv)"
+                  >
+                    Pay
+                  </button>
+                  <span v-else-if="inv.status === 'Paid'" class="paid-text">
+                    Paid
+                  </span>
+                  <!-- Show a badge if they can't pay right now -->
+                  <span v-else-if="active && ['Sent', 'Overdue'].includes(inv.status)" class="status-pill" style="background: #f1f5f9; color: #64748b;">
+                    Sub Active
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
          HEADER
          ============================================================ -->
     <div class="page-header">
@@ -136,7 +215,9 @@
           </div>
           <div class="flex-grow-1" style="min-width: 0">
             <div class="payment-title">M-Pesa payment</div>
-            <div class="payment-sub">{{ duration }} plan · {{ plan_name }}</div>
+            <div class="payment-sub">
+              {{ payingInvoice ? `Invoice ${payingInvoice.invoice_number}` : `${duration} plan · ${plan_name}` }}
+            </div>
           </div>
           <button class="payment-close" @click="resetPayment">
             <v-icon size="18" color="white">mdi-close</v-icon>
@@ -236,12 +317,9 @@
 import axios from "axios";
 import numeral from "numeral";
 
-const API = "https://makaaziserver22.up.railway.app";
+const API = "https://makaaziserver-production.up.railway.app";
 const POLL_DURATION = 25; // seconds
 
-// Presentation metadata keyed by tier index (0-based).
-// The DB stores only plan_id, plan_name, min/max_households, monthly_rate.
-// Everything cosmetic (icon, color, features) lives here.
 const TIER_META = [
   {
     icon: "mdi-home-outline",
@@ -311,6 +389,7 @@ export default {
       phone: null,
       progress_bar: false,
       CheckoutRequestID: null,
+      payingInvoice: null, // Stores invoice object if paying an invoice
 
       // Timer
       timerEnabled: false,
@@ -328,7 +407,21 @@ export default {
       // Plans (fetched from backend)
       plans: [],
       loadingPlans: false,
+
+      // Invoices
+      invoices: [],
+      invoicesLoading: false,
     };
+  },
+
+  watch: {
+    // Fetch invoices when component mounts or estateId changes
+    estateId: {
+      immediate: true,
+      handler(newId) {
+        if (newId) this.fetchInvoices();
+      }
+    }
   },
 
   mounted() {
@@ -340,6 +433,61 @@ export default {
   },
 
   methods: {
+    // =========================================================
+    // INVOICES
+    // =========================================================
+    async fetchInvoices() {
+      if (!this.estateId) return;
+      this.invoicesLoading = true;
+      try {
+        const { data } = await axios.get(
+          `${API}/api/estates/estates/${this.estateId}/invoices`
+        );
+        this.invoices = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn("Invoices fetch failed:", err.message);
+        this.invoices = [];
+      } finally {
+        this.invoicesLoading = false;
+      }
+    },
+
+    invoiceStatusClass(s) {
+      return {
+        'status-draft': s === 'Draft',
+        'status-sent': s === 'Sent',
+        'status-overdue': s === 'Overdue',
+        'status-paid': s === 'Paid',
+        'status-cancelled': s === 'Cancelled',
+      };
+    },
+
+    fmtDate(d) {
+      if (!d) return '—';
+      try {
+        return new Date(d).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+      } catch {
+        return '—';
+      }
+    },
+
+    payInvoice(inv) {
+      // Block Payment if Subscription is Active
+      if (this.active) {
+        return this.showError("Your subscription is already active. You cannot pay this invoice right now.");
+      }
+
+      this.payingInvoice = inv;
+      this.amount = inv.amount;
+      this.CheckoutRequestID = null;
+      this.stopTimer();
+      this.paymentForm = true;
+    },
+
     // =========================================================
     // TIMER CONTROL
     // =========================================================
@@ -378,7 +526,8 @@ export default {
         this.fetchActiveSub(),
         this.fetchMessage(),
         this.computeBand(),
-        this.fetchPlans(),       // ← NEW
+        this.fetchPlans(),
+        this.fetchInvoices(),
       ]);
     },
 
@@ -453,7 +602,6 @@ export default {
           return;
         }
 
-        // Map backend plan rows → UI plan objects
         this.plans = data.map((p, index) => {
           const meta = TIER_META[index % TIER_META.length];
           return {
@@ -471,7 +619,6 @@ export default {
         });
       } catch (err) {
         console.warn("Plans fetch failed:", err.message);
-        // Fallback: minimal placeholder so the grid isn't empty
         this.plans = [];
       } finally {
         this.loadingPlans = false;
@@ -486,6 +633,7 @@ export default {
       this.plan_name = plan.name;
       this.duration = "Monthly";
       this.CheckoutRequestID = null;
+      this.payingInvoice = null; // Clear invoice
       this.stopTimer();
       this.paymentForm = true;
     },
@@ -494,6 +642,7 @@ export default {
       this.stopTimer();
       this.paymentForm = false;
       this.CheckoutRequestID = null;
+      this.payingInvoice = null;
       this.progress_bar = false;
     },
 
@@ -511,15 +660,32 @@ export default {
 
       this.progress_bar = true;
       try {
+        let payload = {
+          phone_number: clean,
+          estate_id: this.estateId,
+        };
+
+        // ========================================================
+        // THE FIX: STRICT PAYLOAD SEPARATION
+        // ========================================================
+        if (this.payingInvoice) {
+          // 1. If paying an invoice, strictly use the invoice data
+          payload.invoice_id = this.payingInvoice.invoice_id;
+          payload.amount = this.payingInvoice.amount; 
+        } else {
+          // 2. If paying a plan, strictly use the plan data
+          payload.invoice_id = null;
+          payload.amount = this.amount; 
+        }
+
+        console.log("🔵 Payload being sent:", payload);
+
         const { data } = await axios.post(
           `${API}/payment/stk_push_subscription`,
-          {
-            phone_number: clean,
-            estate_id: this.estateId,
-          }
+          payload
         );
 
-        console.log("🔵 Subscription STK response:", data);
+        console.log("🔵 STK response:", data);
 
         const code = String(data.ResponseCode || "");
         const crid = data.CheckoutRequestID;
@@ -537,7 +703,7 @@ export default {
           );
         }
       } catch (err) {
-        console.error("🔴 Subscription STK error:", err.response?.data || err.message);
+        console.error("🔴 STK error:", err.response?.data || err.message);
         this.showError(
           err.response?.data?.error ||
           err.response?.data?.detail ||
@@ -548,10 +714,6 @@ export default {
       }
     },
 
-    /**
-     * Single query — always closes the dialog and shows a result.
-     * Never restarts the timer.
-     */
     async StkQuery() {
       if (!this.CheckoutRequestID) {
         this.resetPayment();
@@ -570,7 +732,7 @@ export default {
           { checkoutRequestId: this.CheckoutRequestID }
         );
 
-        console.log("🔵 Subscription STK query:", data);
+        console.log("🔵 STK query:", data);
 
         const rawCode = data.ResultCode ?? data.result_code ?? data.errorCode ?? "";
         const resultCode = String(rawCode);
@@ -578,54 +740,45 @@ export default {
           data.ResultDesc || data.result_desc || data.errorMessage || "";
         const mpesaStatus = data.mpesa_status;
 
-        // SUCCESS
         if (resultCode === "0" || mpesaStatus === "success") {
           outcome = "success";
-          message = "Payment received. Subscription renewed.";
+          message = this.payingInvoice ? "Invoice paid successfully!" : "Payment received. Subscription renewed.";
         }
-        // USER CANCELLED
         else if (resultCode === "1032") {
           outcome = "error";
           message = "You cancelled the payment on your phone.";
         }
-        // WRONG PIN
         else if (resultCode === "2001") {
           outcome = "error";
           message = "Wrong M-Pesa PIN. Please try again.";
         }
-        // INSUFFICIENT FUNDS
         else if (resultCode === "1") {
           outcome = "error";
           message = "Insufficient M-Pesa balance.";
         }
-        // INVALID PHONE
         else if (resultCode === "1001") {
           outcome = "error";
           message = "Invalid phone number.";
         }
-        // TIMEOUT
         else if (resultCode === "1002") {
           outcome = "error";
           message = "M-Pesa request timed out. Please try again.";
         }
-        // GENERIC FAILED
         else if (mpesaStatus === "failed") {
           outcome = "error";
           message = resultDesc || "Payment failed.";
         }
-        // STILL PENDING
         else {
           outcome = "pending";
           message =
             "Payment not confirmed yet. If you entered your PIN, it may take a few minutes to reflect. Check your payment history.";
         }
       } catch (err) {
-        console.error("🔴 Subscription STK query failed:", err.response?.data || err.message);
+        console.error("🔴 STK query failed:", err.response?.data || err.message);
         outcome = "error";
         message = "Could not verify payment status. Please try again.";
       }
 
-      // Always close dialog and show the result
       this.paymentForm = false;
       this.CheckoutRequestID = null;
       this.progress_bar = false;
@@ -633,12 +786,16 @@ export default {
 
       if (outcome === "success") {
         this.showSuccess(message);
+        if (this.payingInvoice) {
+          this.fetchInvoices(); // Refresh invoices to show 'Paid' status
+        }
         this.refreshAll();
       } else if (outcome === "pending") {
         this.showInfo(message);
       } else {
         this.showError(message);
       }
+      this.payingInvoice = null;
     },
 
     // =========================================================
@@ -668,6 +825,173 @@ export default {
   flex-direction: column;
   gap: 20px;
   max-width: 1100px;
+}
+
+/* ============================================================
+   INVOICE STYLES
+   ============================================================ */
+.panel-card {
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 13, 36, 0.03);
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.panel-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f0d24;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(128, 81, 255, 0.12);
+  color: #8051ff;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+.panel-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #8051ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.panel-action:hover { background: rgba(128, 81, 255, 0.08); }
+.panel-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.panel-body {
+  padding: 18px 20px;
+}
+.panel-body.no-pad {
+  padding: 0;
+}
+.panel-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.panel-loading {
+  padding: 16px 20px;
+}
+
+.invoice-table-wrap {
+  overflow-x: auto;
+}
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.invoice-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #64748b;
+  font-weight: 800;
+  background: #fafbff;
+  white-space: nowrap;
+}
+.invoice-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.invoice-table tr:hover {
+  background: #fafbff;
+}
+.ta-right { text-align: right !important; }
+.mono {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: #334155;
+  font-size: 0.8rem;
+}
+.inv-title {
+  font-weight: 700;
+  color: #0f0d24;
+}
+.inv-desc {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.status-pill {
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  display: inline-block;
+}
+.status-draft { background: #f1f5f9; color: #475569; }
+.status-sent { background: #dbeafe; color: #1d4ed8; }
+.status-overdue { background: #fee2e2; color: #b91c1c; }
+.status-paid { background: #d1fae5; color: #065f46; }
+.status-cancelled { background: #fef3c7; color: #b45309; }
+
+.pay-btn-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.pay-btn-small:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(124, 58, 237, 0.6);
+}
+.paid-text {
+  font-size: 0.75rem;
+  color: #10b981;
+  font-weight: 700;
+}
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 767px) {
+  .invoice-table thead th:nth-child(3),
+  .invoice-table tbody td:nth-child(3),
+  .invoice-table thead th:nth-child(4),
+  .invoice-table tbody td:nth-child(4),
+  .invoice-table thead th:nth-child(6),
+  .invoice-table tbody td:nth-child(6) {
+    display: none; /* Hide Amount, Due date and Action on mobile */
+  }
 }
 
 /* ============================================================

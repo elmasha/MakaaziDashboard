@@ -1,725 +1,988 @@
 <template>
-  <div class="view-estate-page">
-    <!-- ============================================================
-         LOADING
-         ============================================================ -->
-    <div v-if="loading && !estate" class="loading-wrap">
-      <v-skeleton-loader type="article, actions" />
-    </div>
-
-    <!-- ============================================================
-         ERROR
-         ============================================================ -->
-    <div v-else-if="!estate" class="error-card">
-      <v-icon size="48" color="#94a3b8">mdi-alert-circle-outline</v-icon>
-      <div class="error-title">Estate not found</div>
-      <div class="error-text">The estate you're looking for doesn't exist or has been removed.</div>
-      <button class="error-back-btn" @click="$router.push('/admin/estates')">
-        <v-icon size="16" class="mr-1">mdi-arrow-left</v-icon>
-        Back to estates
-      </button>
-    </div>
-
-    <!-- ============================================================
-         CONTENT
-         ============================================================ -->
-    <template v-else>
-      <!-- Back link -->
-      <button class="back-link" @click="$router.push('/admin/estates')">
-        <v-icon size="16">mdi-arrow-left</v-icon>
-        All estates
-      </button>
-
-      <!-- Hero header -->
-      <div class="estate-hero">
-        <div class="hero-cover" :style="coverStyle">
-          <div class="hero-overlay"></div>
-          <div class="hero-content">
-            <div class="hero-avatar">
-              <span>{{ initialsOf(estate.estate_name) }}</span>
-            </div>
-            <div class="hero-text">
-              <div class="hero-name-row">
-                <h1 class="hero-name">{{ estate.estate_name }}</h1>
-                <span v-if="sub" class="hero-badge" :class="subStatusClass(sub.status)">
-                  {{ sub.status }}
-                </span>
-                <span v-else class="hero-badge badge-inactive">Not subscribed</span>
-              </div>
-              <div class="hero-meta">
-                <span class="hero-urn">
-                  <v-icon size="13">mdi-identifier</v-icon>
-                  {{ estate.estate_urn }}
-                </span>
-                <span class="hero-dot">·</span>
-                <span class="hero-loc">
-                  <v-icon size="13">mdi-map-marker-outline</v-icon>
-                  {{ estate.estate_location || 'No location' }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="hero-actions">
-          <button class="hero-btn hero-btn-ghost" @click="openEdit">
-            <v-icon size="16" class="mr-2">mdi-pencil-outline</v-icon>
-            Edit
-          </button>
-          <button class="hero-btn hero-btn-ghost" @click="copyUrn">
-            <v-icon size="16" class="mr-2">mdi-content-copy</v-icon>
-            Copy URN
-          </button>
-          <button class="hero-btn hero-btn-danger" @click="removeEstate">
-            <v-icon size="16" class="mr-2">mdi-delete-outline</v-icon>
-            Remove
-          </button>
-        </div>
+  <div>
+    <div class="view-estate-page">
+      <!-- LOADING -->
+      <div v-if="loading && !estate" class="loading-wrap">
+        <v-skeleton-loader type="article, actions" />
       </div>
 
-      <!-- KPI grid -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-icon kpi-icon-purple">
-            <v-icon size="18" color="white">mdi-home-group</v-icon>
-          </div>
-          <div class="kpi-body">
-            <div class="kpi-label">Households</div>
-            <div class="kpi-value">{{ residents.length }}</div>
-            <div class="kpi-sub">{{ pendingResidents }} pending</div>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon kpi-icon-lime">
-            <v-icon size="18" color="#0A0A14">mdi-shield-account-outline</v-icon>
-          </div>
-          <div class="kpi-body">
-            <div class="kpi-label">Officials</div>
-            <div class="kpi-value">{{ officials.length }}</div>
-            <div class="kpi-sub">{{ chairmenCount }} chairmen</div>
-          </div>
-        </div>
-
-        <div class="kpi-card kpi-card-highlight">
-          <div class="kpi-icon kpi-icon-white">
-            <v-icon size="18" color="#0A0A14">mdi-cash-multiple</v-icon>
-          </div>
-          <div class="kpi-body">
-            <div class="kpi-label">Total collected</div>
-            <div class="kpi-value">
-              <span class="currency">KES</span>
-              {{ formatNumShort(stats.total_collected) }}
-            </div>
-            <div class="kpi-sub">Lifetime</div>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon kpi-icon-blue">
-            <v-icon size="18" color="white">mdi-credit-card-outline</v-icon>
-          </div>
-          <div class="kpi-body">
-            <div class="kpi-label">Subscription</div>
-            <div class="kpi-value">{{ sub ? sub.plan_name || 'Custom' : '—' }}</div>
-            <div class="kpi-sub">
-              {{ sub ? `KES ${sub.monthly_rate || 0}/mo` : 'No plan' }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="tabs-wrap">
-        <button
-          v-for="t in tabs"
-          :key="t.id"
-          class="tab-btn"
-          :class="{ 'tab-btn-active': activeTab === t.id }"
-          @click="activeTab = t.id"
-        >
-          <v-icon size="16" class="mr-2">{{ t.icon }}</v-icon>
-          {{ t.label }}
-          <span v-if="t.count != null" class="tab-count">{{ t.count }}</span>
+      <!-- ERROR -->
+      <div v-else-if="!estate" class="error-card">
+        <v-icon size="48" color="#94a3b8">mdi-alert-circle-outline</v-icon>
+        <div class="error-title">Estate not found</div>
+        <div class="error-text">The estate you're looking for doesn't exist or has been removed.</div>
+        <button class="error-back-btn" @click="$router.push('/admin/estates')">
+          <v-icon size="16" class="mr-1">mdi-arrow-left</v-icon>
+          Back to estates
         </button>
       </div>
 
-      <!-- ============================================================
-           TAB: OVERVIEW
-           ============================================================ -->
-      <div v-if="activeTab === 'overview'" class="tab-panel">
-        <div class="overview-grid">
-          <div class="overview-main">
-            <div class="panel-card">
-              <div class="panel-head">
-                <div class="panel-title">About this estate</div>
-              </div>
-              <div class="panel-body">
-                <div class="detail-row">
-                  <div class="detail-label">Estate name</div>
-                  <div class="detail-value">{{ estate.estate_name }}</div>
-                </div>
-                <div class="detail-row">
-                  <div class="detail-label">URN</div>
-                  <div class="detail-value mono">{{ estate.estate_urn }}</div>
-                </div>
-                <div class="detail-row">
-                  <div class="detail-label">Location</div>
-                  <div class="detail-value">{{ estate.estate_location || '—' }}</div>
-                </div>
-                <div class="detail-row">
-                  <div class="detail-label">Latitude</div>
-                  <div class="detail-value mono">{{ estate.latitude || '—' }}</div>
-                </div>
-                <div class="detail-row">
-                  <div class="detail-label">Longitude</div>
-                  <div class="detail-value mono">{{ estate.longitude || '—' }}</div>
-                </div>
-                <div class="detail-row">
-                  <div class="detail-label">Created</div>
-                  <div class="detail-value">{{ fmtDate(estate.created_at) }}</div>
-                </div>
-              </div>
-            </div>
+      <!-- CONTENT -->
+      <template v-else>
+        <!-- Back link -->
+        <button class="back-link" @click="$router.push('/admin/estates')">
+          <v-icon size="16">mdi-arrow-left</v-icon>
+          All estates
+        </button>
 
-            <div class="panel-card">
-              <div class="panel-head">
-                <div class="panel-title">Officials</div>
-                <button class="panel-action" @click="activeTab = 'officials'">
-                  Manage
-                  <v-icon size="14">mdi-arrow-right</v-icon>
-                </button>
+        <!-- Hero header -->
+        <div class="estate-hero">
+          <div class="hero-cover" :style="coverStyle">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+              <div class="hero-avatar">
+                <span>{{ initialsOf(estate.estate_name) }}</span>
               </div>
-              <div class="panel-body">
-                <div v-if="!officials.length" class="panel-empty">
-                  No officials added yet.
+              <div class="hero-text">
+                <div class="hero-name-row">
+                  <h1 class="hero-name">{{ estate.estate_name }}</h1>
+                  <span v-if="sub" class="hero-badge" :class="subStatusClass(sub.status)">
+                    {{ sub.status }}
+                  </span>
+                  <span v-else class="hero-badge badge-inactive">Not subscribed</span>
                 </div>
-                <div
-                  v-for="o in officials.slice(0, 4)"
-                  :key="o.official_id"
-                  class="mini-row"
-                >
-                  <div class="mini-avatar" :class="avatarClass(o.role)">
-                    {{ initialsOf(o.full_name) }}
-                  </div>
-                  <div class="mini-info">
-                    <div class="mini-name">{{ o.full_name }}</div>
-                    <div class="mini-sub">{{ o.role }} · {{ o.contact_number }}</div>
-                  </div>
+                <div class="hero-meta">
+                  <span class="hero-urn">
+                    <v-icon size="13">mdi-identifier</v-icon>
+                    {{ estate.estate_urn }}
+                  </span>
+                  <span class="hero-dot">·</span>
+                  <span class="hero-loc">
+                    <v-icon size="13">mdi-map-marker-outline</v-icon>
+                    {{ estate.estate_location || 'No location' }}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="overview-side">
-            <div class="panel-card">
-              <div class="panel-head">
-                <div class="panel-title">Subscription</div>
+          <div class="hero-actions">
+            <button class="hero-btn hero-btn-ghost" @click="openEdit">
+              <v-icon size="16" class="mr-2">mdi-pencil-outline</v-icon>
+              Edit
+            </button>
+            <button class="hero-btn hero-btn-ghost" @click="copyUrn">
+              <v-icon size="16" class="mr-2">mdi-content-copy</v-icon>
+              Copy URN
+            </button>
+            <button class="hero-btn hero-btn-danger" @click="removeEstate">
+              <v-icon size="16" class="mr-2">mdi-delete-outline</v-icon>
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-purple">
+              <v-icon size="18" color="white">mdi-home-group</v-icon>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-label">Households</div>
+              <div class="kpi-value">{{ residents.length }}</div>
+              <div class="kpi-sub">{{ pendingResidents }} pending</div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-lime">
+              <v-icon size="18" color="#0A0A14">mdi-shield-account-outline</v-icon>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-label">Officials</div>
+              <div class="kpi-value">{{ officials.length }}</div>
+              <div class="kpi-sub">{{ chairmenCount }} chairmen</div>
+            </div>
+          </div>
+
+          <div class="kpi-card kpi-card-highlight">
+            <div class="kpi-icon kpi-icon-white">
+              <v-icon size="18" color="#0A0A14">mdi-cash-multiple</v-icon>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-label">Total collected</div>
+              <div class="kpi-value">
+                <span class="currency">KES</span>
+                {{ formatNumShort(stats.total_collected) }}
               </div>
-              <div class="panel-body">
-                <div v-if="!sub" class="panel-empty">
-                  No subscription attached to this estate.
+              <div class="kpi-sub">Lifetime</div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-amber">
+              <v-icon size="18" color="white">mdi-receipt-text-outline</v-icon>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-label">Outstanding</div>
+              <div class="kpi-value">
+                <span class="currency">KES</span>
+                {{ formatNumShort(invoiceStats.outstanding_amount) }}
+              </div>
+              <div class="kpi-sub">
+                {{ invoiceStats.sent + invoiceStats.overdue }} unpaid invoices
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-wrap">
+          <button
+            v-for="t in tabs"
+            :key="t.id"
+            class="tab-btn"
+            :class="{ 'tab-btn-active': activeTab === t.id }"
+            @click="activeTab = t.id"
+          >
+            <v-icon size="16" class="mr-2">{{ t.icon }}</v-icon>
+            {{ t.label }}
+            <span v-if="t.count != null" class="tab-count">{{ t.count }}</span>
+          </button>
+        </div>
+
+        <!-- TAB: OVERVIEW -->
+        <div v-if="activeTab === 'overview'" class="tab-panel">
+          <div class="overview-grid">
+            <div class="overview-main">
+              <div class="panel-card">
+                <div class="panel-head">
+                  <div class="panel-title">About this estate</div>
                 </div>
-                <template v-else>
-                  <div class="sub-status" :class="subStatusClass(sub.status)">
-                    <span class="sub-status-dot"></span>
-                    {{ sub.status }}
+                <div class="panel-body">
+                  <div class="detail-row">
+                    <div class="detail-label">Estate name</div>
+                    <div class="detail-value">{{ estate.estate_name }}</div>
                   </div>
-                  <div class="detail-row compact">
-                    <div class="detail-label">Plan</div>
-                    <div class="detail-value">{{ sub.plan_name || '—' }}</div>
+                  <div class="detail-row">
+                    <div class="detail-label">URN</div>
+                    <div class="detail-value mono">{{ estate.estate_urn }}</div>
                   </div>
-                  <div class="detail-row compact">
-                    <div class="detail-label">Monthly</div>
-                    <div class="detail-value">KES {{ sub.monthly_rate || 0 }}</div>
+                  <div class="detail-row">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">{{ estate.estate_location || '—' }}</div>
                   </div>
-                  <div class="detail-row compact">
-                    <div class="detail-label">Amount paid</div>
-                    <div class="detail-value">KES {{ formatNum(sub.amount_paid || 0) }}</div>
+                  <div class="detail-row">
+                    <div class="detail-label">Latitude</div>
+                    <div class="detail-value mono">{{ estate.latitude || '—' }}</div>
                   </div>
-                  <div class="detail-row compact">
-                    <div class="detail-label">Period</div>
-                    <div class="detail-value">
-                      {{ fmtDate(sub.start_date) }} → {{ fmtDate(sub.end_date) }}
+                  <div class="detail-row">
+                    <div class="detail-label">Longitude</div>
+                    <div class="detail-value mono">{{ estate.longitude || '—' }}</div>
+                  </div>
+                  <div class="detail-row">
+                    <div class="detail-label">Created</div>
+                    <div class="detail-value">{{ fmtDate(estate.created_at) }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel-card">
+                <div class="panel-head">
+                  <div class="panel-title">Officials</div>
+                  <button class="panel-action" @click="activeTab = 'officials'">
+                    Manage
+                    <v-icon size="14">mdi-arrow-right</v-icon>
+                  </button>
+                </div>
+                <div class="panel-body">
+                  <div v-if="!officials.length" class="panel-empty">
+                    No officials added yet.
+                  </div>
+                  <div
+                    v-for="o in officials.slice(0, 4)"
+                    :key="o.official_id"
+                    class="mini-row"
+                  >
+                    <div class="mini-avatar" :class="avatarClass(o.role)">
+                      {{ initialsOf(o.full_name) }}
+                    </div>
+                    <div class="mini-info">
+                      <div class="mini-name">{{ o.full_name }}</div>
+                      <div class="mini-sub">{{ o.role }} · {{ o.contact_number }}</div>
                     </div>
                   </div>
-                </template>
+                </div>
               </div>
             </div>
 
+            <div class="overview-side">
+              <div class="panel-card">
+                <div class="panel-head">
+                  <div class="panel-title">Subscription</div>
+                </div>
+                <div class="panel-body">
+                  <div v-if="!sub" class="panel-empty">
+                    No subscription attached to this estate.
+                  </div>
+                  <template v-else>
+                    <div class="sub-status" :class="subStatusClass(sub.status)">
+                      <span class="sub-status-dot"></span>
+                      {{ sub.status }}
+                    </div>
+                    <div class="detail-row compact">
+                      <div class="detail-label">Plan</div>
+                      <div class="detail-value">{{ sub.plan_name || '—' }}</div>
+                    </div>
+                    <div class="detail-row compact">
+                      <div class="detail-label">Monthly</div>
+                      <div class="detail-value">KES {{ sub.monthly_rate || 0 }}</div>
+                    </div>
+                    <div class="detail-row compact">
+                      <div class="detail-label">Amount paid</div>
+                      <div class="detail-value">KES {{ formatNum(sub.amount_paid || 0) }}</div>
+                    </div>
+                    <div class="detail-row compact">
+                      <div class="detail-label">Period</div>
+                      <div class="detail-value">
+                        {{ fmtDate(sub.start_date) }} → {{ fmtDate(sub.end_date) }}
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <div class="panel-card">
+                <div class="panel-head">
+                  <div class="panel-title">Address fields</div>
+                </div>
+                <div class="panel-body">
+                  <div class="toggle-row">
+                    <span>Show section</span>
+                    <span class="toggle-state" :class="cfg.show_section ? 'on' : 'off'">
+                      {{ cfg.show_section ? 'On' : 'Off' }}
+                    </span>
+                  </div>
+                  <div class="toggle-row">
+                    <span>Show court</span>
+                    <span class="toggle-state" :class="cfg.show_court ? 'on' : 'off'">
+                      {{ cfg.show_court ? 'On' : 'Off' }}
+                    </span>
+                  </div>
+                  <div class="toggle-row">
+                    <span>Show street</span>
+                    <span class="toggle-state" :class="cfg.show_street ? 'on' : 'off'">
+                      {{ cfg.show_street ? 'On' : 'Off' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: RESIDENTS -->
+        <div v-if="activeTab === 'residents'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-head">
+              <div class="panel-title">
+                Residents
+                <span class="panel-count">{{ residents.length }}</span>
+              </div>
+              <div class="panel-tools">
+                <input
+                  v-model="resSearch"
+                  class="mini-search"
+                  type="text"
+                  placeholder="Search…"
+                />
+                <select v-model="resStatus" class="mini-select">
+                  <option value="">All</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+            <div class="panel-body no-pad">
+              <div v-if="loading && !residents.length" class="panel-loading">
+                <v-skeleton-loader type="list-item-avatar-two-line" />
+                <v-skeleton-loader type="list-item-avatar-two-line" />
+              </div>
+
+              <div v-else-if="!residents.length" class="panel-empty">
+                No households registered for this estate yet.
+              </div>
+
+              <div v-else-if="!filteredResidents.length" class="panel-empty">
+                No residents match this filter.
+              </div>
+
+              <div
+                v-else
+                v-for="r in filteredResidents"
+                :key="r.household_id"
+                class="resident-row"
+              >
+                <div class="resident-avatar" :class="residentAvatarClass(r)">
+                  {{ initialsOf(r.primary_owner) }}
+                </div>
+                <div class="resident-body">
+                  <div class="resident-name-row">
+                    <span class="resident-name">{{ r.primary_owner }}</span>
+                    <span
+                      class="status-pill"
+                      :class="`status-${(r.status || '').toLowerCase()}`"
+                    >
+                      {{ r.status }}
+                    </span>
+                    <span v-if="r.is_official" class="official-mini-tag">
+                      {{ r.official_role || 'Official' }}
+                    </span>
+                  </div>
+                  <div class="resident-meta">
+                    {{ r.contact_number }} · {{ r.house_number || '—' }} ·
+                    {{ [r.section, r.court, r.street].filter(Boolean).join(' · ') }}
+                  </div>
+                </div>
+                <div class="resident-joined">{{ fmtDate(r.created_at) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: OFFICIALS -->
+        <div v-if="activeTab === 'officials'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-head">
+              <div class="panel-title">
+                Officials
+                <span class="panel-count">{{ officials.length }}</span>
+              </div>
+              <button class="panel-action primary" @click="openNewOfficial">
+                <v-icon size="14" class="mr-1">mdi-plus</v-icon>
+                Add official
+              </button>
+            </div>
+            <div class="panel-body no-pad">
+              <div v-if="!officials.length" class="panel-empty">
+                No officials added yet.
+              </div>
+              <div
+                v-for="o in officials"
+                :key="o.official_id"
+                class="official-row"
+              >
+                <div class="official-avatar" :class="avatarClass(o.role)">
+                  {{ initialsOf(o.full_name) }}
+                </div>
+                <div class="official-body">
+                  <div class="official-name-row">
+                    <span class="official-name">{{ o.full_name }}</span>
+                    <span class="role-pill" :class="roleClass(o.role)">
+                      {{ o.role }}
+                    </span>
+                  </div>
+                  <div class="official-meta">
+                    <v-icon size="12">mdi-phone-outline</v-icon>
+                    {{ o.contact_number || '—' }}
+                  </div>
+                </div>
+                <button class="row-icon-btn" @click="removeOfficial(o)">
+                  <v-icon size="16">mdi-delete-outline</v-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: INVOICES -->
+        <div v-if="activeTab === 'invoices'" class="tab-panel">
+          <div class="panel-card">
+            <div class="panel-head">
+              <div class="panel-title">
+                Invoices
+                <span class="panel-count">{{ invoices.length }}</span>
+              </div>
+              <div class="panel-tools">
+                <input
+                  v-model="invoiceSearch"
+                  class="mini-search"
+                  type="text"
+                  placeholder="Search invoice # or title…"
+                />
+                <select v-model="statusFilter" class="mini-select">
+                  <option value="">All statuses</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Sent">Sent</option>
+                  <option value="Overdue">Overdue</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+                <button class="panel-action primary" @click="openInvoiceDialog">
+                  <v-icon size="14" class="mr-1">mdi-plus</v-icon>
+                  New invoice
+                </button>
+              </div>
+            </div>
+
+            <div class="panel-body no-pad">
+              <!-- Loading -->
+              <div v-if="invoicesLoading && !invoices.length" class="panel-loading">
+                <v-skeleton-loader type="list-item-two-line" />
+                <v-skeleton-loader type="list-item-two-line" />
+                <v-skeleton-loader type="list-item-two-line" />
+              </div>
+
+              <!-- Empty -->
+              <div v-else-if="!invoices.length" class="panel-empty">
+                <v-icon size="40" color="#cbd5e1">mdi-receipt-text-outline</v-icon>
+                <div style="font-weight: 700; margin-top: 8px; color: #4b5563;">
+                  No invoices yet
+                </div>
+                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">
+                  Create the first invoice for this estate.
+                </div>
+              </div>
+
+              <!-- Filtered empty -->
+              <div v-else-if="!filteredInvoices.length" class="panel-empty">
+                No invoices match this filter.
+              </div>
+
+              <!-- Table -->
+              <div v-else class="invoice-table-wrap">
+                <table class="invoice-table">
+                  <thead>
+                    <tr>
+                      <th>Invoice #</th>
+                      <th>Title</th>
+                      <th>Type</th>
+                      <th class="ta-right">Amount</th>
+                      <th>Due date</th>
+                      <th>Status</th>
+                      <th class="ta-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="inv in filteredInvoices" :key="inv.invoice_id">
+                      <td class="mono">{{ inv.invoice_number }}</td>
+                      <td>
+                        <div class="inv-title">{{ inv.title }}</div>
+                        <div v-if="inv.description" class="inv-desc">{{ inv.description }}</div>
+                      </td>
+                      <td>
+                        <span class="type-badge" :class="invoiceTypeClass(inv.invoice_type)">
+                          {{ inv.invoice_type }}
+                        </span>
+                      </td>
+                      <td class="ta-right mono">
+                        KES {{ formatNum(inv.amount) }}
+                      </td>
+                      <td>{{ fmtDate(inv.due_date) }}</td>
+                      <td>
+                        <span class="status-pill" :class="invoiceStatusClass(inv.status)">
+                          {{ inv.status }}
+                        </span>
+                      </td>
+                      <td class="ta-right">
+                        <button
+                          v-if="inv.status === 'Draft'"
+                          class="mini-btn"
+                          title="Send"
+                          @click="sendInvoice(inv)"
+                        >
+                          <v-icon size="15">mdi-send-outline</v-icon>
+                        </button>
+                        <button
+                          v-if="['Sent','Overdue'].includes(inv.status)"
+                          class="mini-btn mini-btn-green"
+                          title="Mark paid"
+                          @click="openMarkPaid(inv)"
+                        >
+                          <v-icon size="15">mdi-check-circle-outline</v-icon>
+                        </button>
+                        <button
+                          v-if="['Draft','Sent','Overdue'].includes(inv.status)"
+                          class="mini-btn mini-btn-amber"
+                          title="Cancel"
+                          @click="cancelInvoice(inv)"
+                        >
+                          <v-icon size="15">mdi-cancel</v-icon>
+                        </button>
+                        <button
+                          v-if="inv.status !== 'Paid'"
+                          class="mini-btn mini-btn-danger"
+                          title="Delete"
+                          @click="deleteInvoice(inv)"
+                        >
+                          <v-icon size="15">mdi-delete-outline</v-icon>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: SETTINGS -->
+        <div v-if="activeTab === 'settings'" class="tab-panel">
+          <div class="settings-grid">
             <div class="panel-card">
               <div class="panel-head">
                 <div class="panel-title">Address fields</div>
               </div>
               <div class="panel-body">
-                <div class="toggle-row">
-                  <span>Show section</span>
-                  <span class="toggle-state" :class="cfg.show_section ? 'on' : 'off'">
-                    {{ cfg.show_section ? 'On' : 'Off' }}
-                  </span>
-                </div>
-                <div class="toggle-row">
-                  <span>Show court</span>
-                  <span class="toggle-state" :class="cfg.show_court ? 'on' : 'off'">
-                    {{ cfg.show_court ? 'On' : 'Off' }}
-                  </span>
-                </div>
-                <div class="toggle-row">
-                  <span>Show street</span>
-                  <span class="toggle-state" :class="cfg.show_street ? 'on' : 'off'">
-                    {{ cfg.show_street ? 'On' : 'Off' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ============================================================
-           TAB: RESIDENTS
-           ============================================================ -->
-      <div v-if="activeTab === 'residents'" class="tab-panel">
-        <div class="panel-card">
-          <div class="panel-head">
-            <div class="panel-title">
-              Residents
-              <span class="panel-count">{{ residents.length }}</span>
-            </div>
-            <div class="panel-tools">
-              <input
-                v-model="resSearch"
-                class="mini-search"
-                type="text"
-                placeholder="Search…"
-              />
-              <select v-model="resStatus" class="mini-select">
-                <option value="">All</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-            </div>
-          </div>
-          <div class="panel-body no-pad">
-            <div v-if="loading && !residents.length" class="panel-loading">
-              <v-skeleton-loader type="list-item-avatar-two-line" />
-              <v-skeleton-loader type="list-item-avatar-two-line" />
-            </div>
-
-            <div v-else-if="!residents.length" class="panel-empty">
-              No households registered for this estate yet.
-            </div>
-
-            <div v-else-if="!filteredResidents.length" class="panel-empty">
-              No residents match this filter.
-            </div>
-
-            <div
-              v-else
-              v-for="r in filteredResidents"
-              :key="r.household_id"
-              class="resident-row"
-            >
-              <div class="resident-avatar" :class="residentAvatarClass(r)">
-                {{ initialsOf(r.primary_owner) }}
-              </div>
-              <div class="resident-body">
-                <div class="resident-name-row">
-                  <span class="resident-name">{{ r.primary_owner }}</span>
-                  <span
-                    class="status-pill"
-                    :class="`status-${(r.status || '').toLowerCase()}`"
-                  >
-                    {{ r.status }}
-                  </span>
-                  <span v-if="r.is_official" class="official-mini-tag">
-                    {{ r.official_role || 'Official' }}
-                  </span>
-                </div>
-                <div class="resident-meta">
-                  {{ r.contact_number }} · {{ r.house_number || '—' }} ·
-                  {{ [r.section, r.court, r.street].filter(Boolean).join(' · ') }}
-                </div>
-              </div>
-              <div class="resident-joined">{{ fmtDate(r.created_at) }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ============================================================
-           TAB: OFFICIALS
-           ============================================================ -->
-      <div v-if="activeTab === 'officials'" class="tab-panel">
-        <div class="panel-card">
-          <div class="panel-head">
-            <div class="panel-title">
-              Officials
-              <span class="panel-count">{{ officials.length }}</span>
-            </div>
-            <button class="panel-action primary" @click="openNewOfficial">
-              <v-icon size="14" class="mr-1">mdi-plus</v-icon>
-              Add official
-            </button>
-          </div>
-          <div class="panel-body no-pad">
-            <div v-if="!officials.length" class="panel-empty">
-              No officials added yet.
-            </div>
-            <div
-              v-for="o in officials"
-              :key="o.official_id"
-              class="official-row"
-            >
-              <div class="official-avatar" :class="avatarClass(o.role)">
-                {{ initialsOf(o.full_name) }}
-              </div>
-              <div class="official-body">
-                <div class="official-name-row">
-                  <span class="official-name">{{ o.full_name }}</span>
-                  <span class="role-pill" :class="roleClass(o.role)">
-                    {{ o.role }}
-                  </span>
-                </div>
-                <div class="official-meta">
-                  <v-icon size="12">mdi-phone-outline</v-icon>
-                  {{ o.contact_number || '—' }}
-                </div>
-              </div>
-              <button class="row-icon-btn" @click="removeOfficial(o)">
-                <v-icon size="16">mdi-delete-outline</v-icon>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ============================================================
-           TAB: SETTINGS
-           ============================================================ -->
-      <div v-if="activeTab === 'settings'" class="tab-panel">
-        <div class="settings-grid">
-          <div class="panel-card">
-            <div class="panel-head">
-              <div class="panel-title">Address fields</div>
-            </div>
-            <div class="panel-body">
-              <div class="setting-row">
-                <div>
-                  <div class="setting-label">Show Section</div>
-                  <div class="setting-sub">Residents enter their section</div>
-                </div>
-                <button
-                  class="switch"
-                  :class="{ 'switch-on': localCfg.show_section }"
-                  @click="localCfg.show_section = !localCfg.show_section"
-                >
-                  <span class="switch-knob"></span>
-                </button>
-              </div>
-              <div class="setting-row">
-                <div>
-                  <div class="setting-label">Show Court</div>
-                  <div class="setting-sub">Residents enter their court</div>
-                </div>
-                <button
-                  class="switch"
-                  :class="{ 'switch-on': localCfg.show_court }"
-                  @click="localCfg.show_court = !localCfg.show_court"
-                >
-                  <span class="switch-knob"></span>
-                </button>
-              </div>
-              <div class="setting-row">
-                <div>
-                  <div class="setting-label">Show Street</div>
-                  <div class="setting-sub">Residents enter their street</div>
-                </div>
-                <button
-                  class="switch"
-                  :class="{ 'switch-on': localCfg.show_street }"
-                  @click="localCfg.show_street = !localCfg.show_street"
-                >
-                  <span class="switch-knob"></span>
-                </button>
-              </div>
-              <button
-                class="save-btn"
-                :disabled="savingCfg"
-                @click="saveAddressConfig"
-              >
-                <v-icon v-if="savingCfg" size="14" class="mr-2 spin">mdi-loading</v-icon>
-                Save address config
-              </button>
-            </div>
-          </div>
-
-          <div class="panel-card">
-            <div class="panel-head">
-              <div class="panel-title">
-                Service charges
-                <span class="panel-count">{{ charges.length }}</span>
-              </div>
-            </div>
-            <div class="panel-body">
-              <div v-if="!charges.length" class="panel-empty">No charges configured.</div>
-              <div v-for="c in charges" :key="c.charges_id" class="charge-row">
-                <div>
-                  <div class="charge-type">{{ c.charge_type }}</div>
-                  <div class="charge-sub">
-                    {{ c.frequency }} · KES {{ formatNum(c.amount) }}
+                <div class="setting-row">
+                  <div>
+                    <div class="setting-label">Show Section</div>
+                    <div class="setting-sub">Residents enter their section</div>
                   </div>
+                  <button
+                    class="switch"
+                    :class="{ 'switch-on': localCfg.show_section }"
+                    @click="localCfg.show_section = !localCfg.show_section"
+                  >
+                    <span class="switch-knob"></span>
+                  </button>
                 </div>
-                <button class="row-icon-btn" @click="removeCharge(c)">
-                  <v-icon size="16">mdi-delete-outline</v-icon>
-                </button>
-              </div>
-              <div class="add-form">
-                <input v-model="newCharge.type" class="form-input-sm" placeholder="Type" />
-                <input
-                  v-model="newCharge.amount"
-                  class="form-input-sm"
-                  type="number"
-                  placeholder="Amount"
-                />
-                <select v-model="newCharge.frequency" class="form-input-sm">
-                  <option>Monthly</option>
-                  <option>Quarterly</option>
-                  <option>Yearly</option>
-                  <option>One-time</option>
-                </select>
+                <div class="setting-row">
+                  <div>
+                    <div class="setting-label">Show Court</div>
+                    <div class="setting-sub">Residents enter their court</div>
+                  </div>
+                  <button
+                    class="switch"
+                    :class="{ 'switch-on': localCfg.show_court }"
+                    @click="localCfg.show_court = !localCfg.show_court"
+                  >
+                    <span class="switch-knob"></span>
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div>
+                    <div class="setting-label">Show Street</div>
+                    <div class="setting-sub">Residents enter their street</div>
+                  </div>
+                  <button
+                    class="switch"
+                    :class="{ 'switch-on': localCfg.show_street }"
+                    @click="localCfg.show_street = !localCfg.show_street"
+                  >
+                    <span class="switch-knob"></span>
+                  </button>
+                </div>
                 <button
-                  class="save-btn inline"
-                  :disabled="!canAddCharge"
-                  @click="addCharge"
+                  class="save-btn"
+                  :disabled="savingCfg"
+                  @click="saveAddressConfig"
                 >
-                  Add
+                  <v-icon v-if="savingCfg" size="14" class="mr-2 spin">mdi-loading</v-icon>
+                  Save address config
                 </button>
               </div>
             </div>
-          </div>
 
-          <div class="panel-card">
-            <div class="panel-head">
-              <div class="panel-title">
-                Sections
-                <span class="panel-count">{{ sections.length }}</span>
+            <div class="panel-card">
+              <div class="panel-head">
+                <div class="panel-title">
+                  Service charges
+                  <span class="panel-count">{{ charges.length }}</span>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div v-if="!charges.length" class="panel-empty">No charges configured.</div>
+                <div v-for="c in charges" :key="c.charges_id" class="charge-row">
+                  <div>
+                    <div class="charge-type">{{ c.charge_type }}</div>
+                    <div class="charge-sub">
+                      {{ c.frequency }} · KES {{ formatNum(c.amount) }}
+                    </div>
+                  </div>
+                  <button class="row-icon-btn" @click="removeCharge(c)">
+                    <v-icon size="16">mdi-delete-outline</v-icon>
+                  </button>
+                </div>
+                <div class="add-form">
+                  <input v-model="newCharge.type" class="form-input-sm" placeholder="Type" />
+                  <input
+                    v-model="newCharge.amount"
+                    class="form-input-sm"
+                    type="number"
+                    placeholder="Amount"
+                  />
+                  <select v-model="newCharge.frequency" class="form-input-sm">
+                    <option>Monthly</option>
+                    <option>Quarterly</option>
+                    <option>Yearly</option>
+                    <option>One-time</option>
+                  </select>
+                  <button
+                    class="save-btn inline"
+                    :disabled="!canAddCharge"
+                    @click="addCharge"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="panel-body">
-              <div v-if="!sections.length" class="panel-empty">No sections.</div>
-              <div class="tag-wrap">
-                <span v-for="s in sections" :key="s.id" class="tag">
-                  {{ s.section_name }}
-                  <button class="tag-remove" @click="removeSection(s)">×</button>
-                </span>
-              </div>
-              <div class="add-form">
-                <input v-model="newSection" class="form-input-sm" placeholder="Section name" />
-                <button
-                  class="save-btn inline"
-                  :disabled="!newSection"
-                  @click="addSection"
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <div class="panel-card">
-            <div class="panel-head">
-              <div class="panel-title">
-                Courts
-                <span class="panel-count">{{ courts.length }}</span>
+            <div class="panel-card">
+              <div class="panel-head">
+                <div class="panel-title">
+                  Sections
+                  <span class="panel-count">{{ sections.length }}</span>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div v-if="!sections.length" class="panel-empty">No sections.</div>
+                <div class="tag-wrap">
+                  <span v-for="s in sections" :key="s.id" class="tag">
+                    {{ s.section_name }}
+                    <button class="tag-remove" @click="removeSection(s)">×</button>
+                  </span>
+                </div>
+                <div class="add-form">
+                  <input v-model="newSection" class="form-input-sm" placeholder="Section name" />
+                  <button
+                    class="save-btn inline"
+                    :disabled="!newSection"
+                    @click="addSection"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="panel-body">
-              <div v-if="!courts.length" class="panel-empty">No courts.</div>
-              <div class="tag-wrap">
-                <span v-for="c in courts" :key="c.id" class="tag">
-                  {{ c.court_name }}
-                  <button class="tag-remove" @click="removeCourt(c)">×</button>
-                </span>
-              </div>
-              <div class="add-form">
-                <input v-model="newCourt" class="form-input-sm" placeholder="Court name" />
-                <button
-                  class="save-btn inline"
-                  :disabled="!newCourt"
-                  @click="addCourt"
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <div class="panel-card">
-            <div class="panel-head">
-              <div class="panel-title">
-                Streets
-                <span class="panel-count">{{ streets.length }}</span>
+            <div class="panel-card">
+              <div class="panel-head">
+                <div class="panel-title">
+                  Courts
+                  <span class="panel-count">{{ courts.length }}</span>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div v-if="!courts.length" class="panel-empty">No courts.</div>
+                <div class="tag-wrap">
+                  <span v-for="c in courts" :key="c.id" class="tag">
+                    {{ c.court_name }}
+                    <button class="tag-remove" @click="removeCourt(c)">×</button>
+                  </span>
+                </div>
+                <div class="add-form">
+                  <input v-model="newCourt" class="form-input-sm" placeholder="Court name" />
+                  <button
+                    class="save-btn inline"
+                    :disabled="!newCourt"
+                    @click="addCourt"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="panel-body">
-              <div v-if="!streets.length" class="panel-empty">No streets.</div>
-              <div class="tag-wrap">
-                <span v-for="s in streets" :key="s.id" class="tag">
-                  {{ s.street_name }}
-                  <button class="tag-remove" @click="removeStreet(s)">×</button>
-                </span>
+
+            <div class="panel-card">
+              <div class="panel-head">
+                <div class="panel-title">
+                  Streets
+                  <span class="panel-count">{{ streets.length }}</span>
+                </div>
               </div>
-              <div class="add-form">
-                <input v-model="newStreet" class="form-input-sm" placeholder="Street name" />
-                <button
-                  class="save-btn inline"
-                  :disabled="!newStreet"
-                  @click="addStreet"
-                >
-                  Add
-                </button>
+              <div class="panel-body">
+                <div v-if="!streets.length" class="panel-empty">No streets.</div>
+                <div class="tag-wrap">
+                  <span v-for="s in streets" :key="s.id" class="tag">
+                    {{ s.street_name }}
+                    <button class="tag-remove" @click="removeStreet(s)">×</button>
+                  </span>
+                </div>
+                <div class="add-form">
+                  <input v-model="newStreet" class="form-input-sm" placeholder="Street name" />
+                  <button
+                    class="save-btn inline"
+                    :disabled="!newStreet"
+                    @click="addStreet"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Snackbar -->
+        <v-snackbar
+          v-model="snackbar.show"
+          :color="snackbar.color"
+          :timeout="3000"
+          top
+          rounded="pill"
+        >
+          <div class="d-flex align-center">
+            <v-icon color="white" small class="mr-2">
+              {{ snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+            </v-icon>
+            <span>{{ snackbar.text }}</span>
+          </div>
+        </v-snackbar>
+      </template>
+    </div>
+
+    <!-- DIALOGS -->
+
+    <!-- EDIT ESTATE DIALOG -->
+    <v-dialog v-model="editDialog" max-width="520" content-class="est-dialog-content">
+      <div class="est-dialog-card">
+        <div class="est-dialog-header">
+          <div>
+            <div class="est-dialog-title">Edit estate</div>
+            <div class="est-dialog-sub">Update the estate details</div>
+          </div>
+          <button type="button" class="est-dialog-close" @click="editDialog = false">
+            <v-icon size="20" color="white">mdi-close</v-icon>
+          </button>
+        </div>
+
+        <div class="est-dialog-body">
+          <div class="form-row">
+            <label class="form-label">Estate name</label>
+            <input v-model="editForm.estate_name" class="form-input" type="text" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Location</label>
+            <input v-model="editForm.estate_location" class="form-input" type="text" />
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Latitude</label>
+              <input v-model="editForm.latitude" class="form-input" type="text" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Longitude</label>
+              <input v-model="editForm.longitude" class="form-input" type="text" />
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Logo URL</label>
+            <input v-model="editForm.logo_url" class="form-input" type="text" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Cover image URL</label>
+            <input v-model="editForm.estate_image" class="form-input" type="text" />
+          </div>
+        </div>
+
+        <div class="est-dialog-footer">
+          <button type="button" class="dialog-btn ghost" @click="editDialog = false">Cancel</button>
+          <button type="button" class="dialog-btn primary" :disabled="savingEdit" @click="saveEdit">
+            <v-icon v-if="savingEdit" size="14" class="mr-2 spin">mdi-loading</v-icon>
+            Save changes
+          </button>
         </div>
       </div>
+    </v-dialog>
 
-      <!-- ============================================================
-           EDIT DIALOG
-           ============================================================ -->
-      <v-dialog
-        v-if="editDialog"
-        v-model="editDialog"
-        max-width="520"
-        content-class="est-dialog-content"
-      >
-        <div class="est-dialog-card">
-          <div class="est-dialog-header">
-            <div>
-              <div class="est-dialog-title">Edit estate</div>
-              <div class="est-dialog-sub">Update the estate details</div>
-            </div>
-            <button class="est-dialog-close" @click="closeEdit">
-              <v-icon size="20" color="white">mdi-close</v-icon>
-            </button>
+    <!-- NEW OFFICIAL DIALOG -->
+    <v-dialog v-model="officialDialog" max-width="520" content-class="est-dialog-content" persistent>
+      <div class="est-dialog-card">
+        <div class="est-dialog-header">
+          <div>
+            <div class="est-dialog-title">New official</div>
+            <div class="est-dialog-sub">Add an official to this estate</div>
           </div>
+          <button type="button" class="est-dialog-close" @click="officialDialog = false">
+            <v-icon size="20" color="white">mdi-close</v-icon>
+          </button>
+        </div>
 
-          <div class="est-dialog-body">
-            <div class="form-row">
-              <label class="form-label">Estate name</label>
-              <input v-model="editForm.estate_name" class="form-input" type="text" />
-            </div>
-            <div class="form-row">
-              <label class="form-label">Location</label>
-              <input v-model="editForm.estate_location" class="form-input" type="text" />
-            </div>
-            <div class="form-grid">
-              <div class="form-row">
-                <label class="form-label">Latitude</label>
-                <input v-model="editForm.latitude" class="form-input" type="text" />
-              </div>
-              <div class="form-row">
-                <label class="form-label">Longitude</label>
-                <input v-model="editForm.longitude" class="form-input" type="text" />
-              </div>
-            </div>
-            <div class="form-row">
-              <label class="form-label">Logo URL</label>
-              <input v-model="editForm.logo_url" class="form-input" type="text" />
-            </div>
-            <div class="form-row">
-              <label class="form-label">Cover image URL</label>
-              <input v-model="editForm.estate_image" class="form-input" type="text" />
-            </div>
+        <div class="est-dialog-body">
+          <div class="form-row">
+            <label class="form-label">Full name</label>
+            <input v-model="newOfficial.full_name" class="form-input" type="text" />
           </div>
-
-          <div class="est-dialog-footer">
-            <button class="dialog-btn ghost" @click="closeEdit">Cancel</button>
-            <button class="dialog-btn primary" :disabled="savingEdit" @click="saveEdit">
-              <v-icon v-if="savingEdit" size="14" class="mr-2 spin">mdi-loading</v-icon>
-              Save changes
-            </button>
+          <div class="form-row">
+            <label class="form-label">Phone number</label>
+            <input v-model="newOfficial.contact_number" class="form-input" type="tel" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Role</label>
+            <select v-model="newOfficial.role" class="form-input">
+              <option>Chairman</option>
+              <option>Secretary</option>
+              <option>Treasurer</option>
+              <option>Committee Member</option>
+              <option>Caretaker</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Firebase UID <span class="label-hint">optional</span></label>
+            <input v-model="newOfficial.uid" class="form-input" type="text" />
           </div>
         </div>
-      </v-dialog>
 
-      <!-- ============================================================
-           NEW OFFICIAL DIALOG
-           ============================================================ -->
-      <v-dialog
-        v-model="officialDialog"
-        max-width="520"
-        content-class="est-dialog-content"
-        persistent
-      >
-        <div class="est-dialog-card">
-          <div class="est-dialog-header">
-            <div>
-              <div class="est-dialog-title">New official</div>
-              <div class="est-dialog-sub">Add an official to this estate</div>
-            </div>
-            <button class="est-dialog-close" @click="officialDialog = false">
-              <v-icon size="20" color="white">mdi-close</v-icon>
-            </button>
+        <div class="est-dialog-footer">
+          <button type="button" class="dialog-btn ghost" @click="officialDialog = false">Cancel</button>
+          <button
+            type="button"
+            class="dialog-btn primary"
+            :disabled="!canAddOfficial || savingOfficial"
+            @click="saveNewOfficial"
+          >
+            <v-icon v-if="savingOfficial" size="14" class="mr-2 spin">mdi-loading</v-icon>
+            Add official
+          </button>
+        </div>
+      </div>
+    </v-dialog>
+
+    <!-- NEW INVOICE DIALOG -->
+    <v-dialog v-model="invoiceDialog" max-width="560" content-class="est-dialog-content" persistent>
+      <div class="est-dialog-card">
+        <div class="est-dialog-header">
+          <div>
+            <div class="est-dialog-title">New invoice</div>
+            <div class="est-dialog-sub">Currency is KES — set title, amount, due date</div>
           </div>
+          <button type="button" class="est-dialog-close" @click="invoiceDialog = false">
+            <v-icon size="20" color="white">mdi-close</v-icon>
+          </button>
+        </div>
 
-          <div class="est-dialog-body">
+        <div class="est-dialog-body">
+          <div class="form-row">
+            <label class="form-label">Title *</label>
+            <input
+              v-model="invoiceForm.title"
+              class="form-input"
+              type="text"
+              placeholder="e.g. Monthly service charge — Nov 2026"
+            />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Description</label>
+            <textarea
+              v-model="invoiceForm.description"
+              class="form-input"
+              rows="2"
+              placeholder="Optional notes shown on the invoice"
+            ></textarea>
+          </div>
+          <div class="form-grid">
             <div class="form-row">
-              <label class="form-label">Full name</label>
-              <input v-model="newOfficial.full_name" class="form-input" type="text" />
+              <label class="form-label">Amount (KES) *</label>
+              <input
+                v-model="invoiceForm.amount"
+                class="form-input"
+                type="number"
+                min="1"
+                placeholder="0"
+              />
+              <!-- NEW: Hint showing plan rate -->
+              <div v-if="invoiceForm.invoice_type === 'Subscription' && sub" style="font-size: 0.7rem; color: #7c3aed; margin-top: 4px;">
+                <v-icon size="12">mdi-information-outline</v-icon>
+                Plan rate: KES {{ sub.monthly_rate || 'N/A' }} / month
+              </div>
             </div>
             <div class="form-row">
-              <label class="form-label">Phone number</label>
-              <input v-model="newOfficial.contact_number" class="form-input" type="tel" />
+              <label class="form-label">Due date *</label>
+              <input v-model="invoiceForm.due_date" class="form-input" type="date" />
             </div>
+          </div>
+          <div class="form-grid">
             <div class="form-row">
-              <label class="form-label">Role</label>
-              <select v-model="newOfficial.role" class="form-input">
-                <option>Chairman</option>
-                <option>Secretary</option>
-                <option>Treasurer</option>
-                <option>Committee Member</option>
-                <option>Caretaker</option>
+              <label class="form-label">Type</label>
+              <select v-model="invoiceForm.invoice_type" class="form-input">
+                <option value="Subscription">Subscription</option>
+                <option value="ServiceCharge">Service charge</option>
+                <option value="AdHoc">Ad-hoc</option>
               </select>
             </div>
             <div class="form-row">
-              <label class="form-label">Firebase UID <span class="label-hint">optional</span></label>
-              <input v-model="newOfficial.uid" class="form-input" type="text" />
+              <label class="form-label">Initial status</label>
+              <select v-model="invoiceForm.status" class="form-input">
+                <option value="Draft">Draft</option>
+                <option value="Sent">Sent</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="est-dialog-footer">
+          <button type="button" class="dialog-btn ghost" @click="invoiceDialog = false">Cancel</button>
+          <button
+            type="button"
+            class="dialog-btn primary"
+            :disabled="!canCreateInvoice || invoiceSaving"
+            @click="createInvoice"
+          >
+            <v-icon v-if="invoiceSaving" size="14" class="mr-2 spin">mdi-loading</v-icon>
+            Create invoice
+          </button>
+        </div>
+      </div>
+    </v-dialog>
+
+    <!-- MARK PAID DIALOG -->
+    <v-dialog v-model="markPaidDialog" max-width="440" content-class="est-dialog-content" persistent>
+      <div class="est-dialog-card">
+        <div class="est-dialog-header">
+          <div>
+            <div class="est-dialog-title">Mark invoice paid</div>
+            <div class="est-dialog-sub">Record payment details</div>
+          </div>
+          <button type="button" class="est-dialog-close" @click="markPaidDialog = false">
+            <v-icon size="20" color="white">mdi-close</v-icon>
+          </button>
+        </div>
+
+        <div class="est-dialog-body">
+          <div v-if="markPaidTarget" class="paid-summary">
+            <div class="paid-summary-row">
+              <span>Invoice</span>
+              <strong>{{ markPaidTarget.invoice_number }}</strong>
+            </div>
+            <div class="paid-summary-row">
+              <span>Amount due</span>
+              <strong>KES {{ formatNum(markPaidTarget.amount) }}</strong>
             </div>
           </div>
 
-          <div class="est-dialog-footer">
-            <button class="dialog-btn ghost" @click="officialDialog = false">Cancel</button>
-            <button
-              class="dialog-btn primary"
-              :disabled="!canAddOfficial || savingOfficial"
-              @click="saveNewOfficial"
-            >
-              <v-icon v-if="savingOfficial" size="14" class="mr-2 spin">mdi-loading</v-icon>
-              Add official
-            </button>
+          <div class="form-row">
+            <label class="form-label">Amount paid (KES) *</label>
+            <input
+              v-model="markPaidForm.paid_amount"
+              class="form-input"
+              type="number"
+              min="1"
+            />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Payment method</label>
+            <select v-model="markPaidForm.payment_method" class="form-input">
+              <option>Manual</option>
+              <option>Mpesa</option>
+              <option>Bank</option>
+              <option>Cash</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Transaction ID <span class="label-hint">optional</span></label>
+            <input v-model="markPaidForm.transaction_id" class="form-input" type="text" />
           </div>
         </div>
-      </v-dialog>
 
-      <!-- Snackbar -->
-      <v-snackbar
-        v-model="snackbar.show"
-        :color="snackbar.color"
-        :timeout="3000"
-        top
-        rounded="pill"
-      >
-        <div class="d-flex align-center">
-          <v-icon color="white" small class="mr-2">
-            {{ snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-          </v-icon>
-          <span>{{ snackbar.text }}</span>
+        <div class="est-dialog-footer">
+          <button type="button" class="dialog-btn ghost" @click="markPaidDialog = false">Cancel</button>
+          <button
+            type="button"
+            class="dialog-btn primary"
+            :disabled="!canMarkPaid || markPaidSaving"
+            @click="confirmMarkPaid"
+          >
+            <v-icon v-if="markPaidSaving" size="14" class="mr-2 spin">mdi-loading</v-icon>
+            Confirm payment
+          </button>
         </div>
-      </v-snackbar>
-    </template>
+      </div>
+    </v-dialog>
+
   </div>
 </template>
 
@@ -750,6 +1013,39 @@ export default {
       activeTab: 'overview',
       resSearch: '',
       resStatus: '',
+
+      invoices: [],
+      invoicesLoading: false,
+      invoiceSearch: '',
+      statusFilter: '',
+      invoiceStats: {
+        total_invoices: 0,
+        drafts: 0,
+        sent: 0,
+        overdue: 0,
+        paid: 0,
+        cancelled: 0,
+        outstanding_amount: 0,
+        collected_amount: 0,
+      },
+      invoiceDialog: false,
+      invoiceForm: {
+        title: '',
+        description: '',
+        amount: '',
+        due_date: '',
+        invoice_type: 'Subscription',
+        status: 'Draft',
+      },
+      invoiceSaving: false,
+      markPaidDialog: false,
+      markPaidTarget: null,
+      markPaidForm: {
+        paid_amount: '',
+        payment_method: 'Manual',
+        transaction_id: '',
+      },
+      markPaidSaving: false,
 
       localCfg: { show_section: true, show_court: true, show_street: true },
       savingCfg: false,
@@ -813,6 +1109,7 @@ export default {
         { id: 'overview', label: 'Overview', icon: 'mdi-view-dashboard-outline' },
         { id: 'residents', label: 'Residents', icon: 'mdi-home-group', count: this.residents.length },
         { id: 'officials', label: 'Officials', icon: 'mdi-shield-account-outline', count: this.officials.length },
+        { id: 'invoices', label: 'Invoices', icon: 'mdi-receipt-text-outline', count: this.invoices.length },
         { id: 'settings', label: 'Settings', icon: 'mdi-cog-outline' },
       ];
     },
@@ -840,9 +1137,44 @@ export default {
     canAddOfficial() {
       return !!(this.newOfficial.full_name && this.newOfficial.contact_number);
     },
+    filteredInvoices() {
+      const q = (this.invoiceSearch || '').trim().toLowerCase();
+      return this.invoices.filter((inv) => {
+        if (this.statusFilter && inv.status !== this.statusFilter) return false;
+        if (!q) return true;
+        return (
+          (inv.invoice_number || '').toLowerCase().includes(q) ||
+          (inv.title || '').toLowerCase().includes(q)
+        );
+      });
+    },
+    canCreateInvoice() {
+      const f = this.invoiceForm;
+      return !!(f.title && f.amount && Number(f.amount) > 0 && f.due_date);
+    },
+    canMarkPaid() {
+      return !!(
+        this.markPaidForm.paid_amount &&
+        Number(this.markPaidForm.paid_amount) > 0
+      );
+    },
+  },
+
+  watch: {
+    // Auto-fill / clear amount based on invoice type
+    'invoiceForm.invoice_type'(newType) {
+      if (newType !== 'Subscription') {
+        this.invoiceForm.amount = '';
+      } else if (this.sub && this.sub.monthly_rate) {
+        this.invoiceForm.amount = Number(this.sub.monthly_rate);
+      }
+    }
   },
 
   mounted() {
+    if (this.$route.query.tab === 'invoices') {
+      this.activeTab = 'invoices';
+    }
     this.load();
   },
 
@@ -914,9 +1246,211 @@ export default {
           console.warn('[ViewEstate] subscription fetch failed:', err.message);
           this.subscription = null;
         }
+
+        await Promise.all([
+          this.loadInvoices(),
+          this.loadInvoiceStats(),
+        ]);
       } finally {
         this.loading = false;
       }
+    },
+
+    async loadInvoices() {
+      this.invoicesLoading = true;
+      try {
+        const headers = await this.getAuthHeaders();
+        const { data } = await axios.get(
+          `${API}/admin/estates/${this.estateId}/invoices`,
+          { headers }
+        );
+        this.invoices = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.warn('loadInvoices failed:', err.message);
+        this.invoices = [];
+      } finally {
+        this.invoicesLoading = false;
+      }
+    },
+
+    async loadInvoiceStats() {
+      try {
+        const headers = await this.getAuthHeaders();
+        const { data } = await axios.get(
+          `${API}/admin/invoice-stats?estate_id=${this.estateId}`,
+          { headers }
+        );
+        if (data && typeof data === 'object') {
+          this.invoiceStats = {
+            total_invoices: Number(data.total_invoices || 0),
+            drafts: Number(data.drafts || 0),
+            sent: Number(data.sent || 0),
+            overdue: Number(data.overdue || 0),
+            paid: Number(data.paid || 0),
+            cancelled: Number(data.cancelled || 0),
+            outstanding_amount: Number(data.outstanding_amount || 0),
+            collected_amount: Number(data.collected_amount || 0),
+          };
+        }
+      } catch (err) {
+        console.warn('loadInvoiceStats failed:', err.message);
+      }
+    },
+
+    // UPDATED: Auto-fill invoice amount from plan rate
+    openInvoiceDialog() {
+      const planRate = this.sub && this.sub.monthly_rate ? Number(this.sub.monthly_rate) : 0;
+
+      this.invoiceForm = {
+        title: this.sub ? `Monthly Subscription - ${new Date().toLocaleString('default', { month: 'long' })}` : '',
+        description: '',
+        amount: planRate > 0 ? planRate : '',
+        due_date: '',
+        invoice_type: 'Subscription',
+        status: 'Draft',
+      };
+      this.invoiceDialog = true;
+    },
+
+    async createInvoice() {
+      if (!this.canCreateInvoice || this.invoiceSaving) return;
+      this.invoiceSaving = true;
+      try {
+        const headers = await this.getAuthHeaders();
+        await axios.post(
+          `${API}/admin/estates/${this.estateId}/invoices`,
+          {
+            title: this.invoiceForm.title,
+            description: this.invoiceForm.description || null,
+            amount: Number(this.invoiceForm.amount),
+            due_date: this.invoiceForm.due_date,
+            invoice_type: this.invoiceForm.invoice_type,
+            status: this.invoiceForm.status,
+          },
+          { headers }
+        );
+        this.invoiceDialog = false;
+        this.showSnackbar('Invoice created', 'success');
+        await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
+      } catch (err) {
+        this.showSnackbar(
+          err.response?.data?.error || 'Could not create invoice',
+          'error'
+        );
+      } finally {
+        this.invoiceSaving = false;
+      }
+    },
+
+    async sendInvoice(inv) {
+      try {
+        const headers = await this.getAuthHeaders();
+        await axios.post(
+          `${API}/admin/invoices/${inv.invoice_id}/send`,
+          {},
+          { headers }
+        );
+        this.showSnackbar('Invoice sent', 'success');
+        await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
+      } catch (err) {
+        this.showSnackbar(
+          err.response?.data?.error || 'Send failed',
+          'error'
+        );
+      }
+    },
+
+    openMarkPaid(inv) {
+      this.markPaidTarget = inv;
+      this.markPaidForm = {
+        paid_amount: inv.amount,
+        payment_method: 'Manual',
+        transaction_id: '',
+      };
+      this.markPaidDialog = true;
+    },
+
+    async confirmMarkPaid() {
+      if (!this.markPaidTarget || !this.canMarkPaid || this.markPaidSaving) return;
+      this.markPaidSaving = true;
+      try {
+        const headers = await this.getAuthHeaders();
+        await axios.post(
+          `${API}/admin/invoices/${this.markPaidTarget.invoice_id}/mark-paid`,
+          {
+            paid_amount: Number(this.markPaidForm.paid_amount),
+            payment_method: this.markPaidForm.payment_method,
+            transaction_id: this.markPaidForm.transaction_id || null,
+          },
+          { headers }
+        );
+        this.markPaidDialog = false;
+        this.markPaidTarget = null;
+        this.showSnackbar('Invoice marked paid', 'success');
+        await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
+      } catch (err) {
+        this.showSnackbar(
+          err.response?.data?.error || 'Mark paid failed',
+          'error'
+        );
+      } finally {
+        this.markPaidSaving = false;
+      }
+    },
+
+    async cancelInvoice(inv) {
+      if (!window.confirm(`Cancel invoice ${inv.invoice_number}?`)) return;
+      try {
+        const headers = await this.getAuthHeaders();
+        await axios.post(
+          `${API}/admin/invoices/${inv.invoice_id}/cancel`,
+          {},
+          { headers }
+        );
+        this.showSnackbar('Invoice cancelled', 'success');
+        await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
+      } catch (err) {
+        this.showSnackbar(
+          err.response?.data?.error || 'Cancel failed',
+          'error'
+        );
+      }
+    },
+
+    async deleteInvoice(inv) {
+      if (!window.confirm(`Delete invoice ${inv.invoice_number}? This cannot be undone.`)) return;
+      try {
+        const headers = await this.getAuthHeaders();
+        await axios.delete(
+          `${API}/admin/invoices/${inv.invoice_id}`,
+          { headers }
+        );
+        this.showSnackbar('Invoice deleted', 'success');
+        await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
+      } catch (err) {
+        this.showSnackbar(
+          err.response?.data?.error || 'Delete failed',
+          'error'
+        );
+      }
+    },
+
+    invoiceStatusClass(s) {
+      return {
+        'status-draft': s === 'Draft',
+        'status-sent': s === 'Sent',
+        'status-overdue': s === 'Overdue',
+        'status-paid': s === 'Paid',
+        'status-cancelled': s === 'Cancelled',
+      };
+    },
+
+    invoiceTypeClass(type) {
+      return {
+        'type-sub': type === 'Subscription',
+        'type-svc': type === 'ServiceCharge',
+        'type-adhoc': type === 'AdHoc',
+      };
     },
 
     initialsOf(name) {
@@ -993,18 +1527,6 @@ export default {
       this.editDialog = true;
     },
 
-    closeEdit() {
-      this.editForm = {
-        estate_name: '',
-        estate_location: '',
-        latitude: '',
-        longitude: '',
-        logo_url: '',
-        estate_image: '',
-      };
-      this.editDialog = false;
-    },
-
     async saveEdit() {
       this.savingEdit = true;
       try {
@@ -1016,11 +1538,8 @@ export default {
         );
         this.estate = { ...this.estate, ...this.editForm };
 
-        this.closeEdit();
-
-        this.$nextTick(() => {
-          this.showSnackbar('Estate updated', 'success');
-        });
+        this.editDialog = false;
+        this.showSnackbar('Estate updated', 'success');
       } catch (err) {
         console.warn('saveEdit failed:', err.message);
         this.showSnackbar(
@@ -1543,6 +2062,11 @@ export default {
   box-shadow: 0 8px 20px -10px rgba(37, 99, 235, 0.6);
 }
 
+.kpi-icon-amber {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 8px 20px -10px rgba(245, 158, 11, 0.7);
+}
+
 .kpi-icon-white {
   background: #ffffff;
   box-shadow: 0 8px 20px -10px rgba(255, 255, 255, 0.5);
@@ -1756,6 +2280,7 @@ export default {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .mini-search,
@@ -2105,6 +2630,134 @@ export default {
   color: #b91c1c;
 }
 
+/* ============================================================
+   INVOICE TABLE
+   ============================================================ */
+.invoice-table-wrap {
+  overflow-x: auto;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.invoice-table thead th {
+  text-align: left;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #64748b;
+  font-weight: 800;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbff;
+  white-space: nowrap;
+}
+
+.invoice-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.invoice-table tbody tr:last-child td { border-bottom: none; }
+.invoice-table tbody tr:hover { background: #fafbff; }
+
+.ta-right { text-align: right !important; }
+
+.inv-title {
+  font-weight: 700;
+  color: #0f0d24;
+  font-size: 0.85rem;
+}
+
+.inv-desc {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+.type-badge {
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.type-sub   { background: #ede9fe; color: #6d28d9; }
+.type-svc   { background: #dbeafe; color: #1d4ed8; }
+.type-adhoc { background: #f1f5f9; color: #475569; }
+
+.status-draft     { background: rgba(148, 163, 184, 0.16); color: #475569; }
+.status-sent      { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+.status-overdue   { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+.status-paid      { background: rgba(122, 184, 0, 0.16); color: #3f6b00; }
+.status-cancelled { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+
+.mini-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 0.18s ease;
+}
+
+.mini-btn:hover {
+  border-color: #8051ff;
+  color: #8051ff;
+  transform: translateY(-1px);
+}
+
+.mini-btn-green:hover  { border-color: #10b981; color: #10b981; }
+.mini-btn-amber:hover  { border-color: #f59e0b; color: #f59e0b; }
+.mini-btn-danger:hover { border-color: #ef4444; color: #ef4444; }
+
+.paid-summary {
+  background: #fafbff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 4px;
+}
+
+.paid-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  padding: 4px 0;
+  color: #475569;
+}
+
+.paid-summary-row strong {
+  color: #0f0d24;
+  font-weight: 800;
+}
+
+/* ============================================================
+   SETTINGS / CHARGE / TAG / DIALOG
+   ============================================================ */
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -2400,6 +3053,7 @@ export default {
   transition: border-color 0.2s ease, background 0.2s ease;
   font-family: inherit;
   width: 100%;
+  resize: vertical;
 }
 
 .form-input:focus {
@@ -2480,5 +3134,12 @@ export default {
   .form-grid { grid-template-columns: 1fr; }
 
   .resident-joined { display: none; }
+
+  .invoice-table thead th:nth-child(3),
+  .invoice-table tbody td:nth-child(3),
+  .invoice-table thead th:nth-child(5),
+  .invoice-table tbody td:nth-child(5) {
+    display: none;
+  }
 }
 </style>

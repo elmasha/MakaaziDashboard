@@ -1,8 +1,6 @@
 <template>
   <div class="account-page">
-    <!-- ============================================================
-         LOADING SKELETON
-         ============================================================ -->
+    <!-- LOADING SKELETON -->
     <div v-if="initialLoading" class="hero-card">
       <v-skeleton-loader type="image" height="180" />
       <div class="hero-body" style="padding-top: 24px;">
@@ -10,11 +8,8 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         ESTATE HERO CARD
-         ============================================================ -->
+    <!-- ESTATE HERO CARD -->
     <div v-else class="hero-card">
-      <!-- Cover -->
       <div class="hero-cover" :style="coverStyle">
         <div class="hero-cover-overlay"></div>
         <div class="hero-cover-pattern"></div>
@@ -34,7 +29,6 @@
         </div>
       </div>
 
-      <!-- Body -->
       <div class="hero-body">
         <div class="hero-avatar-wrap">
           <div class="hero-avatar">
@@ -63,9 +57,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         EDIT MODE — upload zone
-         ============================================================ -->
+    <!-- EDIT MODE — upload zone -->
     <transition name="fade-slide">
       <div v-if="edit" class="edit-panel">
         <div class="section-head">
@@ -146,9 +138,7 @@
       </div>
     </transition>
 
-    <!-- ============================================================
-         ESTATE DETAILS FORM
-         ============================================================ -->
+    <!-- ESTATE DETAILS FORM -->
     <div class="section-card" :class="{ 'section-card-editing': edit }">
       <div class="section-head">
         <div class="section-title">
@@ -247,9 +237,7 @@
       </v-form>
     </div>
 
-    <!-- ============================================================
-         STICKY SAVE BAR
-         ============================================================ -->
+    <!-- STICKY SAVE BAR -->
     <transition name="slide-up">
       <div v-if="edit" class="save-bar">
         <div class="save-bar-info">
@@ -281,9 +269,7 @@
       </div>
     </transition>
 
-    <!-- ============================================================
-         CONFIG SUMMARY
-         ============================================================ -->
+    <!-- CONFIG SUMMARY -->
     <div v-if="!edit" class="section-card">
       <div class="section-head">
         <div class="section-title">
@@ -345,9 +331,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         LINKED ACCOUNTS
-         ============================================================ -->
+    <!-- LINKED ACCOUNTS -->
     <div v-if="!edit" class="section-card">
       <div class="section-head">
         <div class="section-title">
@@ -384,9 +368,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         SIGN OUT
-         ============================================================ -->
+    <!-- SIGN OUT -->
     <div v-if="!edit" class="section-card">
       <div class="section-head">
         <div class="section-title">
@@ -424,9 +406,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         DANGER ZONE
-         ============================================================ -->
+    <!-- DANGER ZONE -->
     <div v-if="!edit" class="section-card danger-card">
       <div class="section-head">
         <div class="section-title">
@@ -460,9 +440,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         CONFIRM SIGN OUT DIALOG
-         ============================================================ -->
+    <!-- CONFIRM SIGN OUT DIALOG -->
     <v-dialog v-model="confirmSignOut" max-width="400" content-class="confirm-dialog">
       <div class="confirm-shell">
         <div class="confirm-icon confirm-icon-purple">
@@ -499,9 +477,7 @@
       </div>
     </v-dialog>
 
-    <!-- ============================================================
-         CONFIRM DELETE DIALOG
-         ============================================================ -->
+    <!-- CONFIRM DELETE DIALOG -->
     <v-dialog v-model="confirmDelete" max-width="420" content-class="confirm-dialog">
       <div class="confirm-shell">
         <div class="confirm-icon">
@@ -561,7 +537,7 @@ import "nuxt-dropzone/dropzone.css";
 import { uuid } from "vue-uuid";
 import axios from "axios";
 
-const API = "https://makaaziserver22.up.railway.app/api";
+const API = "https://makaaziserver-production.up.railway.app/api";
 
 export default {
   name: "EstateAccount",
@@ -637,12 +613,23 @@ export default {
     },
   },
 
-  mounted() {
-    this.bootstrap();
+  // FIX: watch estateId with immediate:true so data loads as soon as
+  // the parent provides it — no manual refresh needed.
+  watch: {
+    estateId: {
+      immediate: true,
+      handler(id) {
+        if (id) this.bootstrap();
+      },
+    },
   },
+
+  // FIX: removed mounted() fetch. The watcher above handles initial load
+  // AND any later estateId change (route change, bootstrap redirect, etc.).
 
   methods: {
     async bootstrap() {
+      if (!this.estateId) return;
       this.initialLoading = true;
       await Promise.allSettled([
         this.fetchEstate(),
@@ -792,7 +779,11 @@ export default {
         this.edit = false;
       } catch (err) {
         console.error(err);
-        this.showError(err.response?.data?.error || "Update failed");
+        // FIX: removed optional chaining for Vue 2 compatibility
+        const msg =
+          (err.response && err.response.data && err.response.data.error) ||
+          "Update failed";
+        this.showError(msg);
       } finally {
         this.saving = false;
       }
@@ -809,7 +800,8 @@ export default {
     async signOut() {
       this.signingOut = true;
       try {
-        if (this.$fire?.auth) {
+        // FIX: removed optional chaining
+        if (this.$fire && this.$fire.auth) {
           await this.$fire.auth.signOut();
         }
         this.confirmSignOut = false;
@@ -836,6 +828,8 @@ export default {
   },
 };
 </script>
+
+
 
 <style scoped>
 .account-page {
