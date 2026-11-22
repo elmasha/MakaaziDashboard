@@ -19,7 +19,6 @@
 
       <!-- CONTENT -->
       <template v-else>
-        <!-- Back link -->
         <button class="back-link" @click="$router.push('/admin/estates')">
           <v-icon size="16">mdi-arrow-left</v-icon>
           All estates
@@ -418,14 +417,12 @@
             </div>
 
             <div class="panel-body no-pad">
-              <!-- Loading -->
               <div v-if="invoicesLoading && !invoices.length" class="panel-loading">
                 <v-skeleton-loader type="list-item-two-line" />
                 <v-skeleton-loader type="list-item-two-line" />
                 <v-skeleton-loader type="list-item-two-line" />
               </div>
 
-              <!-- Empty -->
               <div v-else-if="!invoices.length" class="panel-empty">
                 <v-icon size="40" color="#cbd5e1">mdi-receipt-text-outline</v-icon>
                 <div style="font-weight: 700; margin-top: 8px; color: #4b5563;">
@@ -436,12 +433,10 @@
                 </div>
               </div>
 
-              <!-- Filtered empty -->
               <div v-else-if="!filteredInvoices.length" class="panel-empty">
                 No invoices match this filter.
               </div>
 
-              <!-- Table -->
               <div v-else class="invoice-table-wrap">
                 <table class="invoice-table">
                   <thead>
@@ -725,17 +720,19 @@
       </template>
     </div>
 
-    <!-- DIALOGS -->
+    <!-- ============================================================
+         DIALOGS — plain v-if overlays (no v-dialog, no persistent)
+         ============================================================ -->
 
-    <!-- EDIT ESTATE DIALOG -->
-    <v-dialog v-model="editDialog" max-width="520" content-class="est-dialog-content">
-      <div class="est-dialog-card">
+    <!-- EDIT ESTATE -->
+    <div v-if="editDialog" class="modal-overlay" @click.self="closeEditDialog">
+      <div class="modal-card">
         <div class="est-dialog-header">
           <div>
             <div class="est-dialog-title">Edit estate</div>
             <div class="est-dialog-sub">Update the estate details</div>
           </div>
-          <button type="button" class="est-dialog-close" @click="editDialog = false">
+          <button type="button" class="est-dialog-close" @click="closeEditDialog">
             <v-icon size="20" color="white">mdi-close</v-icon>
           </button>
         </div>
@@ -770,24 +767,24 @@
         </div>
 
         <div class="est-dialog-footer">
-          <button type="button" class="dialog-btn ghost" @click="editDialog = false">Cancel</button>
+          <button type="button" class="dialog-btn ghost" @click="closeEditDialog">Cancel</button>
           <button type="button" class="dialog-btn primary" :disabled="savingEdit" @click="saveEdit">
             <v-icon v-if="savingEdit" size="14" class="mr-2 spin">mdi-loading</v-icon>
             Save changes
           </button>
         </div>
       </div>
-    </v-dialog>
+    </div>
 
-    <!-- NEW OFFICIAL DIALOG -->
-    <v-dialog v-model="officialDialog" max-width="520" content-class="est-dialog-content" persistent>
-      <div class="est-dialog-card">
+    <!-- NEW OFFICIAL -->
+    <div v-if="officialDialog" class="modal-overlay" @click.self="closeOfficialDialog">
+      <div class="modal-card">
         <div class="est-dialog-header">
           <div>
             <div class="est-dialog-title">New official</div>
             <div class="est-dialog-sub">Add an official to this estate</div>
           </div>
-          <button type="button" class="est-dialog-close" @click="officialDialog = false">
+          <button type="button" class="est-dialog-close" @click="closeOfficialDialog">
             <v-icon size="20" color="white">mdi-close</v-icon>
           </button>
         </div>
@@ -818,7 +815,7 @@
         </div>
 
         <div class="est-dialog-footer">
-          <button type="button" class="dialog-btn ghost" @click="officialDialog = false">Cancel</button>
+          <button type="button" class="dialog-btn ghost" @click="closeOfficialDialog">Cancel</button>
           <button
             type="button"
             class="dialog-btn primary"
@@ -830,17 +827,17 @@
           </button>
         </div>
       </div>
-    </v-dialog>
+    </div>
 
-    <!-- NEW INVOICE DIALOG -->
-    <v-dialog v-model="invoiceDialog" max-width="560" content-class="est-dialog-content" persistent>
-      <div class="est-dialog-card">
+    <!-- NEW INVOICE -->
+    <div v-if="invoiceDialog" class="modal-overlay" @click.self="closeInvoiceDialog">
+      <div class="modal-card">
         <div class="est-dialog-header">
           <div>
             <div class="est-dialog-title">New invoice</div>
             <div class="est-dialog-sub">Currency is KES — set title, amount, due date</div>
           </div>
-          <button type="button" class="est-dialog-close" @click="invoiceDialog = false">
+          <button type="button" class="est-dialog-close" @click="closeInvoiceDialog">
             <v-icon size="20" color="white">mdi-close</v-icon>
           </button>
         </div>
@@ -874,7 +871,6 @@
                 min="1"
                 placeholder="0"
               />
-              <!-- NEW: Hint showing plan rate -->
               <div v-if="invoiceForm.invoice_type === 'Subscription' && sub" style="font-size: 0.7rem; color: #7c3aed; margin-top: 4px;">
                 <v-icon size="12">mdi-information-outline</v-icon>
                 Plan rate: KES {{ sub.monthly_rate || 'N/A' }} / month
@@ -905,7 +901,7 @@
         </div>
 
         <div class="est-dialog-footer">
-          <button type="button" class="dialog-btn ghost" @click="invoiceDialog = false">Cancel</button>
+          <button type="button" class="dialog-btn ghost" @click="closeInvoiceDialog">Cancel</button>
           <button
             type="button"
             class="dialog-btn primary"
@@ -917,17 +913,17 @@
           </button>
         </div>
       </div>
-    </v-dialog>
+    </div>
 
-    <!-- MARK PAID DIALOG -->
-    <v-dialog v-model="markPaidDialog" max-width="440" content-class="est-dialog-content" persistent>
-      <div class="est-dialog-card">
+    <!-- MARK PAID -->
+    <div v-if="markPaidDialog" class="modal-overlay" @click.self="closeMarkPaidDialog">
+      <div class="modal-card modal-card-sm">
         <div class="est-dialog-header">
           <div>
             <div class="est-dialog-title">Mark invoice paid</div>
             <div class="est-dialog-sub">Record payment details</div>
           </div>
-          <button type="button" class="est-dialog-close" @click="markPaidDialog = false">
+          <button type="button" class="est-dialog-close" @click="closeMarkPaidDialog">
             <v-icon size="20" color="white">mdi-close</v-icon>
           </button>
         </div>
@@ -969,7 +965,7 @@
         </div>
 
         <div class="est-dialog-footer">
-          <button type="button" class="dialog-btn ghost" @click="markPaidDialog = false">Cancel</button>
+          <button type="button" class="dialog-btn ghost" @click="closeMarkPaidDialog">Cancel</button>
           <button
             type="button"
             class="dialog-btn primary"
@@ -981,7 +977,7 @@
           </button>
         </div>
       </div>
-    </v-dialog>
+    </div>
 
   </div>
 </template>
@@ -1038,6 +1034,8 @@ export default {
         status: 'Draft',
       },
       invoiceSaving: false,
+      closingInvoiceDialog: false,
+
       markPaidDialog: false,
       markPaidTarget: null,
       markPaidForm: {
@@ -1046,6 +1044,7 @@ export default {
         transaction_id: '',
       },
       markPaidSaving: false,
+      closingMarkPaidDialog: false,
 
       localCfg: { show_section: true, show_court: true, show_street: true },
       savingCfg: false,
@@ -1065,6 +1064,7 @@ export default {
         estate_image: '',
       },
       savingEdit: false,
+      closingEditDialog: false,
 
       officialDialog: false,
       newOfficial: {
@@ -1074,6 +1074,7 @@ export default {
         uid: '',
       },
       savingOfficial: false,
+      closingOfficialDialog: false,
 
       snackbar: { show: false, text: '', color: 'success' },
     };
@@ -1161,14 +1162,14 @@ export default {
   },
 
   watch: {
-    // Auto-fill / clear amount based on invoice type
     'invoiceForm.invoice_type'(newType) {
+      if (this.closingInvoiceDialog || this.invoiceSaving) return;
       if (newType !== 'Subscription') {
         this.invoiceForm.amount = '';
       } else if (this.sub && this.sub.monthly_rate) {
         this.invoiceForm.amount = Number(this.sub.monthly_rate);
       }
-    }
+    },
   },
 
   mounted() {
@@ -1297,12 +1298,16 @@ export default {
       }
     },
 
-    // UPDATED: Auto-fill invoice amount from plan rate
+    // ---------------- INVOICE DIALOG ----------------
+
     openInvoiceDialog() {
       const planRate = this.sub && this.sub.monthly_rate ? Number(this.sub.monthly_rate) : 0;
-
+      this.closingInvoiceDialog = false;
+      this.invoiceSaving = false;
       this.invoiceForm = {
-        title: this.sub ? `Monthly Subscription - ${new Date().toLocaleString('default', { month: 'long' })}` : '',
+        title: this.sub
+          ? `Monthly Subscription - ${new Date().toLocaleString('default', { month: 'long' })}`
+          : '',
         description: '',
         amount: planRate > 0 ? planRate : '',
         due_date: '',
@@ -1310,6 +1315,23 @@ export default {
         status: 'Draft',
       };
       this.invoiceDialog = true;
+    },
+
+    closeInvoiceDialog() {
+      this.closingInvoiceDialog = true;
+      this.invoiceDialog = false;
+      this.invoiceSaving = false;
+      this.invoiceForm = {
+        title: '',
+        description: '',
+        amount: '',
+        due_date: '',
+        invoice_type: 'Subscription',
+        status: 'Draft',
+      };
+      this.$nextTick(() => {
+        this.closingInvoiceDialog = false;
+      });
     },
 
     async createInvoice() {
@@ -1329,8 +1351,10 @@ export default {
           },
           { headers }
         );
-        this.invoiceDialog = false;
+
+        this.closeInvoiceDialog();
         this.showSnackbar('Invoice created', 'success');
+
         await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
       } catch (err) {
         this.showSnackbar(
@@ -1342,25 +1366,11 @@ export default {
       }
     },
 
-    async sendInvoice(inv) {
-      try {
-        const headers = await this.getAuthHeaders();
-        await axios.post(
-          `${API}/admin/invoices/${inv.invoice_id}/send`,
-          {},
-          { headers }
-        );
-        this.showSnackbar('Invoice sent', 'success');
-        await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
-      } catch (err) {
-        this.showSnackbar(
-          err.response?.data?.error || 'Send failed',
-          'error'
-        );
-      }
-    },
+    // ---------------- MARK PAID DIALOG ----------------
 
     openMarkPaid(inv) {
+      this.closingMarkPaidDialog = false;
+      this.markPaidSaving = false;
       this.markPaidTarget = inv;
       this.markPaidForm = {
         paid_amount: inv.amount,
@@ -1368,6 +1378,21 @@ export default {
         transaction_id: '',
       };
       this.markPaidDialog = true;
+    },
+
+    closeMarkPaidDialog() {
+      this.closingMarkPaidDialog = true;
+      this.markPaidDialog = false;
+      this.markPaidSaving = false;
+      this.markPaidTarget = null;
+      this.markPaidForm = {
+        paid_amount: '',
+        payment_method: 'Manual',
+        transaction_id: '',
+      };
+      this.$nextTick(() => {
+        this.closingMarkPaidDialog = false;
+      });
     },
 
     async confirmMarkPaid() {
@@ -1384,8 +1409,7 @@ export default {
           },
           { headers }
         );
-        this.markPaidDialog = false;
-        this.markPaidTarget = null;
+        this.closeMarkPaidDialog();
         this.showSnackbar('Invoice marked paid', 'success');
         await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
       } catch (err) {
@@ -1395,6 +1419,26 @@ export default {
         );
       } finally {
         this.markPaidSaving = false;
+      }
+    },
+
+    // ---------------- INVOICE ACTIONS ----------------
+
+    async sendInvoice(inv) {
+      try {
+        const headers = await this.getAuthHeaders();
+        await axios.post(
+          `${API}/admin/invoices/${inv.invoice_id}/send`,
+          {},
+          { headers }
+        );
+        this.showSnackbar('Invoice sent', 'success');
+        await Promise.all([this.loadInvoices(), this.loadInvoiceStats()]);
+      } catch (err) {
+        this.showSnackbar(
+          err.response?.data?.error || 'Send failed',
+          'error'
+        );
       }
     },
 
@@ -1514,7 +1558,10 @@ export default {
       }
     },
 
+    // ---------------- EDIT DIALOG ----------------
+
     openEdit() {
+      this.closingEditDialog = false;
       this.savingEdit = false;
       this.editForm = {
         estate_name: this.estate?.estate_name || '',
@@ -1527,6 +1574,15 @@ export default {
       this.editDialog = true;
     },
 
+    closeEditDialog() {
+      this.closingEditDialog = true;
+      this.editDialog = false;
+      this.savingEdit = false;
+      this.$nextTick(() => {
+        this.closingEditDialog = false;
+      });
+    },
+
     async saveEdit() {
       this.savingEdit = true;
       try {
@@ -1537,8 +1593,7 @@ export default {
           { headers }
         );
         this.estate = { ...this.estate, ...this.editForm };
-
-        this.editDialog = false;
+        this.closeEditDialog();
         this.showSnackbar('Estate updated', 'success');
       } catch (err) {
         console.warn('saveEdit failed:', err.message);
@@ -1718,7 +1773,11 @@ export default {
       }
     },
 
+    // ---------------- OFFICIALS DIALOG ----------------
+
     openNewOfficial() {
+      this.closingOfficialDialog = false;
+      this.savingOfficial = false;
       this.newOfficial = {
         full_name: '',
         contact_number: '',
@@ -1727,6 +1786,16 @@ export default {
       };
       this.officialDialog = true;
     },
+
+    closeOfficialDialog() {
+      this.closingOfficialDialog = true;
+      this.officialDialog = false;
+      this.savingOfficial = false;
+      this.$nextTick(() => {
+        this.closingOfficialDialog = false;
+      });
+    },
+
     async saveNewOfficial() {
       if (!this.canAddOfficial || this.savingOfficial) return;
       this.savingOfficial = true;
@@ -1742,7 +1811,7 @@ export default {
           },
           { headers }
         );
-        this.officialDialog = false;
+        this.closeOfficialDialog();
         this.showSnackbar('Official added', 'success');
         await this.load();
       } catch (err) {
@@ -1754,6 +1823,7 @@ export default {
         this.savingOfficial = false;
       }
     },
+
     async removeOfficial(o) {
       if (!window.confirm(`Remove official "${o.full_name}"?`)) return;
       try {
@@ -2756,7 +2826,7 @@ export default {
 }
 
 /* ============================================================
-   SETTINGS / CHARGE / TAG / DIALOG
+   SETTINGS / CHARGE / TAG
    ============================================================ */
 .settings-grid {
   display: grid;
@@ -2940,26 +3010,48 @@ export default {
 
 .tag-remove:hover { opacity: 1; }
 
-::v-deep .est-dialog-content {
-  overflow: visible !important;
-  border-radius: 20px !important;
-  margin: 16px auto !important;
-  max-width: 520px !important;
-  width: calc(100% - 32px) !important;
-  max-height: calc(100vh - 32px) !important;
-  display: flex !important;
-  flex-direction: column !important;
+/* ============================================================
+   PLAIN MODAL (replaces v-dialog)
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2400;
+  background: rgba(15, 13, 36, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+  animation: modalFadeIn 0.15s ease;
 }
 
-.est-dialog-card {
-  display: flex;
-  flex-direction: column;
-  max-height: 100%;
-  min-height: 0;
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 560px;
   background: #ffffff;
   border-radius: 20px;
   overflow: hidden;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+  box-shadow: 0 30px 60px -20px rgba(15, 13, 36, 0.45);
+  animation: modalSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-card-sm {
+  max-width: 440px;
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .est-dialog-header {
@@ -3141,5 +3233,8 @@ export default {
   .invoice-table tbody td:nth-child(5) {
     display: none;
   }
+
+  .modal-overlay { padding: 12px; }
+  .modal-card { max-height: calc(100vh - 24px); }
 }
 </style>
