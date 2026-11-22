@@ -128,64 +128,132 @@
     </v-navigation-drawer>
 
     <v-main class="pa-0">
-      <!-- ============================== HERO ============================== -->
+      <!-- ============================== HERO (BRIGHT) ============================== -->
       <section class="hero-section" ref="hero">
-        <div class="hero-bg-shapes">
-          <div class="shape shape-1"></div>
-          <div class="shape shape-2"></div>
-          <div class="shape shape-3"></div>
-        </div>
+        <!-- Decorative background layers -->
+        <div class="hero-bg-grid"></div>
+        <div class="hero-blob hero-blob-1"></div>
+        <div class="hero-blob hero-blob-2"></div>
+        <div class="hero-blob hero-blob-3"></div>
+        <div class="hero-bottom-fade"></div>
 
-        <v-container class="hero-content py-10 py-sm-14">
-          <v-row align="center" justify="center" class="min-h-screen">
-            <v-col cols="12" md="10" lg="8" class="text-center">
-              <v-chip
-                color="#ede9fe"
-                text-color="#8051FF"
-                small
-                label
-                class="mb-4 font-weight-bold px-4 py-1"
-              >
-                <v-icon left small color="#8051FF">mdi-star-circle</v-icon>
+        <v-container class="hero-container">
+          <v-row align="center" class="hero-row">
+            <!-- LEFT: copy -->
+            <v-col cols="12" md="6" lg="6" class="hero-left">
+              <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
                 Trusted by estates across Kenya
-              </v-chip>
+              </div>
 
-              <h1 class="text-h4 text-sm-h3 text-md-h2 font-weight-black mb-4 hero-title">
+              <h1 class="hero-title">
                 Manage Your Estate
-                <span class="gradient-text d-block mt-1">The Modern Way</span>
+                <span class="hero-title-gradient">The Modern Way</span>
               </h1>
 
-              <p class="text-body-1 text-sm-h6 grey--text text--darken-1 mb-8 mx-auto" style="max-width: 640px; line-height: 1.7;">
-                Makaazi is the all-in-one platform for estate management — service charges, household records, payments, visitors, and reports. Sign in and choose your role below.
+              <p class="hero-lede">
+                Makaazi is the all-in-one platform for estate management — service charges,
+                household records, payments, visitors, and reports. All in one place.
               </p>
 
-              <div class="d-flex flex-column flex-sm-row align-center justify-center gap-3">
-                <v-btn
-                  large
-                  x-large
-                  color="#8051FF"
-                  dark
-                  depressed
-                  rounded
-                  class="px-8 font-weight-bold text-capitalize elevation-4 hover-lift"
-                  @click="scrollToSection('roles')"
-                >
-                  <v-icon left>mdi-account-arrow-right</v-icon>
-                  Choose your role
-                </v-btn>
+              <div class="hero-cta-row">
+                <button class="hero-cta hero-cta-primary" @click="scrollToSection('roles')">
+                  <v-icon size="18" color="white">mdi-account-arrow-right</v-icon>
+                  <span>Choose your role</span>
+                </button>
+                <button class="hero-cta hero-cta-ghost" @click="scrollToSection('features')">
+                  <v-icon size="18" color="#8051FF">mdi-play-circle-outline</v-icon>
+                  <span>See how it works</span>
+                </button>
+              </div>
+            </v-col>
 
-                <v-btn
-                  large
-                  x-large
-                  text
-                  color="grey darken-2"
-                  rounded
-                  class="px-6 font-weight-medium text-capitalize mt-2 mt-sm-0"
-                  @click="scrollToSection('features')"
-                >
-                  <v-icon left color="#8051FF">mdi-play-circle</v-icon>
-                  See how it works
-                </v-btn>
+            <!-- RIGHT: product mockup -->
+            <v-col cols="12" md="6" lg="6" class="hero-right">
+              <div class="mockup-wrap">
+                <!-- Floating stat pill 1 -->
+                <div class="mockup-float mockup-float-1">
+                  <div class="mockup-float-icon mockup-float-icon-lime">
+                    <v-icon size="16" color="#0A0A14">mdi-check</v-icon>
+                  </div>
+                  <div class="mockup-float-body">
+                    <div class="mockup-float-label">Payment received</div>
+                    <div class="mockup-float-value">KES 5,000</div>
+                  </div>
+                </div>
+
+                <!-- Floating stat pill 2 -->
+                <div class="mockup-float mockup-float-2">
+                  <div class="mockup-float-icon mockup-float-icon-purple">
+                    <v-icon size="16" color="white">mdi-home-group</v-icon>
+                  </div>
+                  <div class="mockup-float-body">
+                    <div class="mockup-float-label">Households</div>
+                    <div class="mockup-float-value">128 approved</div>
+                  </div>
+                </div>
+
+                <!-- Main mockup card -->
+                <div class="mockup-card">
+                  <div class="mockup-header">
+                    <div class="mockup-header-left">
+                      <div class="mockup-avatar">GE</div>
+                      <div>
+                        <div class="mockup-name">Greenfield Estate</div>
+                        <div class="mockup-urn">URN · GRN-001</div>
+                      </div>
+                    </div>
+                    <div class="mockup-badge">
+                      <span class="mockup-badge-dot"></span>
+                      Active
+                    </div>
+                  </div>
+
+                  <div class="mockup-stats">
+                    <div class="mockup-stat">
+                      <div class="mockup-stat-label">Collected</div>
+                      <div class="mockup-stat-value">
+                        <span class="mockup-currency">KES</span> 84,500
+                      </div>
+                    </div>
+                    <div class="mockup-stat">
+                      <div class="mockup-stat-label">Outstanding</div>
+                      <div class="mockup-stat-value mockup-stat-warn">
+                        <span class="mockup-currency">KES</span> 12,300
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mockup-chart">
+                    <div class="mockup-chart-label">Last 6 months</div>
+                    <div class="mockup-chart-bars">
+                      <div class="mockup-bar" style="height: 40%"></div>
+                      <div class="mockup-bar" style="height: 65%"></div>
+                      <div class="mockup-bar" style="height: 50%"></div>
+                      <div class="mockup-bar" style="height: 80%"></div>
+                      <div class="mockup-bar" style="height: 70%"></div>
+                      <div class="mockup-bar mockup-bar-active" style="height: 95%"></div>
+                    </div>
+                  </div>
+
+                  <div class="mockup-list">
+                    <div class="mockup-list-row">
+                      <div class="mockup-list-dot mockup-list-dot-green"></div>
+                      <div class="mockup-list-text">Unit A-12 · Paid Nov</div>
+                      <div class="mockup-list-amount">+5,000</div>
+                    </div>
+                    <div class="mockup-list-row">
+                      <div class="mockup-list-dot mockup-list-dot-green"></div>
+                      <div class="mockup-list-text">Unit B-04 · Paid Nov</div>
+                      <div class="mockup-list-amount">+5,000</div>
+                    </div>
+                    <div class="mockup-list-row">
+                      <div class="mockup-list-dot mockup-list-dot-amber"></div>
+                      <div class="mockup-list-text">Unit C-07 · Pending</div>
+                      <div class="mockup-list-amount mockup-list-amount-warn">3,000</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </v-col>
           </v-row>
@@ -441,11 +509,9 @@ export default {
       selectedRole: null,
       routing: false,
 
-      // Tracks which role card is currently checking (spinner on button)
       checkingRole: null,
       resolvingDashboard: false,
 
-      // Auth state (nav bar display)
       isAuthenticated: false,
       uid: null,
       userName: '',
@@ -615,7 +681,7 @@ export default {
     },
 
     // =====================================================
-    // AUTH — nav bar state only
+    // AUTH
     // =====================================================
     checkAuth() {
       const that = this;
@@ -654,14 +720,11 @@ export default {
       const role = this.roles.find((r) => r.key === key);
       if (!role) return;
 
-      // ---- HOUSEHOLD ----
       if (key === 'household') {
-        console.log('Household card -> /household/register');
         this._push('/household/register');
         return;
       }
 
-      // ---- OFFICIAL ----
       if (key === 'official') {
         if (this.isAuthenticated && this.uid) {
           this.checkingRole = 'official';
@@ -671,13 +734,11 @@ export default {
             this.checkingRole = null;
           }
         } else {
-          console.log('Not signed in -> /officials/login');
           this._push('/officials/login');
         }
         return;
       }
 
-      // ---- MANAGER ----
       this.selectedRole = role;
       this.roleDialog = true;
     },
@@ -690,11 +751,9 @@ export default {
           const status = res ? res.status : null;
 
           if (status === 200 && data.official_id && data.estate_id) {
-            console.log('User IS an official -> /officials/dashboard/' + data.estate_id);
             this._push('/officials/dashboard/' + data.estate_id);
             return;
           }
-          console.log('Not an official -> /officials/login');
           this._push('/officials/login');
         })
         .catch((err) => {
@@ -724,8 +783,6 @@ export default {
         path = '/login?role=' + key;
       }
 
-      console.log('proceedAsRole ->', path);
-
       setTimeout(() => {
         this._push(path);
         this.routing = false;
@@ -745,7 +802,6 @@ export default {
       this.resolvingDashboard = true;
 
       try {
-        // 1. Try official first
         const official = await axios
           .get(`${API}/officials/getOfficialById/${this.uid}`)
           .catch(() => null);
@@ -756,12 +812,10 @@ export default {
           official.data &&
           official.data.estate_id
         ) {
-          console.log('Resolved: official');
           this._push('/officials/dashboard/' + official.data.estate_id);
           return;
         }
 
-        // 2. Try household
         const household = await axios
           .get(`${API}/households/getHouseHoldId/${this.uid}`)
           .catch(() => null);
@@ -772,13 +826,10 @@ export default {
           household.data &&
           household.data.household_id
         ) {
-          console.log('Resolved: household');
           this._push('/household/dashboard/' + this.uid);
           return;
         }
 
-        // 3. Fallback
-        console.warn('Could not resolve role -> /household/register');
         this._push('/household/register');
       } catch (err) {
         console.error('Dashboard resolve error:', err.message);
@@ -848,60 +899,476 @@ export default {
   letter-spacing: -0.5px;
 }
 
-/* Hero */
+/* ============================================================
+   HERO — bright, light, no stats strip
+   ============================================================ */
 .hero-section {
   position: relative;
-  background: linear-gradient(135deg, #fafafa 0%, #f5f3ff 100%);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, #faf5ff 0%, transparent 60%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaff 45%, #f6f3ff 100%);
   overflow: hidden;
+  isolation: isolate;
+  padding: 110px 0 100px; /* Adjusted padding to balance without the bottom stat strip */
 }
-.min-h-screen {
-  min-height: calc(100vh - 70px);
-}
-.hero-bg-shapes {
+
+/* Soft grid */
+.hero-bg-grid {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  background-image:
+    linear-gradient(rgba(128, 81, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128, 81, 255, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
   pointer-events: none;
+  z-index: 0;
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 35%, black, transparent);
+  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 35%, black, transparent);
 }
-.shape {
+
+/* Pastel blobs */
+.hero-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.5;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
 }
-.shape-1 {
-  width: 500px;
-  height: 500px;
-  background: #ede9fe;
-  top: -150px;
+.hero-blob-1 {
+  width: 480px;
+  height: 480px;
+  background: #d8c9ff;
+  opacity: 0.55;
+  top: -140px;
   right: -100px;
 }
-.shape-2 {
-  width: 400px;
-  height: 400px;
-  background: #f3ffd9;
-  bottom: -100px;
-  left: -100px;
+.hero-blob-2 {
+  width: 420px;
+  height: 420px;
+  background: #e4f7b8;
+  opacity: 0.55;
+  bottom: -120px;
+  left: -120px;
 }
-.shape-3 {
-  width: 350px;
-  height: 350px;
-  background: #fff3e0;
-  top: 45%;
-  right: 20%;
+.hero-blob-3 {
+  width: 320px;
+  height: 320px;
+  background: #ffe0b8;
+  opacity: 0.35;
+  top: 40%;
+  right: 22%;
 }
+
+.hero-bottom-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(to top, rgba(246, 243, 255, 0.9), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-container {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-row {
+  min-height: 480px;
+}
+
+/* LEFT */
+.hero-left {
+  text-align: left;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 100px;
+  background: rgba(128, 81, 255, 0.08);
+  border: 1px solid rgba(128, 81, 255, 0.18);
+  color: #5b21b6;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 26px;
+}
+
+.hero-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7cb300;
+  box-shadow: 0 0 0 3px rgba(124, 179, 0, 0.18);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
+
 .hero-title {
-  line-height: 1.12;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 900;
+  line-height: 1.08;
   letter-spacing: -0.03em;
+  color: #0f0a1f;
+  margin: 0 0 22px 0;
 }
-.gradient-text {
-  background: linear-gradient(135deg, #8051FF 0%, #5b21b6 50%, #4c1d95 100%);
+
+.hero-title-gradient {
+  display: block;
+  background: linear-gradient(135deg, #8051FF 0%, #5b21b6 55%, #7cb300 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Role cards */
+.hero-lede {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #4b5563;
+  max-width: 520px;
+  margin: 0 0 34px 0;
+}
+
+/* CTA row */
+.hero-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: 100px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.hero-cta-primary {
+  background: #8051FF;
+  color: #ffffff;
+  box-shadow: 0 6px 24px rgba(128, 81, 255, 0.35);
+}
+.hero-cta-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 34px rgba(128, 81, 255, 0.45);
+  background: #7040e8;
+}
+
+.hero-cta-ghost {
+  background: #ffffff;
+  color: #1f2937;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.hero-cta-ghost:hover {
+  border-color: #c4b5fd;
+  background: #faf7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(128, 81, 255, 0.12);
+}
+
+/* RIGHT — mockup */
+.hero-right {
+  display: flex;
+  justify-content: center;
+}
+
+.mockup-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  animation: float-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes float-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Floating pills */
+.mockup-float {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 10px 32px rgba(31, 41, 55, 0.14), 0 2px 8px rgba(31, 41, 55, 0.06);
+  z-index: 3;
+  white-space: nowrap;
+  animation: float-bob 4s ease-in-out infinite;
+}
+
+.mockup-float-1 {
+  top: -18px;
+  right: -24px;
+}
+
+.mockup-float-2 {
+  bottom: 36px;
+  left: -32px;
+  animation-delay: 1.5s;
+}
+
+@keyframes float-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.mockup-float-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mockup-float-icon-lime {
+  background: #C6FF4A;
+}
+.mockup-float-icon-purple {
+  background: #8051FF;
+}
+
+.mockup-float-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mockup-float-value {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0A0A14;
+  letter-spacing: -0.01em;
+}
+
+/* Main mockup card */
+.mockup-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 26px;
+  box-shadow:
+    0 24px 60px rgba(91, 33, 182, 0.16),
+    0 8px 20px rgba(91, 33, 182, 0.08),
+    0 0 0 1px rgba(128, 81, 255, 0.08);
+  z-index: 1;
+}
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.mockup-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mockup-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #8051FF, #5b21b6);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.mockup-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0A0A14;
+  letter-spacing: -0.01em;
+}
+
+.mockup-urn {
+  font-size: 0.65rem;
+  color: #9ca3af;
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.mockup-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 100px;
+  background: #f3ffd9;
+  color: #5a8a00;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mockup-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7cb300;
+  box-shadow: 0 0 8px rgba(124, 179, 0, 0.6);
+}
+
+/* Stats */
+.mockup-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mockup-stat {
+  background: #f8f7fd;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.mockup-stat-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.mockup-stat-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0A0A14;
+  letter-spacing: -0.02em;
+}
+
+.mockup-stat-warn {
+  color: #d97706;
+}
+
+.mockup-currency {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #9ca3af;
+  margin-right: 2px;
+}
+
+/* Chart */
+.mockup-chart {
+  margin-bottom: 18px;
+}
+
+.mockup-chart-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.mockup-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 56px;
+}
+
+.mockup-bar {
+  flex: 1;
+  background: #ede9fe;
+  border-radius: 4px 4px 2px 2px;
+  transition: all 0.3s ease;
+}
+
+.mockup-bar-active {
+  background: linear-gradient(to top, #8051FF, #a78bfa);
+  box-shadow: 0 4px 14px rgba(128, 81, 255, 0.35);
+}
+
+/* List */
+.mockup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid #f1f3f9;
+  padding-top: 14px;
+}
+
+.mockup-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.mockup-list-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mockup-list-dot-green {
+  background: #7cb300;
+  box-shadow: 0 0 0 3px rgba(124, 179, 0, 0.15);
+}
+
+.mockup-list-dot-amber {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.mockup-list-text {
+  flex: 1;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.mockup-list-amount {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #7cb300;
+  letter-spacing: -0.01em;
+}
+
+.mockup-list-amount-warn {
+  color: #d97706;
+}
+
+/* ============================================================
+   REST OF PAGE
+   ============================================================ */
 .role-card {
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid #e2e8f0;
@@ -917,7 +1384,6 @@ export default {
   justify-content: center;
 }
 
-/* Features */
 .feature-card {
   transition: all 0.3s ease;
   background: #ffffff;
@@ -950,10 +1416,70 @@ export default {
   letter-spacing: 0.08em;
 }
 
-/* Responsive */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 959px) {
+  .hero-section {
+    padding: 80px 0 64px;
+  }
+  .hero-row {
+    min-height: auto;
+  }
+  .hero-left {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .hero-lede {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero-cta-row {
+    justify-content: center;
+  }
+  .mockup-float-1 {
+    right: 0;
+    top: -14px;
+  }
+  .mockup-float-2 {
+    left: 0;
+    bottom: 24px;
+  }
+}
+
 @media (max-width: 599px) {
+  .hero-section {
+    padding: 60px 0 48px;
+  }
   .hero-title {
-    font-size: 1.9rem !important;
+    font-size: 2rem;
+  }
+  .hero-lede {
+    font-size: 0.92rem;
+  }
+  .hero-cta {
+    padding: 12px 22px;
+    font-size: 0.88rem;
+    flex: 1;
+    justify-content: center;
+  }
+  .hero-cta-row {
+    gap: 10px;
+  }
+  .mockup-card {
+    padding: 20px;
+    border-radius: 18px;
+  }
+  .mockup-float {
+    padding: 8px 12px;
+  }
+  .mockup-float-1 {
+    top: -12px;
+    right: -8px;
+  }
+  .mockup-float-2 {
+    bottom: 16px;
+    left: -8px;
   }
   .role-icon-wrapper {
     width: 56px;
