@@ -119,6 +119,13 @@
           <v-list-item @click="scrollToSection('faq'); mobileMenu = false">
             <v-list-item-title>FAQ</v-list-item-title>
           </v-list-item>
+          <!-- NEW: Privacy Policy link -->
+          <v-list-item to="/privacy-policy" @click="mobileMenu = false">
+            <v-list-item-icon class="mr-3">
+              <v-icon small color="grey darken-1">mdi-shield-lock</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title>Privacy Policy</v-list-item-title>
+          </v-list-item>
           <v-divider class="my-3"></v-divider>
           <v-list-item v-if="isAuthenticated" @click="signOut(); mobileMenu = false">
             <v-list-item-title class="error--text">Sign Out</v-list-item-title>
@@ -444,6 +451,10 @@
             <v-col cols="12" md="6" class="text-center text-md-right">
               <v-btn text small color="grey lighten-1" class="text-capitalize" @click="scrollToSection('features')">Features</v-btn>
               <v-btn text small color="grey lighten-1" class="text-capitalize" @click="scrollToSection('faq')">FAQ</v-btn>
+              <!-- NEW: Privacy Policy link -->
+              <v-btn text small color="grey lighten-1" class="text-capitalize" to="/privacy-policy">
+                Privacy Policy
+              </v-btn>
               <v-btn text small color="grey lighten-1" class="text-capitalize" href="mailto:support@makaazi.co.ke">Contact</v-btn>
             </v-col>
           </v-row>
