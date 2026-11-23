@@ -1,12 +1,3 @@
-<v-btn
-  text
-  small
-  color="grey lighten-1"
-  class="text-capitalize"
-  to="/privacy-policy"
->
-  Privacy Policy
-</v-btn>
 <template>
   <div class="privacy-page">
     <!-- Header -->
