@@ -31,6 +31,17 @@
         <v-btn text class="mx-1 text-capitalize font-weight-medium" @click="scrollToSection('faq')">
           FAQ
         </v-btn>
+        <!-- Play Store button in navbar -->
+        <v-btn
+          text
+          class="mx-1 text-capitalize font-weight-medium"
+          :href="PLAY_STORE_URL"
+          target="_blank"
+          rel="noopener"
+        >
+          <v-icon left small color="#7cb300">mdi-google-play</v-icon>
+          Download App
+        </v-btn>
       </div>
 
       <!-- Auth-aware: signed in → avatar + Dashboard -->
@@ -119,7 +130,7 @@
           <v-list-item @click="scrollToSection('faq'); mobileMenu = false">
             <v-list-item-title>FAQ</v-list-item-title>
           </v-list-item>
-          <!-- NEW: Privacy Policy link -->
+          <!-- Privacy Policy link -->
           <v-list-item to="/privacy-policy" @click="mobileMenu = false">
             <v-list-item-icon class="mr-3">
               <v-icon small color="grey darken-1">mdi-shield-lock</v-icon>
@@ -172,6 +183,16 @@
                   <v-icon size="18" color="#8051FF">mdi-play-circle-outline</v-icon>
                   <span>See how it works</span>
                 </button>
+                <!-- NEW: Play Store download button in hero -->
+                <a
+                  :href="PLAY_STORE_URL"
+                  target="_blank"
+                  rel="noopener"
+                  class="hero-cta hero-cta-playstore"
+                >
+                  <v-icon size="20" color="white">mdi-google-play</v-icon>
+                  <span>Get it on Google Play</span>
+                </a>
               </div>
             </v-col>
 
@@ -433,6 +454,94 @@
         </v-container>
       </section>
 
+      <!-- ============================== DOWNLOAD APP ============================== -->
+      <section id="download" ref="download" class="download-section py-14 py-sm-18">
+        <v-container>
+          <v-row justify="center">
+            <v-col cols="12" md="10" lg="8">
+              <div class="download-card">
+                <div class="download-content">
+                  <div class="download-badge">
+                    <v-icon small color="#7cb300" class="mr-1">mdi-cellphone</v-icon>
+                    Mobile App
+                  </div>
+                  <h2 class="download-title">
+                    Take Makaazi <span class="download-title-accent">with you</span>
+                  </h2>
+                  <p class="download-lede">
+                    Download the Makaazi Android app to pay service charges, track your
+                    balance, receive payment alerts, and stay connected with your estate —
+                    right from your phone.
+                  </p>
+
+                  <div class="download-features">
+                    <div class="download-feature">
+                      <v-icon small color="#7cb300">mdi-check-circle</v-icon>
+                      <span>One-tap M-Pesa payments</span>
+                    </div>
+                    <div class="download-feature">
+                      <v-icon small color="#7cb300">mdi-check-circle</v-icon>
+                      <span>Real-time balance updates</span>
+                    </div>
+                    <div class="download-feature">
+                      <v-icon small color="#7cb300">mdi-check-circle</v-icon>
+                      <span>Push notifications</span>
+                    </div>
+                  </div>
+
+                  <!-- Single Play Store download button -->
+                  <a
+                    :href="PLAY_STORE_URL"
+                    target="_blank"
+                    rel="noopener"
+                    class="playstore-btn"
+                  >
+                    <v-icon size="28" color="white">mdi-google-play</v-icon>
+                    <div class="playstore-btn-text">
+                      <span class="playstore-btn-small">GET IT ON</span>
+                      <span class="playstore-btn-big">Google Play</span>
+                    </div>
+                  </a>
+                </div>
+
+                <!-- Decorative phone mockup -->
+                <div class="download-visual">
+                  <div class="phone-frame">
+                    <div class="phone-notch"></div>
+                    <div class="phone-screen">
+                      <div class="phone-header">
+                        <div class="phone-avatar">M</div>
+                        <div class="phone-title">Makaazi</div>
+                      </div>
+                      <div class="phone-balance">
+                        <div class="phone-balance-label">Outstanding</div>
+                        <div class="phone-balance-value">KES 3,000</div>
+                      </div>
+                      <div class="phone-btn">Pay via M-Pesa</div>
+                      <div class="phone-row">
+                        <div class="phone-row-dot phone-row-dot-green"></div>
+                        <div class="phone-row-text">Paid Nov</div>
+                        <div class="phone-row-amount">+5,000</div>
+                      </div>
+                      <div class="phone-row">
+                        <div class="phone-row-dot phone-row-dot-green"></div>
+                        <div class="phone-row-text">Paid Oct</div>
+                        <div class="phone-row-amount">+5,000</div>
+                      </div>
+                      <div class="phone-row">
+                        <div class="phone-row-dot phone-row-dot-amber"></div>
+                        <div class="phone-row-text">Pending</div>
+                        <div class="phone-row-amount phone-row-amount-warn">3,000</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </v-col>
+          </v-row>
+        </v-container>
+      </section>
+
       <!-- ============================== FOOTER ============================== -->
       <v-footer color="grey darken-4" dark class="py-8">
         <v-container>
@@ -451,7 +560,6 @@
             <v-col cols="12" md="6" class="text-center text-md-right">
               <v-btn text small color="grey lighten-1" class="text-capitalize" @click="scrollToSection('features')">Features</v-btn>
               <v-btn text small color="grey lighten-1" class="text-capitalize" @click="scrollToSection('faq')">FAQ</v-btn>
-              <!-- NEW: Privacy Policy link -->
               <v-btn text small color="grey lighten-1" class="text-capitalize" to="/privacy-policy">
                 Privacy Policy
               </v-btn>
@@ -510,9 +618,16 @@ import axios from 'axios';
 
 const API = 'https://makaaziserver22.up.railway.app/api';
 
+// Google Play Store link
+const PLAY_STORE_URL =
+  'https://play.google.com/store/apps/details?id=com.inec.makaazi&pcampaignid=web_share';
+
 export default {
   data() {
     return {
+      // expose constant to template
+      PLAY_STORE_URL,
+
       scrolled: false,
       mobileMenu: false,
 
@@ -920,7 +1035,7 @@ export default {
     linear-gradient(180deg, #ffffff 0%, #fbfaff 45%, #f6f3ff 100%);
   overflow: hidden;
   isolation: isolate;
-  padding: 110px 0 100px; /* Adjusted padding to balance without the bottom stat strip */
+  padding: 110px 0 100px;
 }
 
 /* Soft grid */
@@ -1068,6 +1183,7 @@ export default {
   border: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
+  text-decoration: none;
 }
 
 .hero-cta-primary {
@@ -1092,6 +1208,18 @@ export default {
   background: #faf7ff;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(128, 81, 255, 0.12);
+}
+
+/* NEW: Play Store CTA button in hero */
+.hero-cta-playstore {
+  background: #0A0A14;
+  color: #ffffff;
+  box-shadow: 0 6px 24px rgba(10, 10, 20, 0.25);
+}
+.hero-cta-playstore:hover {
+  transform: translateY(-2px);
+  background: #1f1f2e;
+  box-shadow: 0 10px 34px rgba(10, 10, 20, 0.35);
 }
 
 /* RIGHT — mockup */
@@ -1413,6 +1541,269 @@ export default {
   justify-content: center;
 }
 
+/* ============================================================
+   DOWNLOAD SECTION
+   ============================================================ */
+.download-section {
+  background:
+    radial-gradient(ellipse 70% 60% at 80% 20%, #f3ffd9 0%, transparent 60%),
+    radial-gradient(ellipse 70% 60% at 10% 80%, #ede9fe 0%, transparent 60%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaff 100%);
+}
+
+.download-card {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 40px;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 48px;
+  border: 1px solid #e2e8f0;
+  box-shadow:
+    0 20px 60px rgba(91, 33, 182, 0.10),
+    0 4px 16px rgba(91, 33, 182, 0.05);
+}
+
+.download-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 100px;
+  background: #f3ffd9;
+  color: #5a8a00;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 18px;
+}
+
+.download-title {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #0f0a1f;
+  margin: 0 0 16px 0;
+}
+
+.download-title-accent {
+  background: linear-gradient(135deg, #8051FF 0%, #7cb300 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.download-lede {
+  font-size: 0.98rem;
+  line-height: 1.7;
+  color: #4b5563;
+  margin: 0 0 24px 0;
+  max-width: 460px;
+}
+
+.download-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.download-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Single Play Store button */
+.playstore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 26px;
+  border-radius: 14px;
+  background: #0A0A14;
+  color: #ffffff;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 28px rgba(10, 10, 20, 0.25);
+}
+.playstore-btn:hover {
+  transform: translateY(-2px);
+  background: #1a1a2e;
+  box-shadow: 0 12px 36px rgba(10, 10, 20, 0.35);
+}
+
+.playstore-btn-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.playstore-btn-small {
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.playstore-btn-big {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Phone mockup */
+.download-visual {
+  display: flex;
+  justify-content: center;
+}
+
+.phone-frame {
+  position: relative;
+  width: 220px;
+  height: 420px;
+  border-radius: 36px;
+  background: #0A0A14;
+  padding: 12px;
+  box-shadow:
+    0 30px 70px rgba(91, 33, 182, 0.28),
+    0 10px 24px rgba(91, 33, 182, 0.16);
+  animation: float-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 6px;
+  border-radius: 100px;
+  background: #2a2a3e;
+  z-index: 2;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f7fd 100%);
+  padding: 30px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.phone-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.phone-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #8051FF, #5b21b6);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.phone-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0A0A14;
+}
+
+.phone-balance {
+  background: #f8f7fd;
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+
+.phone-balance-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.phone-balance-value {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #d97706;
+  letter-spacing: -0.02em;
+}
+
+.phone-btn {
+  background: #8051FF;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 11px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(128, 81, 255, 0.35);
+}
+
+.phone-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border-top: 1px solid #f1f3f9;
+}
+
+.phone-row-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.phone-row-dot-green {
+  background: #7cb300;
+  box-shadow: 0 0 0 3px rgba(124, 179, 0, 0.15);
+}
+
+.phone-row-dot-amber {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.phone-row-text {
+  flex: 1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.phone-row-amount {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #7cb300;
+}
+
+.phone-row-amount-warn {
+  color: #d97706;
+}
+
 /* Utilities */
 .gap-3 { gap: 12px; }
 .rounded-2xl { border-radius: 20px !important; }
@@ -1456,6 +1847,21 @@ export default {
     left: 0;
     bottom: 24px;
   }
+
+  /* Download section stacks */
+  .download-card {
+    grid-template-columns: 1fr;
+    padding: 36px 28px;
+    gap: 40px;
+    text-align: center;
+  }
+  .download-lede {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .download-features {
+    align-items: center;
+  }
 }
 
 @media (max-width: 599px) {
@@ -1495,6 +1901,19 @@ export default {
   .role-icon-wrapper {
     width: 56px;
     height: 56px;
+  }
+
+  .download-card {
+    padding: 28px 20px;
+    border-radius: 20px;
+  }
+  .phone-frame {
+    width: 190px;
+    height: 370px;
+  }
+  .playstore-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
